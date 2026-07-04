@@ -28,7 +28,7 @@ func TestBuildHandlerKeepsSessionCandidateDisabledByDefault(t *testing.T) {
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/session/me", nil)
@@ -574,7 +574,7 @@ func TestBuildHandlerCanMountPlatformProxyReadCandidateWithoutDatabase(t *testin
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/platform/options?option=store", nil)
@@ -607,7 +607,7 @@ func TestBuildHandlerCanMountPlatformProxyWriteCandidateWithoutDatabase(t *testi
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/platform/pay/prepay", strings.NewReader(`{"order_id":7}`))
@@ -625,7 +625,7 @@ func TestBuildHandlerCanMountPlatformProxySidebarCandidateWithoutDatabase(t *tes
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/platform/device/device-1/sidebar-command", strings.NewReader(`{"type":"request_money","receiver":"客户A","organization_name":"子墨","money":"88.5","msg_id":"msg-sidebar-0001"}`))
@@ -646,7 +646,7 @@ func TestBuildHandlerCanMountP1ScreenCandidateWithoutDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/p1/screen/3/url?quality=0", nil)
@@ -690,7 +690,7 @@ func TestBuildHandlerMountsSessionAdminLoginWithoutDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/session/admin-login", strings.NewReader(`{"username":"admin","password":"secret"}`))
@@ -713,7 +713,7 @@ func TestBuildHandlerMountsDisabledPasswordlessLoginWithoutDatabase(t *testing.T
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/session/login", strings.NewReader(`{"assignee_id":"cs-001"}`))
@@ -935,7 +935,7 @@ func TestBuildHandlerDoesNotRequireDatabaseForSOPMediaLocalCandidate(t *testing.
 	if handler == nil || cleanup == nil {
 		t.Fatalf("handler/cleanup should be configured: handler_nil=%t cleanup_nil=%t", handler == nil, cleanup == nil)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/admin/sop/media/local?object_url=local%3A%2F%2Fsop%2Fwelcome.png", nil)
@@ -957,7 +957,7 @@ func TestBuildHandlerDoesNotRequireDatabaseForSOPMediaUploadCandidate(t *testing
 	if handler == nil || cleanup == nil {
 		t.Fatalf("handler/cleanup should be configured: handler_nil=%t cleanup_nil=%t", handler == nil, cleanup == nil)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/admin/sop/media/upload", nil)
@@ -979,7 +979,7 @@ func TestBuildHandlerDoesNotRequireDatabaseForSOPPlatformTestCandidate(t *testin
 	if handler == nil || cleanup == nil {
 		t.Fatalf("handler/cleanup should be configured: handler_nil=%t cleanup_nil=%t", handler == nil, cleanup == nil)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/admin/sop/platform/test", strings.NewReader(`{"task_url":"https://platform.example/tasks"}`))
@@ -1047,7 +1047,7 @@ func TestBuildHandlerCanMountDeviceBridgeCandidateWithoutDatabase(t *testing.T) 
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/devices/device-1/call-audio-bridge/status", strings.NewReader(`{"running":true}`))
@@ -1077,7 +1077,7 @@ func TestBuildHandlerCanMountDeviceBridgeTargetsCandidateWithAgentToken(t *testi
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/devices/call-audio-bridge/targets", nil)
@@ -1097,7 +1097,7 @@ func TestBuildHandlerCanMountAgentRetiredCandidateWithoutDatabase(t *testing.T) 
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/agents/heartbeat", nil)
@@ -1124,7 +1124,7 @@ func TestBuildHandlerCanMountWeWorkUserInfoLastCandidateWithoutDatabase(t *testi
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
@@ -1160,7 +1160,7 @@ func TestBuildHandlerCanMountDevicesListCandidateWithoutDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
@@ -1196,7 +1196,7 @@ func TestBuildHandlerCanMountDeviceSDKWebRTCCandidateWithoutDatabase(t *testing.
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
@@ -1242,7 +1242,7 @@ func TestBuildHandlerCanMountDeviceSDKStatusCandidateWithoutDatabase(t *testing.
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
@@ -1279,7 +1279,7 @@ func TestBuildHandlerCanMountDeviceSDKControlCandidateWithoutDatabase(t *testing
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
@@ -1310,7 +1310,7 @@ func TestBuildHandlerCanMountSendTextCandidateWithoutDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
@@ -1341,7 +1341,7 @@ func TestBuildHandlerCanMountGroupInviteCandidateWithoutDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
@@ -1397,7 +1397,7 @@ func TestBuildHandlerCanMountSendImageCandidateWithoutDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
@@ -1466,7 +1466,7 @@ func TestBuildHandlerCanMountDeviceSDKRTCSessionCandidateWithoutDatabase(t *test
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
@@ -1508,7 +1508,7 @@ func TestBuildHandlerCanMountDeviceRTCActiveCandidateWithoutDatabase(t *testing.
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
@@ -1554,7 +1554,7 @@ func TestBuildHandlerCanMountDeviceRTCControlCandidateWithoutDatabase(t *testing
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
@@ -1637,7 +1637,7 @@ func TestBuildHandlerDeviceRTCControlInputUsesBridgeExecutor(t *testing.T) {
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
@@ -1690,7 +1690,7 @@ func TestBuildHandlerCanMountDeviceRTCMediaPrepareCandidateWithoutDatabase(t *te
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
@@ -2975,7 +2975,7 @@ func TestBuildHandlerMountsWSGatewayWithoutDatabase(t *testing.T) {
 	if cleanup == nil {
 		t.Fatal("cleanup = nil, want no-op cleanup")
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/ws/conversations", nil)
@@ -3037,4 +3037,14 @@ func sendMediaMultipartBody(t *testing.T, fields map[string]string, filename str
 		t.Fatalf("writer close returned error: %v", err)
 	}
 	return body, writer.FormDataContentType()
+}
+
+func cleanupHandler(t *testing.T, cleanup func() error) {
+	t.Helper()
+	if cleanup == nil {
+		return
+	}
+	if err := cleanup(); err != nil {
+		t.Fatalf("cleanup returned error: %v", err)
+	}
 }

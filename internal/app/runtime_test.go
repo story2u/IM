@@ -39,7 +39,7 @@ func TestNewRuntimeBuildsRedisManagerOnly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.DB != nil || runtime.Session != nil {
 		t.Fatalf("unexpected runtime DB/session: db=%v session=%v", runtime.DB, runtime.Session)
 	}
@@ -100,7 +100,7 @@ func TestNewRuntimeBuildsTasksWithDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Tasks == nil || runtime.Tasks.StoreRepository == nil {
 		t.Fatalf("tasks store not wired: %+v", runtime.Tasks)
 	}
@@ -117,7 +117,7 @@ func TestNewRuntimeBuildsTasksWithRedisDeviceLockStore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Tasks == nil || runtime.Tasks.SendDispatcher.DeviceLockStore == nil {
 		t.Fatalf("device lock store not wired: %+v", runtime.Tasks)
 	}
@@ -131,7 +131,7 @@ func TestNewRuntimeBuildsTasksWithRedisTaskStatusPublisher(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Tasks == nil || runtime.Tasks.SendDispatcher.TerminalSync.Status == nil {
 		t.Fatalf("task.status publisher not wired: %+v", runtime.Tasks)
 	}
@@ -156,7 +156,7 @@ func TestNewRuntimeBuildsTasksWithDatabaseAndRealtimeWiresAITerminalHub(t *testi
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Tasks == nil || runtime.Tasks.AITerminalRepository == nil || runtime.Tasks.AITerminalRepository.Hub == nil {
 		t.Fatalf("ai terminal hub not wired: %+v", runtime.Tasks)
 	}
@@ -170,7 +170,7 @@ func TestNewRuntimeBuildsTasksWithRedisDeviceHealthStore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Tasks == nil || runtime.Tasks.SendDispatcher.DeviceHealth == nil || runtime.Tasks.SendDispatcher.DeviceHealthReader == nil {
 		t.Fatalf("device health store not wired: %+v", runtime.Tasks)
 	}
@@ -182,7 +182,7 @@ func TestNewRuntimeBuildsTasksWithMemoryDeviceHealthStore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Tasks == nil || runtime.Tasks.SendDispatcher.DeviceHealth == nil || runtime.Tasks.SendDispatcher.DeviceHealthReader == nil {
 		t.Fatalf("memory device health store not wired: %+v", runtime.Tasks)
 	}
@@ -198,7 +198,7 @@ func TestNewRuntimeBuildsTasksWithSendConnectorProvider(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Tasks == nil || runtime.Tasks.SendDispatcher.ExecuteBatch == nil {
 		t.Fatalf("send connector provider not wired: %+v", runtime.Tasks)
 	}
@@ -217,7 +217,7 @@ func TestNewRuntimeBuildsTasksWithFakeSendConnector(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Tasks == nil || runtime.Tasks.SendDispatcher.ExecuteBatch == nil {
 		t.Fatalf("fake send connector not wired: %+v", runtime.Tasks)
 	}
@@ -242,7 +242,7 @@ func TestNewRuntimeBuildsSessionWithDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.DB == nil || runtime.Dialect != sqldb.DialectMySQL || runtime.MaskedDSN != "mysql://***@db.example:3306/wework" {
 		t.Fatalf("unexpected DB metadata: db=%v dialect=%q masked=%q", runtime.DB, runtime.Dialect, runtime.MaskedDSN)
 	}
@@ -266,7 +266,7 @@ func TestNewRuntimeBuildsMessagesWithDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Messages == nil || runtime.Messages.StoreRepository == nil || runtime.Messages.BlacklistRepository == nil {
 		t.Fatalf("messages stores not wired: %+v", runtime.Messages)
 	}
@@ -287,7 +287,7 @@ func TestNewRuntimeBuildsWorkbenchWithDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Workbench == nil || runtime.Workbench.AccountRepository == nil || runtime.Workbench.AIConfigRepository == nil || runtime.Workbench.AuditLogRepository == nil || runtime.Workbench.AssignmentConfigRepo == nil || runtime.Workbench.AssignmentRepository == nil || runtime.Workbench.CSUserRepository == nil || runtime.Workbench.DeviceRepository == nil || runtime.Workbench.LoginRepository == nil || runtime.Workbench.ProjectionRepository == nil || runtime.Workbench.ReplyScriptRepo == nil || runtime.Workbench.SensitiveWordRepo == nil || runtime.Workbench.SOPAnalyticsRepo == nil || runtime.Workbench.SOPFlowRepository == nil || runtime.Workbench.SOPPolicyRepository == nil || runtime.Workbench.KnowledgeDocRepo == nil || runtime.Workbench.EnterpriseRepository == nil || runtime.Workbench.BlacklistRepository == nil {
 		t.Fatalf("workbench stores not wired: %+v", runtime.Workbench)
 	}
@@ -313,7 +313,7 @@ func TestNewRuntimeBuildsWorkbenchAssignmentConfigWriteWiring(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Workbench == nil || runtime.Workbench.Service.AssignmentConfigEvents == nil || runtime.Workbench.Service.AssignmentPoolRuntime == nil {
 		t.Fatalf("assignment config write dependencies not wired: %+v", runtime.Workbench)
 	}
@@ -339,7 +339,7 @@ func TestNewRuntimeBuildsWorkbenchAssignmentRuntimeStateWiring(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Workbench == nil || runtime.Workbench.Service.AssignmentEvents == nil || runtime.Workbench.Service.AssignmentRuntimeState == nil || runtime.Workbench.Service.AssignmentOperationLock == nil || runtime.Workbench.Service.ReadModelInvalidator == nil {
 		t.Fatalf("assignment runtime dependencies not wired: %+v", runtime.Workbench)
 	}
@@ -368,7 +368,7 @@ func TestNewRuntimeBuildsWorkbenchAssignmentPoolRuntimeSelector(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Workbench == nil || runtime.Workbench.Service.AssignmentRuntimeState == nil || runtime.Workbench.Service.AssignmentPoolRuntimeSelector == nil {
 		t.Fatalf("assignment auto runtime dependencies not wired: %+v", runtime.Workbench)
 	}
@@ -390,7 +390,7 @@ func TestNewRuntimeBuildsWorkbenchSOPAutoResendPendingStore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Workbench == nil || runtime.Workbench.Service.SOPAutoResendPendingStore == nil {
 		t.Fatalf("sop auto resend pending store not wired: %+v", runtime.Workbench)
 	}
@@ -413,7 +413,7 @@ func TestNewRuntimeBuildsOutboxWithDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Outbox == nil || runtime.Outbox.StoreRepository == nil || runtime.Outbox.Relay == nil {
 		t.Fatalf("outbox module not wired: %+v", runtime.Outbox)
 	}
@@ -440,7 +440,7 @@ func TestNewOutboxNotifyWaiterDisabledWithoutRedisNotify(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.NewOutboxNotifyWaiter() != nil {
 		t.Fatalf("waiter should be nil when redis notify is disabled")
 	}
@@ -458,7 +458,7 @@ func TestNewArchiveSyncNotifyWaiterDefaultsDedicatedChannel(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	waiter := runtime.NewArchiveSyncNotifyWaiter()
 	if waiter == nil || len(waiter.Channels) != 1 || waiter.Channels[0] != archivesyncnotify.DefaultChannel {
 		t.Fatalf("archive sync waiter = %#v", waiter)
@@ -473,7 +473,7 @@ func TestNewArchiveIngestNotifyWaiterDefaultsDedicatedChannel(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	waiter := runtime.NewArchiveIngestNotifyWaiter()
 	if waiter == nil || waiter.Channel != archiveingestnotify.DefaultChannel {
 		t.Fatalf("archive ingest waiter = %#v", waiter)
@@ -509,7 +509,7 @@ func TestNewRuntimeBuildsArchiveSyncWithOutbox(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.ArchiveSync == nil || runtime.ArchiveSync.Enterprises == nil || runtime.ArchiveSync.Cursors == nil || runtime.ArchiveSync.Tasks == nil || runtime.ArchiveSync.Puller == nil {
 		t.Fatalf("archive sync runner not wired: %+v", runtime.ArchiveSync)
 	}
@@ -554,7 +554,7 @@ func TestNewRuntimeBuildsArchiveCompensationWithDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.ArchiveCompensation == nil {
 		t.Fatalf("archive compensation service not wired")
 	}
@@ -589,7 +589,7 @@ func TestNewRuntimeWiresRawGapCompensationHandlerWithArchiveSync(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.ArchiveCompensation == nil || runtime.ArchiveSync == nil {
 		t.Fatalf("archive services not wired: compensation=%#v sync=%#v", runtime.ArchiveCompensation, runtime.ArchiveSync)
 	}
@@ -617,7 +617,7 @@ func TestNewRuntimeWiresMediaStuckCompensationHandlerWithArchiveMedia(t *testing
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.ArchiveCompensation == nil || runtime.ArchiveMedia == nil {
 		t.Fatalf("archive services not wired: compensation=%#v media=%#v", runtime.ArchiveCompensation, runtime.ArchiveMedia)
 	}
@@ -639,7 +639,7 @@ func TestNewRuntimeBuildsArchiveMaintenanceWithDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.ArchiveMaintenance == nil {
 		t.Fatalf("archive maintenance service not wired")
 	}
@@ -675,7 +675,7 @@ func TestNewRuntimeBuildsArchiveColdStorageWithDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.ArchiveColdStorage == nil || runtime.ArchiveColdStorage.Messages == nil || runtime.ArchiveColdStorage.Metadata == nil || runtime.ArchiveColdStorage.Exporter == nil {
 		t.Fatalf("archive cold storage service not wired: %+v", runtime.ArchiveColdStorage)
 	}
@@ -722,7 +722,7 @@ func TestNewRuntimeBuildsArchiveIngestWithDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.ArchiveIngest == nil || runtime.ArchiveIngest.Tasks == nil || runtime.ArchiveIngest.Ingestor == nil {
 		t.Fatalf("archive ingest processor not wired: %+v", runtime.ArchiveIngest)
 	}
@@ -770,7 +770,7 @@ func TestNewRuntimeBuildsArchiveMediaWithDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.ArchiveMedia == nil || runtime.ArchiveMedia.Store == nil || runtime.ArchiveMedia.Puller == nil || runtime.ArchiveMedia.Storage == nil || runtime.ArchiveMedia.Notifier == nil || runtime.ArchiveMedia.Messages == nil || runtime.ArchiveMedia.VoiceTranscription == nil {
 		t.Fatalf("archive media service not wired: %+v", runtime.ArchiveMedia)
 	}
@@ -811,7 +811,7 @@ func TestNewArchiveMediaNotifyWaiterDefaultsDedicatedChannel(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	waiter := runtime.NewArchiveMediaNotifyWaiter()
 	if waiter == nil || waiter.Channel != archivemedianotify.DefaultChannel {
 		t.Fatalf("archive media waiter = %#v", waiter)
@@ -826,7 +826,7 @@ func TestNewVoiceTranscriptionNotifyWaiterDefaultsDedicatedChannel(t *testing.T)
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	waiter := runtime.NewVoiceTranscriptionNotifyWaiter()
 	if waiter == nil || waiter.Channel != voicetranscriptionnotify.DefaultChannel {
 		t.Fatalf("voice transcription waiter = %#v", waiter)
@@ -863,7 +863,7 @@ func TestNewRuntimeBuildsVoiceTranscriptionWithDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.VoiceTranscription == nil || runtime.VoiceTranscription.Store == nil || runtime.VoiceTranscription.URLBuilder == nil || runtime.VoiceTranscription.Executor == nil || runtime.VoiceTranscription.Notifier == nil || runtime.VoiceTranscription.Messages == nil {
 		t.Fatalf("voice transcription service not wired: %+v", runtime.VoiceTranscription)
 	}
@@ -905,7 +905,7 @@ func TestNewRuntimeBuildsVoiceTranscriptionJWTTokenSource(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	executor, ok := runtime.VoiceTranscription.Executor.(voicetranscription.HTTPExecutor)
 	if !ok || executor.TokenSource == nil {
 		t.Fatalf("executor = %#v", runtime.VoiceTranscription.Executor)
@@ -929,7 +929,7 @@ func TestNewRuntimeBuildsOutboxProjectionWithDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Outbox == nil || runtime.Outbox.ProjectionRepository == nil || runtime.Outbox.Projection == nil {
 		t.Fatalf("outbox projection not wired: %+v", runtime.Outbox)
 	}
@@ -957,7 +957,7 @@ func TestNewRuntimeBuildsIncomingWriteWithDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Incoming == nil || runtime.Incoming.MessageRepository == nil || runtime.Incoming.OutboxRepository == nil {
 		t.Fatalf("incoming module not wired: %+v", runtime.Incoming)
 	}
@@ -988,7 +988,7 @@ func TestNewRuntimeBuildsIncomingWorkerWithDatabaseAndEventbus(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Incoming == nil || runtime.IncomingWorker == nil || runtime.IncomingWorker.RedisQueue == nil {
 		t.Fatalf("incoming worker not wired: incoming=%+v worker=%+v", runtime.Incoming, runtime.IncomingWorker)
 	}
@@ -1023,7 +1023,7 @@ func TestNewRuntimeReusesRealtimeHubForTasksAndOutbox(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewRuntime returned error: %v", err)
 	}
-	defer runtime.Close()
+	defer closeRuntime(t, runtime)
 	if runtime.Realtime == nil || runtime.Tasks == nil || runtime.Outbox == nil {
 		t.Fatalf("runtime not wired: %+v", runtime)
 	}
@@ -1050,4 +1050,11 @@ func containsString(values []string, target string) bool {
 		}
 	}
 	return false
+}
+
+func closeRuntime(t *testing.T, runtime *Runtime) {
+	t.Helper()
+	if err := runtime.Close(); err != nil {
+		t.Fatalf("runtime close returned error: %v", err)
+	}
 }

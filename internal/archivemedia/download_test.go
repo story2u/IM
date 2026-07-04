@@ -39,7 +39,7 @@ func TestDownloadTaskReadsLocalArchiveMediaFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DownloadTask returned error: %v", err)
 	}
-	defer download.Body.Close()
+	defer closeDownloadBody(t, download.Body)
 	body, err := io.ReadAll(download.Body)
 	if err != nil {
 		t.Fatalf("ReadAll returned error: %v", err)
@@ -64,7 +64,7 @@ func TestDownloadLocalObjectReadsLocalSOPMediaFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DownloadLocalObject returned error: %v", err)
 	}
-	defer download.Body.Close()
+	defer closeDownloadBody(t, download.Body)
 	body, err := io.ReadAll(download.Body)
 	if err != nil {
 		t.Fatalf("ReadAll returned error: %v", err)
@@ -115,7 +115,7 @@ func TestDownloadObjectProxiesObjectStorage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DownloadObject returned error: %v", err)
 	}
-	defer download.Body.Close()
+	defer closeDownloadBody(t, download.Body)
 	body, err := io.ReadAll(download.Body)
 	if err != nil {
 		t.Fatalf("ReadAll returned error: %v", err)
@@ -138,6 +138,13 @@ func TestExtractLocalObjectPathRejectsNonLocalURL(t *testing.T) {
 	}
 	if got := ExtractLocalObjectPath("local://archive_media/ent-1/file.png"); got != "archive_media/ent-1/file.png" {
 		t.Fatalf("local path = %q", got)
+	}
+}
+
+func closeDownloadBody(t *testing.T, body io.Closer) {
+	t.Helper()
+	if err := body.Close(); err != nil {
+		t.Fatalf("download body close returned error: %v", err)
 	}
 }
 

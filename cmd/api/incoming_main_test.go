@@ -18,7 +18,7 @@ func TestBuildHandlerMountsIncomingMessagesWithoutDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer cleanupHandler(t, cleanup)
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/messages/incoming", strings.NewReader(`{"trace_id":"trace-1"}`))
 	handler.ServeHTTP(response, request)

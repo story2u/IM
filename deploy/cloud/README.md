@@ -13,6 +13,20 @@ docker compose --env-file .env up -d --build go-api go-web go-redis
 
 Set `GO_IMAGE_TAG`, `GO_WEB_VERSION`, `GO_WEB_COMMIT`, and `GO_WEB_BUILD_TIME` before building release images when the tag, visible Next.js version marker, `/version.txt`, and container runtime metadata must point at the same artifact.
 
+## GitHub Actions VPS Deploy
+
+The `Deploy to VPS` workflow deploys the GHCR images built by `Docker Build & Push`. Configure these repository or environment values before running it:
+
+- Variables or secrets: `VPS_HOST`, `VPS_USER`, optional `VPS_PORT`, optional `VPS_DEPLOY_DIR`, optional `VPS_API_URL`, optional `VPS_WEB_URL`.
+- Secret: `VPS_SSH_KEY`, the private key used by the workflow to SSH into the VPS.
+- Optional secret: `VPS_ENV_FILE`, the full production `.env` content to write to the VPS deploy directory.
+- Optional variable: `VPS_COMPOSE_SERVICES`, defaults to `go-redis go-cache-redis go-api go-web go-outbox-worker go-incoming-worker`.
+- Optional variable/secret: `GHCR_USERNAME` / `GHCR_TOKEN` when the package registry requires a token other than the workflow token.
+
+The SSH user must be able to write `VPS_DEPLOY_DIR` and run `docker compose`. On a fresh Ubuntu VPS, install Docker and add the deploy user to the `docker` group, or use a restricted root login dedicated to deployment.
+
+The workflow copies `deploy/cloud/docker-compose.yml` and `.env.example` to the VPS, preserves an existing `.env`, and overwrites `.env` only when `VPS_ENV_FILE` is set. It exports GHCR image names such as `ghcr.io/story2u/wework-api:main` at deploy time, so the compose file pulls release images instead of building locally.
+
 Start workers only for the product surface being validated:
 
 ```bash

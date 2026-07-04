@@ -62,7 +62,9 @@ func (client Client) PullSelfDecrypt(ctx context.Context, input PullInput) (Resu
 	if err != nil {
 		return Result{}, err
 	}
-	defer response.Body.Close()
+	defer func() {
+		_ = response.Body.Close()
+	}()
 	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return Result{}, err
