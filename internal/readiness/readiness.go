@@ -803,7 +803,7 @@ func DefaultProfiles() []Profile {
 		},
 		{
 			Name:        "device-ops",
-			Description: "Device inventory, P1 screen helpers, WeWork login tasks, SDK controls, LiveKit RTC control, and media preparation.",
+			Description: "Device inventory, P1 screen helpers, connector login adapter tasks, SDK controls, LiveKit RTC control, and media preparation.",
 			Routes: []RouteRequirement{
 				{Method: "GET", Path: "/api/p1/screen/{slot_index}"},
 				{Method: "GET", Path: "/api/p1/screen/{slot_index}/url"},

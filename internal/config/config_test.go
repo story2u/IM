@@ -1839,7 +1839,7 @@ func TestLoadVoiceTranscriptionPrivateKeyPath(t *testing.T) {
 func TestLoadPlatformConfig(t *testing.T) {
 	clearPlatformEnv(t)
 	cfg := Load()
-	if cfg.PlatformBaseURL != "https://www.henm.cn" || cfg.PlatformAPIToken != "" || cfg.PlatformDefaultUserID != 7294 || cfg.PlatformDefaultCorpID != "ww916da62a08044243" || cfg.PlatformDefaultWechat != "yzm-yibingwen" || cfg.PlatformDefaultPaymentID != 12 || cfg.PlatformTimeoutSec != 15 {
+	if cfg.PlatformBaseURL != "" || cfg.PlatformAPIToken != "" || cfg.PlatformDefaultUserID != 0 || cfg.PlatformDefaultCorpID != "" || cfg.PlatformDefaultWechat != "" || cfg.PlatformDefaultPaymentID != 0 || cfg.PlatformTimeoutSec != 15 {
 		t.Fatalf("platform defaults base=%q token=%q user=%d corp=%q wechat=%q payment=%d timeout=%d", cfg.PlatformBaseURL, cfg.PlatformAPIToken, cfg.PlatformDefaultUserID, cfg.PlatformDefaultCorpID, cfg.PlatformDefaultWechat, cfg.PlatformDefaultPaymentID, cfg.PlatformTimeoutSec)
 	}
 
