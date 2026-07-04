@@ -1,21 +1,21 @@
 # Codex 长任务提示（可直接放入 goal）
 
-目标：按 `go/docs/refactor-plan.md`、`go/docs/phased-plan.md`、`go/docs/harness-architecture.md` 推进重构，把 Python/FastAPI + React/Vite 迁移为 Go + Next.js + TailwindCSS，并保持兼容性边界不变。
+目标：按 `go/docs/refactor-plan.md`、`go/docs/phased-plan.md`、`go/docs/harness-architecture.md` 推进独立 Go + Next.js + TailwindCSS 实现，并保持兼容性边界不变。
 
 ## 目标硬约束（必读）
 
 - 不改变对外接口：`/api/v1/**`、`/ws/{channel}`、`/healthz`、`/readyz`、`/metrics` 结构保持兼容。
 - 不改 Redis key 命名、DB schema、WS 事件名与 payload 语义。
 - 不改 Docker 运行角色边界（api / incoming-worker / send-dispatcher / ws-gateway / archive-sync-worker / archive-media-worker / maintenance-worker / automation-worker / ...）。
-- 每个阶段按顺序推进：先补 harness/验证，再实现迁移，再跑测试和对账。
+- 每个阶段按顺序推进：先补 harness/验证，再实现功能，再跑测试和对账。
 
 ## 执行规则
 
 - 只在有明确“证据闭环”时推进下一阶段：
   - `go test ./...`
-  - `go run ./cmd/inventory -python-root ../Python -pretty`
-  - `go run ./cmd/inventory-diff -baseline <old.json> -current <new.json>` 清单数量漂移检查（有 baseline 时）
-  - `go run ./cmd/golden-http -python ...` 对应阶段 fixture 对账
+  - `go run ./cmd/inventory -python-root <compatibility-baseline-root> -pretty`
+  - `go run ./cmd/inventory-diff -baseline <previous.json> -current <new.json>` 清单数量漂移检查（有 baseline 时）
+  - `go run ./cmd/golden-http -python-url <baseline-url> -go-url <go-url> ...` 对应阶段 fixture 对账
   - `go run ./cmd/route-diff` 清单一致性检查
   - `go run ./cmd/route-diff -mode openapi-drift` OpenAPI 文档级契约对账（配置 spec 时比对 request/response schema、path 参数和 operationId）
   - Next.js `npm run build`（需要前端变更时）
@@ -42,7 +42,7 @@
 - 阶段 5：WS 连接与事件回放兼容。
 - 阶段 6～7：发送链路与 send-dispatcher 任务执行边界。
 - 阶段 8～10：入站、存档、AI/SOP/KB 与自动化。
-- 阶段 11：Next.js 完整接管前端展示与交互（不做业务推断）。
+- 阶段 11：Next.js 完整实现前端展示与交互（不做业务推断）。
 - 阶段 12：灰度、canary、回滚验证。
 
 ## 任务上下文提交格式
@@ -53,10 +53,10 @@
 2. 影响的接口、契约、Redis key、DB table、task type 与 WS event。
 3. 通过的 harness 门禁（列出命令与摘要）。
 4. 下一阶段待办和阻塞项（如有）。
-5. 若某处未迁移，说明是“有意保留”或“暂不支持（需显式确认）”。
+5. 若某处未实现，说明是“有意保留”或“暂不支持（需显式确认）”。
 
 ## 风险边界（默认不做）
 
-- 不做主观业务重构（例如把权限过滤、状态归类挪到前端）。
+- 不做主观业务改造（例如把权限过滤、状态归类挪到前端）。
 - 不做新 schema 变更，不做 Redis key 重命名。
 - 不做高风险真机执行前置假设，除非当前阶段已有 replay / shadow / canary 证据。

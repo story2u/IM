@@ -1,8 +1,8 @@
 # Go Harness 架构设计
 
-> 本文档定义 Go 重构阶段使用的 harness 架构。
-> 它借鉴 `Python/docs/ai/` 的导航、事实源、影响面和回写理念，但不复制 Python 文档体系。
-> 目标是把每次迁移从“写完再测”转成“先冻结证据，再实现，再用证据判定是否可接管”。
+> 本文档定义 Go 开发阶段使用的 harness 架构。
+> 它延续“先导航、先清单、先验证”的工程理念，并将其落实为可执行证据。
+> 目标是把每次开发从“写完再测”转成“先冻结证据，再实现，再用证据判定是否可接管”。
 > 本文档只描述目标架构，不表示这些目录、测试或 CI gate 已全部实现。
 > 对齐执行方式的目标提示见 `go/docs/codex-refactor-goal-prompt.md`。
 
@@ -10,20 +10,20 @@
 
 这里的 harness 不是单个测试套件，也不是脚本集合，而是一套围绕代码变更的证据系统：
 
-- 它先回答“当前 Python 行为是什么”。
+- 它先回答“当前兼容契约是什么”。
 - 再回答“Go 实现是否在同一输入下保持同一契约和边界”。
 - 最后回答“本阶段是否有足够证据接管流量，或必须继续留在 shadow / canary”。
 
-`Python/docs/ai/` 的核心价值是导航和事实沉淀：先读索引，再收敛功能域，再核实代码，再评估影响面。Go 侧 harness 要把这个思想变成可执行资产：清单、契约、golden、replay、并发验证、观测报告和 CI gate。
+Go 侧 harness 把导航和事实沉淀变成可执行资产：清单、契约、golden、replay、并发验证、观测报告和 CI gate。
 
 ## 2. 设计原则
 
-1. 事实先冻结，再迁移。
+1. 事实先冻结，再实现。
    - 每个阶段开始前先由 inventory 产出 route、contract、WS event、Redis key、DB table、task type 和运行角色清单。
    - 清单变化必须能从代码 diff 或人工批准的破坏性变更中解释。
 
 2. 契约优先于实现。
-   - Go 新代码不能靠“看起来等价”接管旧流量。
+   - Go 新代码不能靠“看起来等价”接管生产流量。
    - HTTP、WebSocket、task payload、Redis key、DB schema、错误结构和权限语义都需要可比较的契约证据。
 
 3. 快速 gate 与深度 gate 分层。
@@ -45,21 +45,21 @@
 
 7. 前端只验证展示和交互，不补业务事实。
    - Next.js harness 只能验证加载态、参数透传、事件消费和 UI 状态。
-   - 权限裁剪、列表筛选、统计口径、状态归类必须在 Go API 或旧 Python API 的契约中验证。
+   - 权限裁剪、列表筛选、统计口径、状态归类必须在 Go API 或兼容基线 API 的契约中验证。
 
-## 3. 与 Python/docs/ai 的关系
+## 3. 与文档资产的关系
 
 Go harness 借鉴三件事：
 
 - 导航：先定位功能域、入口、数据流和禁区，避免全仓猜测。
 - 事实源：接口、事件、Redis key、DB 字段、任务状态和展示字段都必须绑定真实代码或运行证据。
-- 回写：一旦迁移改变事实、链路、规则或边界，文档和 harness 清单必须一起更新。
+- 回写：一旦实现改变事实、链路、规则或边界，文档和 harness 清单必须一起更新。
 
 Go harness 不复制三件事：
 
 - 不把所有知识都写成长篇 Markdown。稳定契约应进入 schema、golden、inventory 输出和可执行测试。
 - 不让文档替代验证。文档负责解释为什么测，测试和报告负责证明测到了什么。
-- 不沿用 Python 的运行时假设。Go 需要额外关注 goroutine 生命周期、context deadline、连接池、锁粒度、race 和 backpressure。
+- 不沿用其他运行时假设。Go 需要额外关注 goroutine 生命周期、context deadline、连接池、锁粒度、race 和 backpressure。
 
 Next.js 前端也有独立执行规范：`go/docs/nextjs-harness-architecture.md`。
 
@@ -75,7 +75,7 @@ go/
   internal/harness/
     inventory/       # 清单模型、diff、报告格式
     contracts/       # HTTP / WS / task / Redis / schema 契约加载和校验
-    golden/          # Python 与 Go 响应对比、语义归一化
+    golden/          # baseline 与 Go 响应对比、语义归一化
     replay/          # WS、Redis Stream、outbox、archive 样本重放
     fixtures/        # 确定性时间、账号、设备、会话、消息 fixture
     env/             # Testcontainers / fake server / local stub 编排
@@ -85,7 +85,7 @@ go/
     integration/     # MySQL / Redis / OSS mock 等容器集成测试
     replay/          # 事件流重放测试
     e2e/             # Next.js 与 Go API 的关键路径 smoke
-    shadow/          # Python / Go 双跑对账
+    shadow/          # baseline / Go 双跑对账
   testdata/
     contracts/
     golden/
@@ -101,7 +101,7 @@ go/
 
 职责：
 
-- 从 `Python/docs/ai/`、`go/docs/refactor-plan.md` 和 `go/docs/phased-plan.md` 收敛功能域、入口和禁区。
+- 从 `go/docs/refactor-plan.md`、`go/docs/phased-plan.md` 和本 harness 文档收敛功能域、入口和禁区。
 - 记录每个阶段的接管范围、暂不接管范围、回滚路径和待确认项。
 
 输出：
@@ -114,7 +114,7 @@ go/
 
 职责：
 
-- 用 inventory 扫描 Python 和 Go 的 route、schema、Docker role、Redis key、WS event 和 task type。
+- 用 inventory 扫描 baseline 和 Go 的 route、schema、Docker role、Redis key、WS event 和 task type。
 - 有 baseline 时使用 `inventory-diff` 比较 route、contract、WS event、Redis key、DB table 和 task type 数量变化；`phase1_gate.sh` 默认发现 `testdata/inventory/baseline.json`，也允许 `INVENTORY_BASELINE_JSON` 指向 CI 下载的历史 artifact；`INVENTORY_DIFF_PROFILE=auto` 在主干/发布分支使用 strict 零漂移，其它分支默认 observe，具体阈值仍可用 `INVENTORY_DIFF_MAX_*` 显式覆盖。
 - 对 Go 代码执行 `gofmt`、`go test ./...`、`go vet`，前端执行 lint / build。
 
@@ -154,7 +154,7 @@ Go 约束：
 职责：
 
 - 保护输入解析、ID 归一化、消息 payload、WS event、Redis key builder、分页游标和 schema 解码。
-- 用旧系统真实样本作为 seed corpus，验证 Go 代码不会 panic、不会生成非法状态、不会越权扩展范围。
+- 用当前运行面真实样本作为 seed corpus，验证 Go 代码不会 panic、不会生成非法状态、不会越权扩展范围。
 
 适用阶段：
 
@@ -164,7 +164,7 @@ Go 约束：
 
 职责：
 
-- 同一请求分别打 Python 与 Go，比较状态码、响应字段、错误结构、分页游标和权限裁剪。
+- 同一请求分别打 baseline 与 Go，比较状态码、响应字段、错误结构、分页游标和权限裁剪。
 - 在 OpenAPI spec 可用时，对比 request/response schema、path 参数和 operationId；未提供 spec 时，仍通过 route metadata 与 JSON Schema catalog 产出 drift 证据，避免“没有文档就没有门禁”。
 - OpenAPI drift 必须同时覆盖默认暴露路由和 candidate 路由：默认路由证明当前运行面未漂移，candidate 路由证明后续切流对象的文档契约可审计。
 - schema drift 对 required、enum 等集合语义做稳定归一；字段类型、默认值、枚举成员和约束变化应报告为 drift，纯顺序变化不应成为失败原因。
@@ -187,7 +187,7 @@ Go 约束：
 职责：
 
 - 用可复现容器验证 MySQL、Redis、对象存储 mock、外部 HTTP mock 和本地 fake SDK。
-- 验证事务、锁、Stream pending、Pub/Sub、连接池、迁移脚本和幂等键。
+- 验证事务、锁、Stream pending、Pub/Sub、连接池、schema 变更脚本和幂等键。
 
 禁止：
 
@@ -250,7 +250,7 @@ Go 约束：
 
 职责：
 
-- Go 与 Python 双跑同一输入，Go 只读或 dry-run，不写生产事实源。
+- Go 与兼容基线双跑同一输入，Go 只读或 dry-run，不写生产事实源。
 - 比较输出、状态转换、事件和耗时。
 - canary 只接管明确接口、明确租户或明确设备池，且保留快速回滚。
 
@@ -277,11 +277,11 @@ Go 约束：
 | AI / SOP / 主动触达 | L1、L2、L4、L5、L6、L8、L9 |
 | Next.js 前端 | API contract、loading state、事件消费、可访问性 smoke、build gate（详见 `nextjs-harness-architecture.md`） |
 
-## 7. 每次迁移的工作流
+## 7. 每次开发的工作流
 
 1. 读文档。
-   - 先读 `Python/docs/ai/00_READ_FIRST.md`、`02_GLOBAL_RULES.md`、`01_SYSTEM_INDEX.md` 和目标功能域文档。
-   - 再读 Go 侧计划和本 harness 文档。
+   - 先读 Go 侧计划、本 harness 文档和目标功能域说明。
+   - 再核对代码入口、契约和相关 gate 产物。
 
 2. 生成或核对清单。
    - 运行 inventory。
@@ -291,8 +291,8 @@ Go 约束：
    - 按功能域映射选择最低 gate。
    - 高风险链路默认追加 replay、race、observability 和 shadow。
 
-4. 实现最小迁移。
-   - 不改变旧契约。
+4. 实现最小切片。
+   - 不改变兼容契约。
    - 不把前端做成事实源。
    - 不绕过 dispatcher、worker、projection 或 outbox 边界。
 
@@ -311,7 +311,7 @@ Go 约束：
 | 基础 Go 测试 | `go test ./...` |
 | Race 测试 | `go test -race ./...` |
 | Fuzz smoke | `go test ./... -run=^$ -fuzz=Fuzz -fuzztime=30s` |
-| Inventory | `go run ./cmd/inventory -python-root ../Python` |
+| Inventory | `go run ./cmd/inventory -python-root <compatibility-baseline-root>` |
 | Contract | `go test ./tests/contract/...` |
 | Integration | `go test ./tests/integration/...` |
 | Replay | `go test ./tests/replay/...`、`go run ./cmd/replay-http -cases testdata/replay/<suite>.json` |
@@ -336,24 +336,24 @@ Go 约束：
 - 用 `time.Sleep` 等待异步结果，而不是可观测信号、fake clock 或明确 deadline。
 - 把 Redis / projection 缺失时的全量扫描当成兼容路径。
 - 在 Next.js 里补权限过滤、业务筛选或状态归类。
-- 新旧实现长期并存却没有 shadow 差异报告和下线条件。
+- 并行实现长期并存却没有 shadow 差异报告和下线条件。
 
 ## 10. 外部理念参考
 
 - Go `testing` 包提供测试、子测试、benchmark、fuzz 和测试资源管理能力，是 Go harness 的默认底座：https://pkg.go.dev/testing
 - Go fuzzing 适合用 seed corpus 扩展输入空间，保护解析器、协议边界和状态机：https://go.dev/doc/security/fuzz/
-- Go race detector 应用于 goroutine、channel、锁和共享状态的迁移验证：https://go.dev/doc/articles/race_detector
+- Go race detector 应用于 goroutine、channel、锁和共享状态的实现验证：https://go.dev/doc/articles/race_detector
 - Testcontainers for Go 支持用容器编排依赖服务，适合替代共享开发库做集成测试：https://golang.testcontainers.org/
-- Pact 的 consumer-driven contract 思路适合 API 消费方和提供方分阶段迁移：https://docs.pact.io/
+- Pact 的 consumer-driven contract 思路适合 API 消费方和提供方分阶段实现：https://docs.pact.io/
 - OpenAPI / JSON Schema 适合把 HTTP 与 JSON payload 从文档描述提升为可校验契约：https://spec.openapis.org/oas/latest.html 和 https://json-schema.org/
 - OpenTelemetry Go 适合把 trace、metrics、logs 纳入验证产物，而不仅是上线后排障工具：https://opentelemetry.io/docs/languages/go/
 - SWE-bench 的任务级评测思想说明，现代 harness 越来越强调“真实仓库任务 + 可执行判定器”，这适合指导本项目的阶段接管判断：https://www.swebench.com/
 
 ## 11. 现代趋势借鉴（Go 实现）
 
-- 方向一：契约优先迁移。将旧 Python 接口定义收敛为 `schema` / `route` / `event` 三类可验证源，先冻结，再改造，再逐批对账。
+- 方向一：契约优先实现。将接口定义收敛为 `schema` / `route` / `event` 三类可验证源，先冻结，再改造，再逐批对账。
 - 方向二：可观测先于覆盖率。测试结果附带关键指标（耗时、重试率、队列长度）能让“为什么通过/为什么失败”有实据。
 - 方向三：双实现对照。以 `schema-drift`、`openapi-drift`、`golden-http`、`replay-http` 与 shadow/canary 组成“多视角对账”，相比单点断言更能防漏。
 - 方向四：失败可解释。每次 gate 输出都需带理由桶（例如 schema mismatch reason、event miss reason），避免“通过但未知原因”。
 - 方向五：渐进开关与可回滚。Go 仍沿用 `GO_ENABLE_*` 机制，在没有充分 evidence 前不改变默认流量路径。
-- 方向六：前端只测展现和交互。Next.js 层先做加载态、参数透传、状态渲染、事件消费 smoke，不在前端复原原有业务事实推断。
+- 方向六：前端只测展现和交互。Next.js 层先做加载态、参数透传、状态渲染、事件消费 smoke，不在前端重建业务事实推断。

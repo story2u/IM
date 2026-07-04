@@ -15,7 +15,7 @@ go run ./cmd/cutover-readiness -profile <profile> -strict
 2. 再配置 profile 必需 env/secrets。
 3. 跑对应 golden/live/shadow gate。
 4. 最后开启 `GO_ENABLE_*` 候选开关并跑 `-strict`。
-5. 进入 canary 前保留 Python 回滚路径和旧 Docker 运行角色。
+5. 进入 canary 前保留上一稳定版本的回滚路径和当前 Docker 运行角色。
 
 ## session-access
 
@@ -80,7 +80,7 @@ go run ./cmd/cutover-readiness -profile task-status -strict
 重点动作：
 - 配置 DB/JWT，并确认 `go-api`、`go-web` 服务存在。
 - 先验证会话列表、消息历史、panel snapshot、搜索和 contact profile golden。
-- 搜索仍需注意 projection 字段覆盖边界，切流前不要把 ES/消息正文增强视为已完全替换。
+- 搜索仍需注意 projection 字段覆盖边界，切流前不要把 ES/消息正文增强视为已完整覆盖。
 
 ```bash
 go run ./cmd/cutover-readiness -profile workbench-read -format markdown
@@ -159,12 +159,12 @@ go run ./cmd/cutover-readiness -profile admin-diagnostics -strict
 
 ## send-dispatch
 
-范围：Manual send, media send, group invite, and conversation reply paths with the temporary Python SDK executor sidecar.
+范围：Manual send, media send, group invite, and conversation reply paths with the temporary SDK executor sidecar.
 
 重点动作：
 - 配置 DB/JWT、SDK executor token、eventbus/lock/cache Redis。
 - 验证 reply、send text/media、group invite golden。
-- 该 profile 仍依赖 Python SDK executor sidecar，canary 前必须确认 sidecar 回滚路径。
+- 该 profile 仍依赖 SDK executor sidecar，canary 前必须确认 sidecar 回滚路径。
 
 ```bash
 go run ./cmd/cutover-readiness -profile send-dispatch -format markdown
@@ -290,7 +290,7 @@ go run ./cmd/cutover-readiness -profile archive-cold-storage -strict
 重点动作：
 - 配置 DB/JWT、agent token、SDK sidecar token、P1/RTC/LiveKit/media/env。
 - 验证 P1、devices、wework login、SDK control、RTC/media golden。
-- 切流前必须保留真机 shadow/canary 和 Python device side rollback。
+- 切流前必须保留真机 shadow/canary 和设备侧回滚路径。
 
 ```bash
 go run ./cmd/cutover-readiness -profile device-ops -format markdown
@@ -304,7 +304,7 @@ go run ./cmd/cutover-readiness -profile device-ops -strict
 重点动作：
 - 配置 JWT 和 WS Redis。
 - 验证 stream channels、replay、snapshot golden/replay。
-- 切流前确认 WS fanout、cursor、replay 和旧前端事件消费兼容。
+- 切流前确认 WS fanout、cursor、replay 和兼容前端事件消费兼容。
 
 ```bash
 go run ./cmd/cutover-readiness -profile realtime-workbench -format markdown

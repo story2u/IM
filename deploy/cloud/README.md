@@ -1,7 +1,8 @@
 # Go Cloud Compose
 
 This directory contains the Go/Next.js cloud compose baseline for shadow or canary runs.
-It does not replace `Python/deploy/cloud/docker-compose.yml` by default.
+It is a standalone deployment baseline; route traffic only after the matching
+readiness profile passes.
 
 ## Usage
 
@@ -74,7 +75,7 @@ The session cutover slice uses
 `GO_ENABLE_SESSION_ME_CANDIDATE`, `GO_ENABLE_SESSION_REFRESH_CANDIDATE`, and
 `GO_ENABLE_SESSION_LOGOUT_CANDIDATE`. Set `SESSION_JWT_SECRET`,
 `CLOUD_DB_DSN`, `ADMIN_USERNAME`, and `ADMIN_PASSWORD` before moving login
-traffic. `ALLOW_PASSWORDLESS_LOGIN` remains `0` unless the legacy passwordless
+traffic. `ALLOW_PASSWORDLESS_LOGIN` remains `0` unless the compatibility passwordless
 route is intentionally enabled.
 `GO_ENABLE_AUDIT_LOGS_CANDIDATE=1`,
 `GO_ENABLE_SYSTEM_LOGS_CANDIDATE=1`,
@@ -132,7 +133,7 @@ candidate and requires `CLOUD_DB_DSN`; Go writes callback receipt state for the
 candidate path.
 `GO_ENABLE_ARCHIVE_CALLBACK_RECEIPTS_CANDIDATE=1` mounts
 `GET /api/v1/archive/callback/receipts`; it requires `CLOUD_DB_DSN` and
-`SESSION_JWT_SECRET`, and keeps compensation/prune endpoints on Python.
+`SESSION_JWT_SECRET`; compensation and prune endpoints stay outside this profile.
 For the archive pipeline cutover profile, enable the archive read/admin,
 manual pull, callback, SDK bridge, media run/prepare/download, and events
 notify flags together only with `ARCHIVE_BRIDGE_TOKEN`,
@@ -151,16 +152,16 @@ with `go-api` and `go-redis` for the full retry/worker path.
 `GO_ENABLE_CONVERSATION_REPLY_CANDIDATE=1` mounts the text reply candidate
 `POST /api/v1/conversations/{conversation_id}/reply`; it requires
 `SESSION_JWT_SECRET`, creates a `send_text` task, and does not yet replace the
-Python route's message-table write.
+baseline route's message-table write.
 `GO_ENABLE_SEND_TEXT_CANDIDATE=1`, `GO_ENABLE_SEND_IMAGE_CANDIDATE=1`,
 `GO_ENABLE_SEND_VIDEO_CANDIDATE=1`, `GO_ENABLE_SEND_VOICE_CANDIDATE=1`,
 `GO_ENABLE_SEND_FILE_CANDIDATE=1`, and `GO_ENABLE_GROUP_INVITE_CANDIDATE=1`
-mount the legacy direct send and group invite candidates. They require
+mount the compatibility direct send and group invite candidates. They require
 `SESSION_JWT_SECRET`, create durable SDK tasks, and share the in-process device
 send limiter configured by `RATE_LIMIT_WINDOW_SEC`, `RATE_LIMIT_MAX_SENDS`,
 `RATE_LIMIT_BURST`, and `RATE_LIMIT_BURST_WINDOW`. When `CLOUD_DB_DSN` is
 configured, they also block fresh `devices.online=false` snapshots for
-`DEVICE_OFFLINE_BLOCK_MAX_AGE_SEC` seconds before falling through like Python.
+`DEVICE_OFFLINE_BLOCK_MAX_AGE_SEC` seconds before falling through to the compatibility behavior.
 `GO_ENABLE_STAGE6_HEALTH_CANDIDATE=1` mounts the admin/supervisor
 `GET /healthz/stage6` observability health candidate; it requires
 `CLOUD_DB_DSN` and `SESSION_JWT_SECRET` and currently reuses the dashboard
@@ -168,11 +169,11 @@ stage6 status provider.
 `GO_ENABLE_P1_SCREEN_CANDIDATE=1` mounts the read-only `/api/p1/screen/*` and
 `/api/p1/slots/ports` URL/port helpers; it does not require `CLOUD_DB_DSN`.
 Set `P1_INTERNAL_IP` and optional `P1_WEBRTC_TCP_PORT` /
-`P1_WEBRTC_UDP_PORT` to mirror the Python P1 screen settings.
+`P1_WEBRTC_UDP_PORT` to mirror the P1 screen settings.
 `GO_ENABLE_DEVICE_RTC_CONTROL_CANDIDATE=1` mounts the LiveKit device-control
 lease and input endpoints. By default `/control/input` stays unavailable after
 lease validation; set `P1_RTC_CONTROL_EXECUTOR_BASE_URL` to a trusted internal
-Python backend or dedicated P1 control bridge to forward validated input to
+internal backend or dedicated P1 control bridge to forward validated input to
 MytRpc. The bridge should share the same `CLOUD_CACHE_REDIS_URL` /
 `CLOUD_CACHE_REDIS_PREFIX` control-state keys, and `P1_RTC_CONTROL_EXECUTOR_TOKEN`
 can override `AGENT_API_TOKEN` for bridge auth. Optional
@@ -195,13 +196,13 @@ stores, orders, schedule hours, collections, and user appid; it uses
 placeholder plus non-device platform proxy mutations such as customer mobile,
 order, schedule, prepay, and store video proxy calls.
 `GO_ENABLE_PLATFORM_PROXY_SIDEBAR_CANDIDATE=1` mounts the device sidebar command
-task entrypoint; it normalizes the legacy sidebar payload and creates an
+task entrypoint; it normalizes the compatibility sidebar payload and creates an
 accepted SDK task, but does not execute SDK/MytRpc work inside the API process.
 For the full platform proxy cutover profile, configure `PLATFORM_BASE_URL`,
 `PLATFORM_API_TOKEN`, platform identity defaults, `CLOUD_DB_DSN`,
 `SDK_EXECUTOR_API_TOKEN`, and the lock/cache Redis URLs, then run
 `go-send-dispatcher` with `python-sdk-executor-sidecar` so sidebar tasks reach
-the existing SDK executor bridge.
+the SDK executor bridge.
 `GO_ENABLE_AI_OUTREACH_CANDIDATE=1` mounts
 `/api/v1/platform-agent/ai-outreach/*` for platform-agent conversation context
 and outreach send task creation. Set `AGENT_API_TOKEN`, the same `PLATFORM_*`
@@ -215,7 +216,7 @@ local/upload, and platform test. Configure `CLOUD_DB_DSN`,
 `ARCHIVE_MEDIA_OBJECT_UPLOAD_TOKEN`, `ARCHIVE_MEDIA_SIGNING_KEY`,
 `SDK_EXECUTOR_API_TOKEN`, and the lock/cache Redis URLs; run `go-web`,
 `go-send-dispatcher`, and `python-sdk-executor-sidecar` so manual SOP resend
-tasks leave the API process and reach the existing SDK bridge.
+tasks leave the API process and reach the SDK bridge.
 For the admin diagnostics cutover profile, enable the `GO_ENABLE_DIAGNOSTIC_*`
 candidate flags for device/account maps, orphan/forked conversations, dirty
 contacts, archive sync status, archive missing-outbox check/replay, and
@@ -234,8 +235,8 @@ repaired canonical events update projections and realtime subscribers.
 - `VOICE_TRANSCRIPTION_COZE_API_KEY` or the Coze JWT OAuth key fields for voice transcription
 
 For Go send-dispatcher canary runs, start `python-sdk-executor-sidecar` with
-`go-send-dispatcher`. The sidecar is a temporary bridge around the existing
-Python `SdkTaskExecutor`; it exposes only `/devices`, `/execute`, and
+`go-send-dispatcher`. The sidecar is a temporary bridge around the SDK task
+executor; it exposes only `/devices`, `/execute`, and
 `/execute-batch` on the internal compose network. Set `SDK_EXECUTOR_API_TOKEN`
 to a non-empty shared value and leave
 `GO_SDK_EXECUTOR_BASE_URL=http://python-sdk-executor-sidecar:9107` unless the
@@ -246,8 +247,8 @@ For multi-enterprise archive workers, set `ARCHIVE_SYNC_ALL_ENTERPRISES=1` or
 `ARCHIVE_WORKER_SCOPE_CONCURRENCY` controls multi-enterprise archive ingest,
 archive media, and voice transcription worker fan-out; the default is `1`.
 
-`go-contact-sync-worker` runs the Go replacement for Python
-`ContactSyncScheduler`. It requires `CLOUD_DB_DSN` and enterprise contact
+`go-contact-sync-worker` runs the Go contact sync scheduler. It requires
+`CLOUD_DB_DSN` and enterprise contact
 secrets in the shared `enterprises` table. `CONTACT_SYNC_FULL_INTERVAL_SEC`
 defaults to `86400` with a minimum of `3600`; `CONTACT_SYNC_REFRESH_INTERVAL_SEC`
 defaults to `300` with a minimum of `60`; `CONTACT_SYNC_REFRESH_LIMIT` defaults
@@ -271,7 +272,7 @@ Set `GO_ENABLE_ARCHIVE_COLD_STORAGE_CANDIDATE=1` to also export expired
 `encrypted_messages` rows to snappy Parquet before hot-row pruning; this requires
 `CLOUD_ARCHIVE_LOCAL_EXPORT_ROOT`, `ARCHIVE_MEDIA_OBJECT_UPLOAD_URL`, and
 `ARCHIVE_MEDIA_OBJECT_UPLOAD_TOKEN` because the Go path intentionally does not
-use the Python direct OSS fallback yet. Run `go-archive-sync-worker`; the cold
+use the direct OSS fallback yet. Run `go-archive-sync-worker`; the cold
 storage cutover readiness profile is worker-only and has no HTTP route.
 Archive media workers use the lock Redis client for
 `archive-media:lock:{enterprise_id}|{source}`; `ARCHIVE_MEDIA_LOCK_TTL_SEC`
@@ -280,7 +281,7 @@ Signed archive media downloads can be shadow-mounted with
 `GO_ENABLE_ARCHIVE_MEDIA_DOWNLOAD_CANDIDATE=1`; the API validates the same
 `ARCHIVE_MEDIA_SIGNING_KEY` token used by generated `access_url` values, reads
 `archive_media_tasks`, serves `local://archive_media/...` files from
-`PYTHON_PROJECT_ROOT/backend/data`, and proxies object paths through
+the configured local data root, and proxies object paths through
 `ARCHIVE_MEDIA_OBJECT_INTERNAL_BASE_URL` (default `http://object-storage:9102`).
 
 Outbox enqueue publishes a best-effort Redis wakeup to `CLOUD_OUTBOX_NOTIFY_CHANNEL`

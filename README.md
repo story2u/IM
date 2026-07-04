@@ -1,16 +1,15 @@
 # Go/Next 第一阶段骨架
 
-本目录承载从 `Python/` 旧项目迁移到 Go + Next.js + Tailwind CSS 的新实现。第一阶段只建立可验证骨架，不接管旧业务流量。
+本目录承载独立的 Go + Next.js + Tailwind CSS 实现。第一阶段建立可验证骨架和兼容护栏，默认不接管生产业务流量。
 
 ## 当前边界
 
-- 保留 `Python/` 作为唯一真实业务实现。
 - Go API 只提供 `/`、`/healthz`、`/readyz`、`/metrics` 最小探针。
-- `cmd/inventory` 只读扫描旧项目路由、契约、功能文档、Docker 服务、WS 事件、Redis key、DB 表和任务类型，用于后续迁移对账。
+- `cmd/inventory` 只读扫描兼容基线路由、契约、功能文档、Docker 服务、WS 事件、Redis key、DB 表和任务类型，用于后续实现对账。
 - `cmd/inventory-diff` 对比两份 inventory JSON 的数量变化，并可按阈值失败，用于把“清单变化必须解释”变成 CI gate。
-- `cmd/route-diff` 对比 Python route inventory 和 Go route metadata，输出阶段覆盖度报告；默认比较当前暴露路由，`-go-routes candidate` 比较全部 Go 候选路由，`-mode openapi-drift` 可在提供 OpenAPI 文件时比对文档级请求/响应 schema、path 参数和 operationId。
-- `cmd/golden-http` 读取 `testdata/golden/*.json`，在有 Python/Go base URL 时执行同请求响应对账；CI 先做 fixture 校验。
-- `web/` 只提供 Next.js `/` 与 `/admin` 占位入口，不实现业务筛选或旧页面逻辑。
+- `cmd/route-diff` 对比 baseline route inventory 和 Go route metadata，输出阶段覆盖度报告；默认比较当前暴露路由，`-go-routes candidate` 比较全部 Go 候选路由，`-mode openapi-drift` 可在提供 OpenAPI 文件时比对文档级请求/响应 schema、path 参数和 operationId。
+- `cmd/golden-http` 读取 `testdata/golden/*.json`，在有 baseline/Go base URL 时执行同请求响应对账；CI 先做 fixture 校验。
+- `web/` 只提供 Next.js `/` 与 `/admin` 占位入口，不实现业务筛选或完整页面逻辑。
 
 ## 本地验证
 
@@ -53,26 +52,26 @@ bash scripts/refresh_inventory_baseline.sh
 cd go
 go test ./...
 go vet ./...
-go run ./cmd/inventory -python-root ../Python -pretty
-go run ./cmd/inventory -python-root ../Python -format markdown
+go run ./cmd/inventory -python-root <compatibility-baseline-root> -pretty
+go run ./cmd/inventory -python-root <compatibility-baseline-root> -format markdown
 go run ./cmd/inventory-diff -baseline tmp/baseline-inventory.json -current tmp/phase1/inventory-report.json -max-routes 0 -format markdown
-go run ./cmd/route-diff -python-root ../Python -format markdown
-go run ./cmd/route-diff -python-root ../Python -go-routes candidate -format markdown
-go run ./cmd/route-diff -python-root ../Python -mode schema-drift -pretty
-go run ./cmd/route-diff -python-root ../Python -mode schema-drift -format markdown
-go run ./cmd/route-diff -python-root ../Python -mode schema-drift -max-schema-mismatch 0 -format json
-go run ./cmd/route-diff -python-root ../Python -mode openapi-drift -format markdown
-go run ./cmd/route-diff -python-root ../Python -go-routes candidate -mode openapi-drift -format markdown
-go run ./cmd/route-diff -python-root ../Python -mode openapi-drift -python-openapi ../Python/openapi.json -go-openapi tmp/go-openapi.json -max-openapi-mismatch 0 -format json
+go run ./cmd/route-diff -python-root <compatibility-baseline-root> -format markdown
+go run ./cmd/route-diff -python-root <compatibility-baseline-root> -go-routes candidate -format markdown
+go run ./cmd/route-diff -python-root <compatibility-baseline-root> -mode schema-drift -pretty
+go run ./cmd/route-diff -python-root <compatibility-baseline-root> -mode schema-drift -format markdown
+go run ./cmd/route-diff -python-root <compatibility-baseline-root> -mode schema-drift -max-schema-mismatch 0 -format json
+go run ./cmd/route-diff -python-root <compatibility-baseline-root> -mode openapi-drift -format markdown
+go run ./cmd/route-diff -python-root <compatibility-baseline-root> -go-routes candidate -mode openapi-drift -format markdown
+go run ./cmd/route-diff -python-root <compatibility-baseline-root> -mode openapi-drift -python-openapi <baseline-openapi.json> -go-openapi tmp/go-openapi.json -max-openapi-mismatch 0 -format json
 SCHEMA_DRIFT_MISMATCH_THRESHOLD=1 SKIP_NPM_CI=1 bash scripts/phase1_gate.sh
-PYTHON_OPENAPI_SPEC=../Python/openapi.json GO_OPENAPI_SPEC=tmp/go-openapi.json OPENAPI_DRIFT_MISMATCH_THRESHOLD=0 SKIP_NPM_CI=1 bash scripts/phase1_gate.sh
+PYTHON_OPENAPI_SPEC=<baseline-openapi.json> GO_OPENAPI_SPEC=tmp/go-openapi.json OPENAPI_DRIFT_MISMATCH_THRESHOLD=0 SKIP_NPM_CI=1 bash scripts/phase1_gate.sh
 INVENTORY_DIFF_PROFILE=strict SKIP_NPM_CI=1 bash scripts/phase1_gate.sh
 go run ./cmd/cutover-readiness -all -format runbook
 go run ./cmd/golden-http -cases testdata/golden/phase1-probes.json -validate-only
 go run ./cmd/api
 ```
 
-已有 Python 与 Go 服务同时运行时，可执行首批探针 golden 对账：
+已有兼容基线服务与 Go 服务同时运行时，可执行首批探针 golden 对账：
 
 ```bash
 cd go
@@ -103,8 +102,8 @@ docker build -t wework-next-web .
 
 ## 不可破坏的兼容面
 
-- 旧 API 路径、请求参数和返回结构。
+- 当前 API 路径、请求参数和返回结构。
 - `/ws/{channel}` 及 Redis Pub/Sub 事件语义。
-- `Python/contracts/v1/*.schema.json` 的 task payload 与状态事件契约。
+- task payload 与状态事件 JSON schema contract catalog。
 - 数据库 schema、Redis key、投影表和 Docker 运行角色。
 - `incoming-worker` 与 `send-dispatcher` 热路径独立运行边界。
