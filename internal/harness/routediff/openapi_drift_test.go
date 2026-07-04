@@ -12,10 +12,10 @@ import (
 func TestBuildOpenAPIDriftReportComparesOpenAPISchemas(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
-	pythonSpecPath := filepath.Join(dir, "python.openapi.json")
+	referenceSpecPath := filepath.Join(dir, "reference.openapi.json")
 	goSpecPath := filepath.Join(dir, "go.openapi.json")
 
-	pythonSpec := `{
+	referenceSpec := `{
   "openapi": "3.0.0",
   "paths": {
     "/api/v1/tasks/{task_id}": {
@@ -65,7 +65,7 @@ func TestBuildOpenAPIDriftReportComparesOpenAPISchemas(t *testing.T) {
     }
   }
 }`
-	if err := writeJSON(t, pythonSpecPath, pythonSpec); err != nil {
+	if err := writeJSON(t, referenceSpecPath, referenceSpec); err != nil {
 		t.Fatal(err)
 	}
 	if err := writeJSON(t, goSpecPath, goSpec); err != nil {
@@ -76,12 +76,12 @@ func TestBuildOpenAPIDriftReportComparesOpenAPISchemas(t *testing.T) {
 		[]inventory.Route{{Method: "GET", Path: "/api/v1/tasks/{task_id}"}},
 		[]httpserver.Route{{Method: "GET", Path: "/api/v1/tasks/{task_id}", Owner: "go", Phase: "phase6"}},
 		nil,
-		pythonSpecPath,
+		referenceSpecPath,
 		goSpecPath,
 	)
 
-	if report.PythonSourceStatus != "loaded" || report.GoSourceStatus != "loaded" {
-		t.Fatalf("source status = %q/%q, want loaded/loaded", report.PythonSourceStatus, report.GoSourceStatus)
+	if report.ReferenceSourceStatus != "loaded" || report.GoSourceStatus != "loaded" {
+		t.Fatalf("source status = %q/%q, want loaded/loaded", report.ReferenceSourceStatus, report.GoSourceStatus)
 	}
 	if report.MismatchCount != 1 {
 		t.Fatalf("mismatch count = %d, want 1", report.MismatchCount)
@@ -104,8 +104,8 @@ func TestBuildOpenAPIDriftReportRecordsUnconfiguredSources(t *testing.T) {
 		"",
 	)
 
-	if report.PythonSourceStatus != "not_configured" || report.GoSourceStatus != "not_configured" {
-		t.Fatalf("source status = %q/%q, want not_configured/not_configured", report.PythonSourceStatus, report.GoSourceStatus)
+	if report.ReferenceSourceStatus != "not_configured" || report.GoSourceStatus != "not_configured" {
+		t.Fatalf("source status = %q/%q, want not_configured/not_configured", report.ReferenceSourceStatus, report.GoSourceStatus)
 	}
 	if report.MismatchCount != 0 {
 		t.Fatalf("mismatch count = %d, want 0", report.MismatchCount)
@@ -115,8 +115,8 @@ func TestBuildOpenAPIDriftReportRecordsUnconfiguredSources(t *testing.T) {
 func TestMarkdownOpenAPIDriftReportHighlightsInvalidSources(t *testing.T) {
 	t.Parallel()
 	report := OpenAPIDriftReport{
-		PythonSourceStatus: "invalid: bad json",
-		GoSourceStatus:     "loaded",
+		ReferenceSourceStatus: "invalid: bad json",
+		GoSourceStatus:        "loaded",
 	}
 	markdown := MarkdownOpenAPIDriftReport(report)
 	if !strings.Contains(markdown, "should not be treated as full OpenAPI proof") {
@@ -127,10 +127,10 @@ func TestMarkdownOpenAPIDriftReportHighlightsInvalidSources(t *testing.T) {
 func TestBuildOpenAPIDriftReportCapturesOperationAndPathParamDrift(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
-	pythonSpecPath := filepath.Join(dir, "python.openapi.json")
+	referenceSpecPath := filepath.Join(dir, "reference.openapi.json")
 	goSpecPath := filepath.Join(dir, "go.openapi.json")
 
-	pythonSpec := `{
+	referenceSpec := `{
   "openapi": "3.0.0",
   "paths": {
     "/api/v1/tasks/{task_id}": {
@@ -154,7 +154,7 @@ func TestBuildOpenAPIDriftReportCapturesOperationAndPathParamDrift(t *testing.T)
     }
   }
 }`
-	if err := writeJSON(t, pythonSpecPath, pythonSpec); err != nil {
+	if err := writeJSON(t, referenceSpecPath, referenceSpec); err != nil {
 		t.Fatal(err)
 	}
 	if err := writeJSON(t, goSpecPath, goSpec); err != nil {
@@ -165,7 +165,7 @@ func TestBuildOpenAPIDriftReportCapturesOperationAndPathParamDrift(t *testing.T)
 		[]inventory.Route{{Method: "GET", Path: "/api/v1/tasks/{task_id}"}},
 		[]httpserver.Route{{Method: "GET", Path: "/api/v1/tasks/{task_id}", Owner: "go", Phase: "phase6"}},
 		nil,
-		pythonSpecPath,
+		referenceSpecPath,
 		goSpecPath,
 	)
 
@@ -183,10 +183,10 @@ func TestBuildOpenAPIDriftReportCapturesOperationAndPathParamDrift(t *testing.T)
 func TestBuildOpenAPIDriftReportResolvesArrayItemRefs(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
-	pythonSpecPath := filepath.Join(dir, "python.openapi.json")
+	referenceSpecPath := filepath.Join(dir, "reference.openapi.json")
 	goSpecPath := filepath.Join(dir, "go.openapi.json")
 
-	pythonSpec := `{
+	referenceSpec := `{
   "openapi": "3.0.0",
   "components": {
     "schemas": {
@@ -216,7 +216,7 @@ func TestBuildOpenAPIDriftReportResolvesArrayItemRefs(t *testing.T) {
     }
   }
 }`
-	if err := writeJSON(t, pythonSpecPath, pythonSpec); err != nil {
+	if err := writeJSON(t, referenceSpecPath, referenceSpec); err != nil {
 		t.Fatal(err)
 	}
 	if err := writeJSON(t, goSpecPath, goSpec); err != nil {
@@ -227,7 +227,7 @@ func TestBuildOpenAPIDriftReportResolvesArrayItemRefs(t *testing.T) {
 		[]inventory.Route{{Method: "GET", Path: "/api/v1/tasks"}},
 		[]httpserver.Route{{Method: "GET", Path: "/api/v1/tasks", Owner: "go", Phase: "phase6"}},
 		nil,
-		pythonSpecPath,
+		referenceSpecPath,
 		goSpecPath,
 	)
 
@@ -242,10 +242,10 @@ func TestBuildOpenAPIDriftReportResolvesArrayItemRefs(t *testing.T) {
 func TestBuildOpenAPIDriftReportResolvesRequestBodyArrayRefs(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
-	pythonSpecPath := filepath.Join(dir, "python.openapi.json")
+	referenceSpecPath := filepath.Join(dir, "reference.openapi.json")
 	goSpecPath := filepath.Join(dir, "go.openapi.json")
 
-	pythonSpec := `{
+	referenceSpec := `{
   "openapi": "3.0.0",
   "components": {
     "schemas": {
@@ -277,7 +277,7 @@ func TestBuildOpenAPIDriftReportResolvesRequestBodyArrayRefs(t *testing.T) {
     }
   }
 }`
-	if err := writeJSON(t, pythonSpecPath, pythonSpec); err != nil {
+	if err := writeJSON(t, referenceSpecPath, referenceSpec); err != nil {
 		t.Fatal(err)
 	}
 	if err := writeJSON(t, goSpecPath, goSpec); err != nil {
@@ -288,7 +288,7 @@ func TestBuildOpenAPIDriftReportResolvesRequestBodyArrayRefs(t *testing.T) {
 		[]inventory.Route{{Method: "POST", Path: "/api/v1/tasks/batch"}},
 		[]httpserver.Route{{Method: "POST", Path: "/api/v1/tasks/batch", Owner: "go", Phase: "phase6"}},
 		nil,
-		pythonSpecPath,
+		referenceSpecPath,
 		goSpecPath,
 	)
 

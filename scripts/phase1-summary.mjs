@@ -22,14 +22,27 @@ const display = (value) => {
   return md(value);
 };
 const count = (value) => (Array.isArray(value) ? value.length : value ?? 0);
-const routeCount = (report, key, countKey) => {
+const fieldValue = (report, key, fallbackKey) => {
+  if (!report) {
+    return undefined;
+  }
+  if (Object.prototype.hasOwnProperty.call(report, key)) {
+    return report[key];
+  }
+  if (fallbackKey && Object.prototype.hasOwnProperty.call(report, fallbackKey)) {
+    return report[fallbackKey];
+  }
+  return undefined;
+};
+const routeCount = (report, key, countKey, fallbackKey, fallbackCountKey) => {
   if (!report) {
     return "n/a";
   }
-  if (Number.isFinite(report[countKey])) {
-    return report[countKey];
+  const explicitCount = fieldValue(report, countKey, fallbackCountKey);
+  if (Number.isFinite(explicitCount)) {
+    return explicitCount;
   }
-  return count(report[key]);
+  return count(fieldValue(report, key, fallbackKey));
 };
 
 const manifest = readJSON("phase1_gate_manifest.json");
@@ -76,7 +89,7 @@ for (const [label, report] of [
   ["candidate", routeCandidate],
 ]) {
   lines.push(
-    `| ${label} | ${display(report?.python_route_count)} | ${display(report?.go_route_count)} | ${display(routeCount(report, "matching", "matching_count"))} | ${display(routeCount(report, "python_only", "python_only_count"))} | ${display(routeCount(report, "go_only", "go_only_count"))} |`
+    `| ${label} | ${display(fieldValue(report, "reference_route_count", "python_route_count"))} | ${display(report?.go_route_count)} | ${display(routeCount(report, "matching", "matching_count"))} | ${display(routeCount(report, "reference_only", "reference_only_count", "python_only", "python_only_count"))} | ${display(routeCount(report, "go_only", "go_only_count"))} |`
   );
 }
 lines.push("");
@@ -89,10 +102,10 @@ lines.push(
   `| schema | ${display(schemaDrift?.schema_comparable_count)} | ${display(schemaDrift?.schema_match_count)} | ${display(schemaDrift?.schema_mismatch_count)} | n/a | n/a | ${display(formatReasons(schemaDrift?.top_drift_reasons))} |`
 );
 lines.push(
-  `| openapi default | ${display(openAPIDrift?.comparable_pairs)} | ${display(openAPIDrift?.match_count)} | ${display(openAPIDrift?.mismatch_count)} | ${display(openAPIDrift?.python_openapi_source_status)} | ${display(openAPIDrift?.go_openapi_source_status)} | ${display(formatReasons(openAPIDrift?.top_drift_reasons))} |`
+  `| openapi default | ${display(openAPIDrift?.comparable_pairs)} | ${display(openAPIDrift?.match_count)} | ${display(openAPIDrift?.mismatch_count)} | ${display(fieldValue(openAPIDrift, "reference_openapi_source_status", "python_openapi_source_status"))} | ${display(openAPIDrift?.go_openapi_source_status)} | ${display(formatReasons(openAPIDrift?.top_drift_reasons))} |`
 );
 lines.push(
-  `| openapi candidate | ${display(openAPICandidate?.comparable_pairs)} | ${display(openAPICandidate?.match_count)} | ${display(openAPICandidate?.mismatch_count)} | ${display(openAPICandidate?.python_openapi_source_status)} | ${display(openAPICandidate?.go_openapi_source_status)} | ${display(formatReasons(openAPICandidate?.top_drift_reasons))} |`
+  `| openapi candidate | ${display(openAPICandidate?.comparable_pairs)} | ${display(openAPICandidate?.match_count)} | ${display(openAPICandidate?.mismatch_count)} | ${display(fieldValue(openAPICandidate, "reference_openapi_source_status", "python_openapi_source_status"))} | ${display(openAPICandidate?.go_openapi_source_status)} | ${display(formatReasons(openAPICandidate?.top_drift_reasons))} |`
 );
 lines.push("");
 

@@ -50,7 +50,7 @@ func TestSchemaFileSignatureIgnoresMetadataFields(t *testing.T) {
 	pathB := filepath.Join(dir, "phase-alt.schema.json")
 
 	base := `{"title":"Task","type":"object","properties":{"status":{"type":"string"}},"required":["status"]}`
-	alt := `{"type":"object","description":"legacy meta","properties":{"status":{"type":"string"}}, "required":["status"]}`
+	alt := `{"type":"object","description":"reference meta","properties":{"status":{"type":"string"}}, "required":["status"]}`
 
 	if err := writeJSON(t, pathA, base); err != nil {
 		t.Fatal(err)

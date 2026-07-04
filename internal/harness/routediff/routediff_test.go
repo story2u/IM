@@ -38,18 +38,18 @@ func TestCompareClassifiesRoutes(t *testing.T) {
 	if matchingHealthz.Owner != "go" || matchingHealthz.Phase != "phase1" || matchingHealthz.Source != "server.py:10" {
 		t.Fatalf("matching /healthz route = %+v", matchingHealthz)
 	}
-	if len(report.PythonOnly) != 0 {
-		t.Fatalf("python only routes = %+v", report.PythonOnly)
+	if len(report.ReferenceOnly) != 0 {
+		t.Fatalf("reference only routes = %+v", report.ReferenceOnly)
 	}
 	matchingTask := routeByPath(report.Matching, "/api/v1/tasks")
 	if matchingTask == nil {
 		t.Fatalf("expected /api/v1/tasks in matching routes")
 	}
-	if matchingTask.PythonResponseModel != "TaskResponse" {
-		t.Fatalf("python response model = %q", matchingTask.PythonResponseModel)
+	if matchingTask.ReferenceResponseModel != "TaskResponse" {
+		t.Fatalf("reference response model = %q", matchingTask.ReferenceResponseModel)
 	}
-	if matchingTask.PythonRequestModel != "TaskCreateRequest" {
-		t.Fatalf("python request model = %q", matchingTask.PythonRequestModel)
+	if matchingTask.ReferenceRequestModel != "TaskCreateRequest" {
+		t.Fatalf("reference request model = %q", matchingTask.ReferenceRequestModel)
 	}
 	if got := strings.Join(matchingTask.AuthDependencies, ","); got != "optional_agent_auth,require_roles(\"admin\")" {
 		t.Fatalf("auth dependencies = %q", got)
@@ -76,27 +76,27 @@ func routeByPath(routes []RouteRef, path string) *RouteRef {
 
 func TestMarkdownReportIncludesSummary(t *testing.T) {
 	report := Report{
-		PythonRouteCount: 2,
-		GoRouteCount:     1,
-		PythonOnly: []RouteRef{{
-			Method:              "POST",
-			Path:                "/api/v1/tasks",
-			Owner:               "python",
-			Phase:               "legacy",
-			PythonResponseModel: "TaskResponse",
-			PythonRequestModel:  "TaskCreateRequest",
-			AuthDependencies:    []string{"optional_agent_auth"},
+		ReferenceRouteCount: 2,
+		GoRouteCount:        1,
+		ReferenceOnly: []RouteRef{{
+			Method:                 "POST",
+			Path:                   "/api/v1/tasks",
+			Owner:                  "reference",
+			Phase:                  "reference",
+			ReferenceResponseModel: "TaskResponse",
+			ReferenceRequestModel:  "TaskCreateRequest",
+			AuthDependencies:       []string{"optional_agent_auth"},
 		}},
 	}
 	markdown := MarkdownReport(report)
-	for _, want := range []string{"# Route Diff Report", "| Python routes | 2 |", "`/api/v1/tasks`", "`TaskResponse`", "`TaskCreateRequest`", "`optional_agent_auth`"} {
+	for _, want := range []string{"# Route Diff Report", "| Reference routes | 2 |", "`/api/v1/tasks`", "`TaskResponse`", "`TaskCreateRequest`", "`optional_agent_auth`"} {
 		if !strings.Contains(markdown, want) {
 			t.Fatalf("markdown missing %q:\n%s", want, markdown)
 		}
 	}
 }
 
-func TestCompareShowsSchemaDriftBetweenPythonAndGo(t *testing.T) {
+func TestCompareShowsSchemaDriftBetweenReferenceAndGo(t *testing.T) {
 	report := Compare([]inventory.Route{
 		{
 			Method:        "POST",
@@ -117,13 +117,13 @@ func TestCompareShowsSchemaDriftBetweenPythonAndGo(t *testing.T) {
 		t.Fatalf("matching count = %d", len(report.Matching))
 	}
 	if report.Matching[0].SchemaMatch {
-		t.Fatalf("schema match should be false when python/go schema diverge: %+v", report.Matching[0])
+		t.Fatalf("schema match should be false when reference/go schema diverge: %+v", report.Matching[0])
 	}
-	if report.Matching[0].PythonResponseModel != "TaskResponse" || report.Matching[0].GoResponseModel != "TaskRecord" {
-		t.Fatalf("python/go response mismatch: %+v", report.Matching[0])
+	if report.Matching[0].ReferenceResponseModel != "TaskResponse" || report.Matching[0].GoResponseModel != "TaskRecord" {
+		t.Fatalf("reference/go response mismatch: %+v", report.Matching[0])
 	}
-	if report.Matching[0].PythonRequestModel != "TaskStatusUpdate" || report.Matching[0].GoRequestModel != "task-create.schema.json" {
-		t.Fatalf("python/go request mismatch: %+v", report.Matching[0])
+	if report.Matching[0].ReferenceRequestModel != "TaskStatusUpdate" || report.Matching[0].GoRequestModel != "task-create.schema.json" {
+		t.Fatalf("reference/go request mismatch: %+v", report.Matching[0])
 	}
 }
 
@@ -154,14 +154,14 @@ func TestCompareWithContractsAnnotatesRowsAndContractDrift(t *testing.T) {
 	}
 	row := report.Matching[0]
 
-	if row.PythonRequestContract != "TaskCreate.schema.json" {
-		t.Fatalf("python request contract = %q, want TaskCreate.schema.json", row.PythonRequestContract)
+	if row.ReferenceRequestContract != "TaskCreate.schema.json" {
+		t.Fatalf("reference request contract = %q, want TaskCreate.schema.json", row.ReferenceRequestContract)
 	}
 	if row.GoRequestContract != "TaskCreate.schema.json" {
 		t.Fatalf("go request contract = %q, want TaskCreate.schema.json", row.GoRequestContract)
 	}
-	if row.PythonResponseContract != "TaskCreate.schema.json" {
-		t.Fatalf("python response contract = %q, want TaskCreate.schema.json", row.PythonResponseContract)
+	if row.ReferenceResponseContract != "TaskCreate.schema.json" {
+		t.Fatalf("reference response contract = %q, want TaskCreate.schema.json", row.ReferenceResponseContract)
 	}
 	if row.GoResponseContract != "TaskRecord.schema.json" {
 		t.Fatalf("go response contract = %q, want TaskRecord.schema.json", row.GoResponseContract)
@@ -271,10 +271,10 @@ func TestBuildSchemaDriftReportCapturesMismatchAndReasons(t *testing.T) {
 
 func TestMarkdownSchemaDriftReportContainsSections(t *testing.T) {
 	report := SchemaDriftReport{
-		PythonRouteCount:      2,
+		ReferenceRouteCount:   2,
 		GoRouteCount:          2,
 		MatchingCount:         2,
-		PythonOnlyCount:       0,
+		ReferenceOnlyCount:    0,
 		GoOnlyCount:           0,
 		SchemaComparableCount: 1,
 		SchemaMatchCount:      0,

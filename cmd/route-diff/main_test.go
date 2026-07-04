@@ -42,8 +42,8 @@ func TestSelectGoRoutesRejectsUnknownSet(t *testing.T) {
 
 func TestEnforceRouteDiffGatesRouteMode(t *testing.T) {
 	report := routediff.Report{
-		PythonOnly: make([]routediff.RouteRef, 3),
-		GoOnly:     make([]routediff.RouteRef, 5),
+		ReferenceOnly: make([]routediff.RouteRef, 3),
+		GoOnly:        make([]routediff.RouteRef, 5),
 	}
 	if err := enforceRouteDiffGates("route", report, nil, 4, 6, -1); err != nil {
 		t.Fatalf("route gate unexpectedly failed: %v", err)
@@ -58,8 +58,8 @@ func TestEnforceRouteDiffGatesRouteMode(t *testing.T) {
 
 func TestEnforceRouteDiffGatesSchemaMode(t *testing.T) {
 	report := routediff.Report{
-		PythonOnly: make([]routediff.RouteRef, 2),
-		GoOnly:     make([]routediff.RouteRef, 1),
+		ReferenceOnly: make([]routediff.RouteRef, 2),
+		GoOnly:        make([]routediff.RouteRef, 1),
 	}
 	schemaReport := routediff.SchemaDriftReport{
 		SchemaMismatchCount: 2,

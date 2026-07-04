@@ -1,6 +1,5 @@
-// Package routediff compares legacy Python route inventory with Go routes.
-// The report is a migration coverage artifact: phase one expects many
-// Python-only routes while Go only exposes probes.
+// Package routediff compares external reference route inventory with Go routes.
+// The report is an optional compatibility artifact for implementation planning.
 package routediff
 
 import (
@@ -16,71 +15,71 @@ import (
 
 // RouteRef is the normalized route identity used in diff reports.
 type RouteRef struct {
-	Method                 string   `json:"method"`
-	Path                   string   `json:"path"`
-	Source                 string   `json:"source,omitempty"`
-	Owner                  string   `json:"owner,omitempty"`
-	Phase                  string   `json:"phase,omitempty"`
-	PythonResponseModel    string   `json:"python_response_model,omitempty"`
-	PythonRequestModel     string   `json:"python_request_model,omitempty"`
-	PythonResponseContract string   `json:"python_response_contract,omitempty"`
-	PythonRequestContract  string   `json:"python_request_contract,omitempty"`
-	PythonResponseSig      string   `json:"python_response_schema_signature,omitempty"`
-	PythonRequestSig       string   `json:"python_request_schema_signature,omitempty"`
-	GoResponseModel        string   `json:"go_response_model,omitempty"`
-	GoRequestModel         string   `json:"go_request_model,omitempty"`
-	GoResponseContract     string   `json:"go_response_contract,omitempty"`
-	GoRequestContract      string   `json:"go_request_contract,omitempty"`
-	GoResponseSig          string   `json:"go_response_schema_signature,omitempty"`
-	GoRequestSig           string   `json:"go_request_schema_signature,omitempty"`
-	AuthDependencies       []string `json:"auth_dependencies,omitempty"`
-	SchemaMatch            bool     `json:"schema_match,omitempty"`
-	SchemaMatchReason      string   `json:"schema_match_reason,omitempty"`
+	Method                    string   `json:"method"`
+	Path                      string   `json:"path"`
+	Source                    string   `json:"source,omitempty"`
+	Owner                     string   `json:"owner,omitempty"`
+	Phase                     string   `json:"phase,omitempty"`
+	ReferenceResponseModel    string   `json:"reference_response_model,omitempty"`
+	ReferenceRequestModel     string   `json:"reference_request_model,omitempty"`
+	ReferenceResponseContract string   `json:"reference_response_contract,omitempty"`
+	ReferenceRequestContract  string   `json:"reference_request_contract,omitempty"`
+	ReferenceResponseSig      string   `json:"reference_response_schema_signature,omitempty"`
+	ReferenceRequestSig       string   `json:"reference_request_schema_signature,omitempty"`
+	GoResponseModel           string   `json:"go_response_model,omitempty"`
+	GoRequestModel            string   `json:"go_request_model,omitempty"`
+	GoResponseContract        string   `json:"go_response_contract,omitempty"`
+	GoRequestContract         string   `json:"go_request_contract,omitempty"`
+	GoResponseSig             string   `json:"go_response_schema_signature,omitempty"`
+	GoRequestSig              string   `json:"go_request_schema_signature,omitempty"`
+	AuthDependencies          []string `json:"auth_dependencies,omitempty"`
+	SchemaMatch               bool     `json:"schema_match,omitempty"`
+	SchemaMatchReason         string   `json:"schema_match_reason,omitempty"`
 }
 
-// Report contains the route coverage comparison between Python and Go.
+// Report contains the route coverage comparison between Reference and Go.
 type Report struct {
-	PythonRouteCount int        `json:"python_route_count"`
-	GoRouteCount     int        `json:"go_route_count"`
-	Matching         []RouteRef `json:"matching"`
-	PythonOnly       []RouteRef `json:"python_only"`
-	GoOnly           []RouteRef `json:"go_only"`
+	ReferenceRouteCount int        `json:"reference_route_count"`
+	GoRouteCount        int        `json:"go_route_count"`
+	Matching            []RouteRef `json:"matching"`
+	ReferenceOnly       []RouteRef `json:"reference_only"`
+	GoOnly              []RouteRef `json:"go_only"`
 }
 
 // Compare builds a deterministic route diff report.
-func Compare(pythonRoutes []inventory.Route, goRoutes []httpserver.Route) Report {
-	return CompareWithContracts(pythonRoutes, goRoutes, nil)
+func Compare(referenceRoutes []inventory.Route, goRoutes []httpserver.Route) Report {
+	return CompareWithContracts(referenceRoutes, goRoutes, nil)
 }
 
 // CompareWithContracts builds a route diff and annotates route rows with inferred
 // contract file hints when a schema catalog is provided.
 func CompareWithContracts(
-	pythonRoutes []inventory.Route,
+	referenceRoutes []inventory.Route,
 	goRoutes []httpserver.Route,
 	catalog []contracts.SchemaFile,
 ) Report {
 	contractIndex := buildSchemaContractIndex(catalog)
 	schemaSignatures := make(map[string]string, len(contractIndex))
-	report := compare(pythonRoutes, goRoutes)
+	report := compare(referenceRoutes, goRoutes)
 
 	for i := range report.Matching {
 		route := &report.Matching[i]
-		route.PythonResponseContract = contractNameForModel(route.PythonResponseModel, contractIndex)
-		route.PythonRequestContract = contractNameForModel(route.PythonRequestModel, contractIndex)
+		route.ReferenceResponseContract = contractNameForModel(route.ReferenceResponseModel, contractIndex)
+		route.ReferenceRequestContract = contractNameForModel(route.ReferenceRequestModel, contractIndex)
 		route.GoResponseContract = contractNameForModel(route.GoResponseModel, contractIndex)
 		route.GoRequestContract = contractNameForModel(route.GoRequestModel, contractIndex)
-		route.PythonResponseSig = schemaSignature(route.PythonResponseContract, contractIndex, schemaSignatures)
-		route.PythonRequestSig = schemaSignature(route.PythonRequestContract, contractIndex, schemaSignatures)
+		route.ReferenceResponseSig = schemaSignature(route.ReferenceResponseContract, contractIndex, schemaSignatures)
+		route.ReferenceRequestSig = schemaSignature(route.ReferenceRequestContract, contractIndex, schemaSignatures)
 		route.GoResponseSig = schemaSignature(route.GoResponseContract, contractIndex, schemaSignatures)
 		route.GoRequestSig = schemaSignature(route.GoRequestContract, contractIndex, schemaSignatures)
 
 		route.SchemaMatch, route.SchemaMatchReason = schemaMatchWithContracts(
-			route.PythonResponseModel,
-			route.PythonRequestModel,
+			route.ReferenceResponseModel,
+			route.ReferenceRequestModel,
 			route.GoResponseModel,
 			route.GoRequestModel,
-			route.PythonResponseContract,
-			route.PythonRequestContract,
+			route.ReferenceResponseContract,
+			route.ReferenceRequestContract,
 			route.GoResponseContract,
 			route.GoRequestContract,
 			contractIndex,
@@ -90,20 +89,20 @@ func CompareWithContracts(
 	return report
 }
 
-func compare(pythonRoutes []inventory.Route, goRoutes []httpserver.Route) Report {
-	pythonIndex := map[string]RouteRef{}
-	for _, route := range pythonRoutes {
+func compare(referenceRoutes []inventory.Route, goRoutes []httpserver.Route) Report {
+	referenceIndex := map[string]RouteRef{}
+	for _, route := range referenceRoutes {
 		ref := RouteRef{
-			Method:              normalizeMethod(route.Method),
-			Path:                normalizePath(route.Path),
-			Source:              fmt.Sprintf("%s:%d", route.Source, route.Line),
-			Owner:               "python",
-			Phase:               "legacy",
-			PythonResponseModel: strings.TrimSpace(route.ResponseModel),
-			PythonRequestModel:  strings.TrimSpace(route.RequestModel),
-			AuthDependencies:    normalizeAuthDependencies(route.AuthDependencies),
+			Method:                 normalizeMethod(route.Method),
+			Path:                   normalizePath(route.Path),
+			Source:                 fmt.Sprintf("%s:%d", route.Source, route.Line),
+			Owner:                  "reference",
+			Phase:                  "reference",
+			ReferenceResponseModel: strings.TrimSpace(route.ResponseModel),
+			ReferenceRequestModel:  strings.TrimSpace(route.RequestModel),
+			AuthDependencies:       normalizeAuthDependencies(route.AuthDependencies),
 		}
-		pythonIndex[routeKey(ref.Method, ref.Path)] = ref
+		referenceIndex[routeKey(ref.Method, ref.Path)] = ref
 	}
 
 	goIndex := map[string]RouteRef{}
@@ -120,33 +119,33 @@ func compare(pythonRoutes []inventory.Route, goRoutes []httpserver.Route) Report
 	}
 
 	report := Report{
-		PythonRouteCount: len(pythonIndex),
-		GoRouteCount:     len(goIndex),
+		ReferenceRouteCount: len(referenceIndex),
+		GoRouteCount:        len(goIndex),
 	}
-	for key, pythonRoute := range pythonIndex {
+	for key, referenceRoute := range referenceIndex {
 		if goRoute, ok := goIndex[key]; ok {
-			pythonRoute.Owner = goRoute.Owner
-			pythonRoute.Phase = goRoute.Phase
-			pythonRoute.GoResponseModel = goRoute.GoResponseModel
-			pythonRoute.GoRequestModel = goRoute.GoRequestModel
-			pythonRoute.SchemaMatch, pythonRoute.SchemaMatchReason = schemaMatch(
-				pythonRoute.PythonResponseModel,
-				pythonRoute.PythonRequestModel,
+			referenceRoute.Owner = goRoute.Owner
+			referenceRoute.Phase = goRoute.Phase
+			referenceRoute.GoResponseModel = goRoute.GoResponseModel
+			referenceRoute.GoRequestModel = goRoute.GoRequestModel
+			referenceRoute.SchemaMatch, referenceRoute.SchemaMatchReason = schemaMatch(
+				referenceRoute.ReferenceResponseModel,
+				referenceRoute.ReferenceRequestModel,
 				goRoute.GoResponseModel,
 				goRoute.GoRequestModel,
 			)
-			report.Matching = append(report.Matching, pythonRoute)
+			report.Matching = append(report.Matching, referenceRoute)
 			continue
 		}
-		report.PythonOnly = append(report.PythonOnly, pythonRoute)
+		report.ReferenceOnly = append(report.ReferenceOnly, referenceRoute)
 	}
 	for key, goRoute := range goIndex {
-		if _, ok := pythonIndex[key]; !ok {
+		if _, ok := referenceIndex[key]; !ok {
 			report.GoOnly = append(report.GoOnly, goRoute)
 		}
 	}
 	sortRoutes(report.Matching)
-	sortRoutes(report.PythonOnly)
+	sortRoutes(report.ReferenceOnly)
 	sortRoutes(report.GoOnly)
 	return report
 }
@@ -187,7 +186,7 @@ func contractNameForModel(model string, index map[string]contracts.SchemaFile) s
 		return ""
 	}
 
-	model = unwrapPythonContainerModel(model)
+	model = unwrapReferenceContainerModel(model)
 	if model == "" {
 		return ""
 	}
@@ -369,7 +368,7 @@ func stripTrailingModelSuffix(words *[]string) bool {
 	return len(*words) > 0
 }
 
-func unwrapPythonContainerModel(value string) string {
+func unwrapReferenceContainerModel(value string) string {
 	for {
 		current := strings.TrimSpace(value)
 		if current == "" {
@@ -424,39 +423,39 @@ func unwrapPythonContainerModel(value string) string {
 func MarkdownReport(report Report) string {
 	var builder strings.Builder
 	builder.WriteString("# Route Diff Report\n\n")
-	builder.WriteString("This report compares legacy Python route inventory with the current Go HTTP route metadata. Python-only routes are expected until their migration phase begins.\n\n")
+	builder.WriteString("This report compares external reference route inventory with the current Go HTTP route metadata. Reference-only routes represent work that has not yet been implemented in Go.\n\n")
 	builder.WriteString("## Summary\n\n")
 	builder.WriteString("| Surface | Count |\n")
 	builder.WriteString("| --- | ---: |\n")
-	builder.WriteString(fmt.Sprintf("| Python routes | %d |\n", report.PythonRouteCount))
+	builder.WriteString(fmt.Sprintf("| Reference routes | %d |\n", report.ReferenceRouteCount))
 	builder.WriteString(fmt.Sprintf("| Go routes | %d |\n", report.GoRouteCount))
 	builder.WriteString(fmt.Sprintf("| Matching | %d |\n", len(report.Matching)))
-	builder.WriteString(fmt.Sprintf("| Python only | %d |\n", len(report.PythonOnly)))
+	builder.WriteString(fmt.Sprintf("| Reference only | %d |\n", len(report.ReferenceOnly)))
 	builder.WriteString(fmt.Sprintf("| Go only | %d |\n\n", len(report.GoOnly)))
 	writeRouteTable(&builder, "Matching Routes", report.Matching)
-	writeRouteTable(&builder, "Python Only Routes", report.PythonOnly)
+	writeRouteTable(&builder, "Reference Only Routes", report.ReferenceOnly)
 	writeRouteTable(&builder, "Go Only Routes", report.GoOnly)
 	return builder.String()
 }
 
-// MarkdownSchemaDriftReport renders contract-shape mismatches for migration audits.
+// MarkdownSchemaDriftReport renders contract-shape mismatches for implementation audits.
 func MarkdownSchemaDriftReport(report SchemaDriftReport) string {
 	var builder strings.Builder
 	builder.WriteString("# Route Schema Drift Report\n\n")
-	builder.WriteString("This report compares resolved Python and Go schema contracts for matching routes.\n")
+	builder.WriteString("This report compares resolved Reference and Go schema contracts for matching routes.\n")
 	builder.WriteString("Routes with no matched contract pair are excluded unless one side is missing.\n\n")
 	builder.WriteString("## Summary\n\n")
 	builder.WriteString("| Surface | Count |\n")
 	builder.WriteString("| --- | ---: |\n")
-	builder.WriteString(fmt.Sprintf("| Python routes | %d |\n", report.PythonRouteCount))
+	builder.WriteString(fmt.Sprintf("| Reference routes | %d |\n", report.ReferenceRouteCount))
 	builder.WriteString(fmt.Sprintf("| Go routes | %d |\n", report.GoRouteCount))
 	builder.WriteString(fmt.Sprintf("| Matching | %d |\n", report.MatchingCount))
-	builder.WriteString(fmt.Sprintf("| Python only | %d |\n", report.PythonOnlyCount))
+	builder.WriteString(fmt.Sprintf("| Reference only | %d |\n", report.ReferenceOnlyCount))
 	builder.WriteString(fmt.Sprintf("| Go only | %d |\n", report.GoOnlyCount))
 	builder.WriteString(fmt.Sprintf("| Comparable pairs | %d |\n", report.SchemaComparableCount))
 	builder.WriteString(fmt.Sprintf("| Matching schemas | %d |\n", report.SchemaMatchCount))
 	builder.WriteString(fmt.Sprintf("| Schema mismatches | %d |\n", report.SchemaMismatchCount))
-	builder.WriteString(fmt.Sprintf("| Missing python contract links | %d |\n", report.MissingPythonContractLink))
+	builder.WriteString(fmt.Sprintf("| Missing reference contract links | %d |\n", report.MissingReferenceContractLink))
 	builder.WriteString(fmt.Sprintf("| Missing go contract links | %d |\n\n", report.MissingGoContractLink))
 
 	builder.WriteString("## Drift Reason Ranking\n\n")
@@ -502,7 +501,7 @@ func MarkdownSchemaDriftReport(report SchemaDriftReport) string {
 
 func writeRouteTable(builder *strings.Builder, title string, routes []RouteRef) {
 	builder.WriteString("## " + title + "\n\n")
-	builder.WriteString("| Method | Path | Owner | Phase | Schema Match | Python Request | Python Response | Python Req Contract | Python Resp Contract | Go Request | Go Response | Go Req Contract | Go Resp Contract | Auth | Source | Schema Match Reason |\n")
+	builder.WriteString("| Method | Path | Owner | Phase | Schema Match | Reference Request | Reference Response | Reference Req Contract | Reference Resp Contract | Go Request | Go Response | Go Req Contract | Go Resp Contract | Auth | Source | Schema Match Reason |\n")
 	builder.WriteString("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
 	if len(routes) == 0 {
 		builder.WriteString("| none | none | none | none | none | none | none | none | none | none | none | none | none | none | none |\n\n")
@@ -516,10 +515,10 @@ func writeRouteTable(builder *strings.Builder, title string, routes []RouteRef) 
 			escapeTable(route.Owner),
 			escapeTable(route.Phase),
 			escapeTable(boolToYN(route.SchemaMatch)),
-			escapeTable(route.PythonRequestModel),
-			escapeTable(route.PythonResponseModel),
-			escapeTable(route.PythonRequestContract),
-			escapeTable(route.PythonResponseContract),
+			escapeTable(route.ReferenceRequestModel),
+			escapeTable(route.ReferenceResponseModel),
+			escapeTable(route.ReferenceRequestContract),
+			escapeTable(route.ReferenceResponseContract),
 			escapeTable(route.GoRequestModel),
 			escapeTable(route.GoResponseModel),
 			escapeTable(route.GoRequestContract),
@@ -533,39 +532,39 @@ func writeRouteTable(builder *strings.Builder, title string, routes []RouteRef) 
 }
 
 func schemaMatchWithContracts(
-	pythonResponseModel, pythonRequestModel, goResponseModel, goRequestModel,
-	pythonResponseContract, pythonRequestContract, goResponseContract, goRequestContract string,
+	referenceResponseModel, referenceRequestModel, goResponseModel, goRequestModel,
+	referenceResponseContract, referenceRequestContract, goResponseContract, goRequestContract string,
 	contractIndex map[string]contracts.SchemaFile,
 ) (bool, string) {
-	matched, reason := schemaMatch(pythonResponseModel, pythonRequestModel, goResponseModel, goRequestModel)
+	matched, reason := schemaMatch(referenceResponseModel, referenceRequestModel, goResponseModel, goRequestModel)
 
-	if pythonResponseContract != "" || goResponseContract != "" {
-		if pythonResponseContract == "" {
-			reason = appendReason(reason, "python response contract missing")
+	if referenceResponseContract != "" || goResponseContract != "" {
+		if referenceResponseContract == "" {
+			reason = appendReason(reason, "reference response contract missing")
 			matched = false
 		} else if goResponseContract == "" {
 			reason = appendReason(reason, "go response contract missing")
 			matched = false
-		} else if pythonResponseContract != goResponseContract {
+		} else if referenceResponseContract != goResponseContract {
 			reason = appendReason(reason, "response contract mismatch")
 			matched = false
-		} else if !schemaShapeMatches(pythonResponseContract, goResponseContract, contractIndex) {
+		} else if !schemaShapeMatches(referenceResponseContract, goResponseContract, contractIndex) {
 			reason = appendReason(reason, "response schema shape mismatch")
 			matched = false
 		}
 	}
 
-	if pythonRequestContract != "" || goRequestContract != "" {
-		if pythonRequestContract == "" {
-			reason = appendReason(reason, "python request contract missing")
+	if referenceRequestContract != "" || goRequestContract != "" {
+		if referenceRequestContract == "" {
+			reason = appendReason(reason, "reference request contract missing")
 			matched = false
 		} else if goRequestContract == "" {
 			reason = appendReason(reason, "go request contract missing")
 			matched = false
-		} else if pythonRequestContract != goRequestContract {
+		} else if referenceRequestContract != goRequestContract {
 			reason = appendReason(reason, "request contract mismatch")
 			matched = false
-		} else if !schemaShapeMatches(pythonRequestContract, goRequestContract, contractIndex) {
+		} else if !schemaShapeMatches(referenceRequestContract, goRequestContract, contractIndex) {
 			reason = appendReason(reason, "request schema shape mismatch")
 			matched = false
 		}
@@ -602,24 +601,24 @@ func uniqueRowDriftReasons(requestReasons, responseReasons []string) []string {
 	return merged
 }
 
-func schemaMatch(pythonResponseModel, pythonRequestModel, goResponseModel, goRequestModel string) (bool, string) {
-	pythonResponseModel = strings.TrimSpace(pythonResponseModel)
-	pythonRequestModel = strings.TrimSpace(pythonRequestModel)
+func schemaMatch(referenceResponseModel, referenceRequestModel, goResponseModel, goRequestModel string) (bool, string) {
+	referenceResponseModel = strings.TrimSpace(referenceResponseModel)
+	referenceRequestModel = strings.TrimSpace(referenceRequestModel)
 	goResponseModel = strings.TrimSpace(goResponseModel)
 	goRequestModel = strings.TrimSpace(goRequestModel)
 
-	if pythonResponseModel == goResponseModel && pythonRequestModel == goRequestModel {
+	if referenceResponseModel == goResponseModel && referenceRequestModel == goRequestModel {
 		return true, ""
 	}
 
 	reason := []string{}
-	if pythonResponseModel != goResponseModel {
+	if referenceResponseModel != goResponseModel {
 		reason = append(reason, "response mismatch")
 	}
-	if pythonRequestModel != goRequestModel {
+	if referenceRequestModel != goRequestModel {
 		reason = append(reason, "request mismatch")
 	}
-	if pythonResponseModel == "" || pythonRequestModel == "" || goResponseModel == "" || goRequestModel == "" {
+	if referenceResponseModel == "" || referenceRequestModel == "" || goResponseModel == "" || goRequestModel == "" {
 		reason = append(reason, "schema metadata missing")
 	}
 	return false, strings.Join(reason, "; ")

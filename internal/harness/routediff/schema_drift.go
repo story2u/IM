@@ -25,71 +25,71 @@ type SchemaDriftReasonCount struct {
 
 // SchemaDriftRow captures schema-level compatibility status for one route.
 type SchemaDriftRow struct {
-	Method                 string   `json:"method"`
-	Path                   string   `json:"path"`
-	Owner                  string   `json:"owner"`
-	Phase                  string   `json:"phase"`
-	PythonResponseContract string   `json:"python_response_contract"`
-	GoResponseContract     string   `json:"go_response_contract"`
-	PythonRequestContract  string   `json:"python_request_contract"`
-	GoRequestContract      string   `json:"go_request_contract"`
-	PythonResponseSig      string   `json:"python_response_schema_signature"`
-	GoResponseSig          string   `json:"go_response_schema_signature"`
-	PythonRequestSig       string   `json:"python_request_schema_signature"`
-	GoRequestSig           string   `json:"go_request_schema_signature"`
-	ResponseSchemaMatch    bool     `json:"response_schema_match"`
-	ResponseSchemaReasons  []string `json:"response_schema_reasons"`
-	RequestSchemaMatch     bool     `json:"request_schema_match"`
-	RequestSchemaReasons   []string `json:"request_schema_reasons"`
-	ResponseSchemaDiff     []string `json:"response_schema_diff"`
-	RequestSchemaDiff      []string `json:"request_schema_diff"`
+	Method                    string   `json:"method"`
+	Path                      string   `json:"path"`
+	Owner                     string   `json:"owner"`
+	Phase                     string   `json:"phase"`
+	ReferenceResponseContract string   `json:"reference_response_contract"`
+	GoResponseContract        string   `json:"go_response_contract"`
+	ReferenceRequestContract  string   `json:"reference_request_contract"`
+	GoRequestContract         string   `json:"go_request_contract"`
+	ReferenceResponseSig      string   `json:"reference_response_schema_signature"`
+	GoResponseSig             string   `json:"go_response_schema_signature"`
+	ReferenceRequestSig       string   `json:"reference_request_schema_signature"`
+	GoRequestSig              string   `json:"go_request_schema_signature"`
+	ResponseSchemaMatch       bool     `json:"response_schema_match"`
+	ResponseSchemaReasons     []string `json:"response_schema_reasons"`
+	RequestSchemaMatch        bool     `json:"request_schema_match"`
+	RequestSchemaReasons      []string `json:"request_schema_reasons"`
+	ResponseSchemaDiff        []string `json:"response_schema_diff"`
+	RequestSchemaDiff         []string `json:"request_schema_diff"`
 }
 
 // SchemaDriftReport summarizes contract-level route parity.
 type SchemaDriftReport struct {
-	PythonRouteCount          int                      `json:"python_route_count"`
-	GoRouteCount              int                      `json:"go_route_count"`
-	MatchingCount             int                      `json:"matching_count"`
-	PythonOnlyCount           int                      `json:"python_only_count"`
-	GoOnlyCount               int                      `json:"go_only_count"`
-	SchemaComparableCount     int                      `json:"schema_comparable_count"`
-	SchemaMatchCount          int                      `json:"schema_match_count"`
-	SchemaMismatchCount       int                      `json:"schema_mismatch_count"`
-	MissingPythonContractLink int                      `json:"missing_python_contract_link_count"`
-	MissingGoContractLink     int                      `json:"missing_go_contract_link_count"`
-	TopDriftReasons           []SchemaDriftReasonCount `json:"top_drift_reasons"`
-	Rows                      []SchemaDriftRow         `json:"rows"`
+	ReferenceRouteCount          int                      `json:"reference_route_count"`
+	GoRouteCount                 int                      `json:"go_route_count"`
+	MatchingCount                int                      `json:"matching_count"`
+	ReferenceOnlyCount           int                      `json:"reference_only_count"`
+	GoOnlyCount                  int                      `json:"go_only_count"`
+	SchemaComparableCount        int                      `json:"schema_comparable_count"`
+	SchemaMatchCount             int                      `json:"schema_match_count"`
+	SchemaMismatchCount          int                      `json:"schema_mismatch_count"`
+	MissingReferenceContractLink int                      `json:"missing_reference_contract_link_count"`
+	MissingGoContractLink        int                      `json:"missing_go_contract_link_count"`
+	TopDriftReasons              []SchemaDriftReasonCount `json:"top_drift_reasons"`
+	Rows                         []SchemaDriftRow         `json:"rows"`
 }
 
-// BuildSchemaDriftReport builds a contract-shape report from python and go routes.
-func BuildSchemaDriftReport(pythonRoutes []inventory.Route, goRoutes []httpserver.Route, catalog []contracts.SchemaFile) SchemaDriftReport {
-	report := CompareWithContracts(pythonRoutes, goRoutes, catalog)
+// BuildSchemaDriftReport builds a contract-shape report from reference and go routes.
+func BuildSchemaDriftReport(referenceRoutes []inventory.Route, goRoutes []httpserver.Route, catalog []contracts.SchemaFile) SchemaDriftReport {
+	report := CompareWithContracts(referenceRoutes, goRoutes, catalog)
 	contractIndex := buildSchemaContractIndex(catalog)
 	signatures := make(map[string]string, len(contractIndex))
 
 	result := SchemaDriftReport{
-		PythonRouteCount: report.PythonRouteCount,
-		GoRouteCount:     report.GoRouteCount,
-		MatchingCount:    len(report.Matching),
-		PythonOnlyCount:  len(report.PythonOnly),
-		GoOnlyCount:      len(report.GoOnly),
-		TopDriftReasons:  nil,
+		ReferenceRouteCount: report.ReferenceRouteCount,
+		GoRouteCount:        report.GoRouteCount,
+		MatchingCount:       len(report.Matching),
+		ReferenceOnlyCount:  len(report.ReferenceOnly),
+		GoOnlyCount:         len(report.GoOnly),
+		TopDriftReasons:     nil,
 	}
 
 	reasonCounter := make(map[string]int, 16)
 	for _, row := range report.Matching {
 		maybeEmitRow := false
 		driftRow := buildSchemaDriftRow(row, contractIndex, signatures, reasonCounter)
-		if len(row.PythonResponseContract) > 0 || len(row.GoResponseContract) > 0 || len(row.PythonRequestContract) > 0 || len(row.GoRequestContract) > 0 {
+		if len(row.ReferenceResponseContract) > 0 || len(row.GoResponseContract) > 0 || len(row.ReferenceRequestContract) > 0 || len(row.GoRequestContract) > 0 {
 			result.SchemaComparableCount++
-			if row.PythonResponseContract == "" {
-				result.MissingPythonContractLink++
+			if row.ReferenceResponseContract == "" {
+				result.MissingReferenceContractLink++
 			}
 			if row.GoResponseContract == "" {
 				result.MissingGoContractLink++
 			}
-			if row.PythonRequestContract == "" {
-				result.MissingPythonContractLink++
+			if row.ReferenceRequestContract == "" {
+				result.MissingReferenceContractLink++
 			}
 			if row.GoRequestContract == "" {
 				result.MissingGoContractLink++
@@ -120,36 +120,36 @@ func BuildSchemaDriftReport(pythonRoutes []inventory.Route, goRoutes []httpserve
 
 func buildSchemaDriftRow(routeRef RouteRef, contractIndex map[string]contracts.SchemaFile, signatures map[string]string, reasonCounter map[string]int) SchemaDriftRow {
 	row := SchemaDriftRow{
-		Method:                 routeRef.Method,
-		Path:                   routeRef.Path,
-		Owner:                  routeRef.Owner,
-		Phase:                  routeRef.Phase,
-		PythonResponseContract: routeRef.PythonResponseContract,
-		GoResponseContract:     routeRef.GoResponseContract,
-		PythonRequestContract:  routeRef.PythonRequestContract,
-		GoRequestContract:      routeRef.GoRequestContract,
-		PythonResponseSig:      schemaSignature(routeRef.PythonResponseContract, contractIndex, signatures),
-		GoResponseSig:          schemaSignature(routeRef.GoResponseContract, contractIndex, signatures),
-		PythonRequestSig:       schemaSignature(routeRef.PythonRequestContract, contractIndex, signatures),
-		GoRequestSig:           schemaSignature(routeRef.GoRequestContract, contractIndex, signatures),
+		Method:                    routeRef.Method,
+		Path:                      routeRef.Path,
+		Owner:                     routeRef.Owner,
+		Phase:                     routeRef.Phase,
+		ReferenceResponseContract: routeRef.ReferenceResponseContract,
+		GoResponseContract:        routeRef.GoResponseContract,
+		ReferenceRequestContract:  routeRef.ReferenceRequestContract,
+		GoRequestContract:         routeRef.GoRequestContract,
+		ReferenceResponseSig:      schemaSignature(routeRef.ReferenceResponseContract, contractIndex, signatures),
+		GoResponseSig:             schemaSignature(routeRef.GoResponseContract, contractIndex, signatures),
+		ReferenceRequestSig:       schemaSignature(routeRef.ReferenceRequestContract, contractIndex, signatures),
+		GoRequestSig:              schemaSignature(routeRef.GoRequestContract, contractIndex, signatures),
 	}
 
-	if !hasAnyContract(row.PythonResponseContract, row.GoResponseContract, row.PythonRequestContract, row.GoRequestContract) {
+	if !hasAnyContract(row.ReferenceResponseContract, row.GoResponseContract, row.ReferenceRequestContract, row.GoRequestContract) {
 		return row
 	}
 
 	row.ResponseSchemaMatch = true
 	row.RequestSchemaMatch = true
 
-	if row.PythonResponseContract != "" || row.GoResponseContract != "" {
-		ok, reasons, diffs := compareSchemaContracts(routeRef.PythonResponseContract, routeRef.GoResponseContract, "response", contractIndex, signatures)
+	if row.ReferenceResponseContract != "" || row.GoResponseContract != "" {
+		ok, reasons, diffs := compareSchemaContracts(routeRef.ReferenceResponseContract, routeRef.GoResponseContract, "response", contractIndex, signatures)
 		row.ResponseSchemaMatch = ok
 		row.ResponseSchemaReasons = reasons
 		row.ResponseSchemaDiff = diffs
 		countReasons(reasonCounter, reasons)
 	}
-	if row.PythonRequestContract != "" || row.GoRequestContract != "" {
-		ok, reasons, diffs := compareSchemaContracts(routeRef.PythonRequestContract, routeRef.GoRequestContract, "request", contractIndex, signatures)
+	if row.ReferenceRequestContract != "" || row.GoRequestContract != "" {
+		ok, reasons, diffs := compareSchemaContracts(routeRef.ReferenceRequestContract, routeRef.GoRequestContract, "request", contractIndex, signatures)
 		row.RequestSchemaMatch = ok
 		row.RequestSchemaReasons = reasons
 		row.RequestSchemaDiff = diffs
@@ -166,29 +166,29 @@ type schemaDriftReasonAgg struct {
 	count  int
 }
 
-func compareSchemaContracts(pythonName, goName, kind string, contractIndex map[string]contracts.SchemaFile, signatures map[string]string) (bool, []string, []string) {
+func compareSchemaContracts(referenceName, goName, kind string, contractIndex map[string]contracts.SchemaFile, signatures map[string]string) (bool, []string, []string) {
 	reasons := []string{}
 	diffs := []string{}
 
-	if pythonName == "" && goName == "" {
+	if referenceName == "" && goName == "" {
 		return true, reasons, diffs
 	}
-	if pythonName == "" {
-		return false, []string{"python " + kind + " contract missing"}, diffs
+	if referenceName == "" {
+		return false, []string{"reference " + kind + " contract missing"}, diffs
 	}
 	if goName == "" {
 		return false, []string{"go " + kind + " contract missing"}, diffs
 	}
-	if pythonName != goName {
+	if referenceName != goName {
 		reasons = append(reasons, "contract name mismatch")
 	}
 
-	pythonKey := canonicalSchemaKey(pythonName)
+	referenceKey := canonicalSchemaKey(referenceName)
 	goKey := canonicalSchemaKey(goName)
-	left, leftExists := contractIndex[pythonKey]
+	left, leftExists := contractIndex[referenceKey]
 	right, rightExists := contractIndex[goKey]
 	if !leftExists || strings.TrimSpace(left.Path) == "" {
-		reasons = append(reasons, "python "+kind+" contract definition missing")
+		reasons = append(reasons, "reference "+kind+" contract definition missing")
 	}
 	if !rightExists || strings.TrimSpace(right.Path) == "" {
 		reasons = append(reasons, "go "+kind+" contract definition missing")
@@ -197,7 +197,7 @@ func compareSchemaContracts(pythonName, goName, kind string, contractIndex map[s
 		return false, dedupeSortedReasons(reasons), diffs
 	}
 
-	leftSig := schemaSignature(pythonName, contractIndex, signatures)
+	leftSig := schemaSignature(referenceName, contractIndex, signatures)
 	rightSig := schemaSignature(goName, contractIndex, signatures)
 	if leftSig != rightSig {
 		diffs = schemaDiff(left.Path, right.Path)
@@ -272,7 +272,7 @@ func collectSchemaDiffs(path string, left any, right any, diffs *[]string) {
 			leftChild, leftHas := leftMap[key]
 			rightChild, rightHas := rightMap[key]
 			if !leftHas {
-				*diffs = append(*diffs, fmt.Sprintf("%s: missing in python contract", childPath))
+				*diffs = append(*diffs, fmt.Sprintf("%s: missing in reference contract", childPath))
 				continue
 			}
 			if !rightHas {
@@ -305,7 +305,7 @@ func collectSchemaDiffs(path string, left any, right any, diffs *[]string) {
 				continue
 			}
 			if idx >= len(rightArr) {
-				*diffs = append(*diffs, fmt.Sprintf("%s: extra value in python contract: %v", childPath, leftArr[idx]))
+				*diffs = append(*diffs, fmt.Sprintf("%s: extra value in reference contract: %v", childPath, leftArr[idx]))
 				continue
 			}
 			collectSchemaDiffs(childPath, leftArr[idx], rightArr[idx], diffs)

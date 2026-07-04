@@ -16,12 +16,12 @@ Phase 1 skeleton 已具备 Go API、worker、Next.js、Docker compose、inventor
 
 新的开发方向见：
 
-- [docs/product-roadmap.md](/Users/bruce/git/tools/refactor-go/go/docs/product-roadmap.md)
-- [docs/architecture.md](/Users/bruce/git/tools/refactor-go/go/docs/architecture.md)
-- [docs/milestones.md](/Users/bruce/git/tools/refactor-go/go/docs/milestones.md)
-- [docs/harness-architecture.md](/Users/bruce/git/tools/refactor-go/go/docs/harness-architecture.md)
-- [docs/release-readiness.md](/Users/bruce/git/tools/refactor-go/go/docs/release-readiness.md)
-- [docs/nextjs-harness-architecture.md](/Users/bruce/git/tools/refactor-go/go/docs/nextjs-harness-architecture.md)
+- [docs/product-roadmap.md](docs/product-roadmap.md)
+- [docs/architecture.md](docs/architecture.md)
+- [docs/milestones.md](docs/milestones.md)
+- [docs/harness-architecture.md](docs/harness-architecture.md)
+- [docs/release-readiness.md](docs/release-readiness.md)
+- [docs/nextjs-harness-architecture.md](docs/nextjs-harness-architecture.md)
 
 ## 本地验证
 

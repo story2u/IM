@@ -186,11 +186,11 @@ func encodeOpenAPIJSON(report routediff.OpenAPIDriftReport, pretty bool) {
 }
 
 func enforceRouteDiffGates(mode string, report routediff.Report, schemaReport *routediff.SchemaDriftReport, maxReferenceOnly, maxGoOnly, maxSchemaMismatch int) error {
-	if maxReferenceOnly >= 0 && len(report.PythonOnly) > maxReferenceOnly {
+	if maxReferenceOnly >= 0 && len(report.ReferenceOnly) > maxReferenceOnly {
 		return fmt.Errorf(
 			"%s mode gate failed: reference_only=%d exceeds max=%d",
 			mode,
-			len(report.PythonOnly),
+			len(report.ReferenceOnly),
 			maxReferenceOnly,
 		)
 	}

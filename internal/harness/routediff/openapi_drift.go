@@ -30,47 +30,47 @@ type OpenAPIDriftReasonCount struct {
 
 // OpenAPIDriftRow captures one matched-route OpenAPI compatibility result.
 type OpenAPIDriftRow struct {
-	Method            string   `json:"method"`
-	Path              string   `json:"path"`
-	Owner             string   `json:"owner"`
-	Phase             string   `json:"phase"`
-	PythonOperationID string   `json:"python_operation_id,omitempty"`
-	GoOperationID     string   `json:"go_operation_id,omitempty"`
-	PythonRequest     string   `json:"python_request_contract,omitempty"`
-	GoRequest         string   `json:"go_request_contract,omitempty"`
-	PythonResponse    string   `json:"python_response_contract,omitempty"`
-	GoResponse        string   `json:"go_response_contract,omitempty"`
-	PythonRequestSig  string   `json:"python_request_schema_signature,omitempty"`
-	GoRequestSig      string   `json:"go_request_schema_signature,omitempty"`
-	PythonResponseSig string   `json:"python_response_schema_signature,omitempty"`
-	GoResponseSig     string   `json:"go_response_schema_signature,omitempty"`
-	PythonPathParams  []string `json:"python_path_params,omitempty"`
-	GoPathParams      []string `json:"go_path_params,omitempty"`
-	RequestMatch      bool     `json:"request_match"`
-	ResponseMatch     bool     `json:"response_match"`
-	PathParamsMatch   bool     `json:"path_params_match"`
-	RequestDiffs      []string `json:"request_diffs,omitempty"`
-	ResponseDiffs     []string `json:"response_diffs,omitempty"`
-	PathParamDiffs    []string `json:"path_param_diffs,omitempty"`
-	DriftReasons      []string `json:"drift_reasons,omitempty"`
+	Method               string   `json:"method"`
+	Path                 string   `json:"path"`
+	Owner                string   `json:"owner"`
+	Phase                string   `json:"phase"`
+	ReferenceOperationID string   `json:"reference_operation_id,omitempty"`
+	GoOperationID        string   `json:"go_operation_id,omitempty"`
+	ReferenceRequest     string   `json:"reference_request_contract,omitempty"`
+	GoRequest            string   `json:"go_request_contract,omitempty"`
+	ReferenceResponse    string   `json:"reference_response_contract,omitempty"`
+	GoResponse           string   `json:"go_response_contract,omitempty"`
+	ReferenceRequestSig  string   `json:"reference_request_schema_signature,omitempty"`
+	GoRequestSig         string   `json:"go_request_schema_signature,omitempty"`
+	ReferenceResponseSig string   `json:"reference_response_schema_signature,omitempty"`
+	GoResponseSig        string   `json:"go_response_schema_signature,omitempty"`
+	ReferencePathParams  []string `json:"reference_path_params,omitempty"`
+	GoPathParams         []string `json:"go_path_params,omitempty"`
+	RequestMatch         bool     `json:"request_match"`
+	ResponseMatch        bool     `json:"response_match"`
+	PathParamsMatch      bool     `json:"path_params_match"`
+	RequestDiffs         []string `json:"request_diffs,omitempty"`
+	ResponseDiffs        []string `json:"response_diffs,omitempty"`
+	PathParamDiffs       []string `json:"path_param_diffs,omitempty"`
+	DriftReasons         []string `json:"drift_reasons,omitempty"`
 }
 
 // OpenAPIDriftReport summarizes OpenAPI-level contract parity for matching routes.
 type OpenAPIDriftReport struct {
-	PythonRouteCount    int                       `json:"python_route_count"`
-	GoRouteCount        int                       `json:"go_route_count"`
-	MatchingCount       int                       `json:"matching_count"`
-	PythonOnlyCount     int                       `json:"python_only_count"`
-	GoOnlyCount         int                       `json:"go_only_count"`
-	ComparableCount     int                       `json:"comparable_pairs"`
-	MatchCount          int                       `json:"match_count"`
-	MismatchCount       int                       `json:"mismatch_count"`
-	PythonOpenAPISource string                    `json:"python_openapi_source,omitempty"`
-	GoOpenAPISource     string                    `json:"go_openapi_source,omitempty"`
-	PythonSourceStatus  string                    `json:"python_openapi_source_status"`
-	GoSourceStatus      string                    `json:"go_openapi_source_status"`
-	TopDriftReasons     []OpenAPIDriftReasonCount `json:"top_drift_reasons"`
-	Rows                []OpenAPIDriftRow         `json:"rows"`
+	ReferenceRouteCount    int                       `json:"reference_route_count"`
+	GoRouteCount           int                       `json:"go_route_count"`
+	MatchingCount          int                       `json:"matching_count"`
+	ReferenceOnlyCount     int                       `json:"reference_only_count"`
+	GoOnlyCount            int                       `json:"go_only_count"`
+	ComparableCount        int                       `json:"comparable_pairs"`
+	MatchCount             int                       `json:"match_count"`
+	MismatchCount          int                       `json:"mismatch_count"`
+	ReferenceOpenAPISource string                    `json:"reference_openapi_source,omitempty"`
+	GoOpenAPISource        string                    `json:"go_openapi_source,omitempty"`
+	ReferenceSourceStatus  string                    `json:"reference_openapi_source_status"`
+	GoSourceStatus         string                    `json:"go_openapi_source_status"`
+	TopDriftReasons        []OpenAPIDriftReasonCount `json:"top_drift_reasons"`
+	Rows                   []OpenAPIDriftRow         `json:"rows"`
 }
 
 type openAPISource struct {
@@ -91,33 +91,33 @@ type openAPIOperation struct {
 // BuildOpenAPIDriftReport compares OpenAPI route contracts when specs are configured.
 // Without configured specs it falls back to route/schema metadata and records source status.
 func BuildOpenAPIDriftReport(
-	pythonRoutes []inventory.Route,
+	referenceRoutes []inventory.Route,
 	goRoutes []httpserver.Route,
 	catalog []contracts.SchemaFile,
-	pythonOpenAPIPath string,
+	referenceOpenAPIPath string,
 	goOpenAPIPath string,
 ) OpenAPIDriftReport {
 	contractIndex := buildSchemaContractIndex(catalog)
 	signatures := make(map[string]string, len(contractIndex))
-	pythonSpec := loadOpenAPISource(pythonOpenAPIPath)
+	referenceSpec := loadOpenAPISource(referenceOpenAPIPath)
 	goSpec := loadOpenAPISource(goOpenAPIPath)
-	routeReport := CompareWithContracts(pythonRoutes, goRoutes, catalog)
+	routeReport := CompareWithContracts(referenceRoutes, goRoutes, catalog)
 
 	report := OpenAPIDriftReport{
-		PythonRouteCount:    routeReport.PythonRouteCount,
-		GoRouteCount:        routeReport.GoRouteCount,
-		MatchingCount:       len(routeReport.Matching),
-		PythonOnlyCount:     len(routeReport.PythonOnly),
-		GoOnlyCount:         len(routeReport.GoOnly),
-		PythonOpenAPISource: strings.TrimSpace(pythonOpenAPIPath),
-		GoOpenAPISource:     strings.TrimSpace(goOpenAPIPath),
-		PythonSourceStatus:  pythonSpec.status,
-		GoSourceStatus:      goSpec.status,
+		ReferenceRouteCount:    routeReport.ReferenceRouteCount,
+		GoRouteCount:           routeReport.GoRouteCount,
+		MatchingCount:          len(routeReport.Matching),
+		ReferenceOnlyCount:     len(routeReport.ReferenceOnly),
+		GoOnlyCount:            len(routeReport.GoOnly),
+		ReferenceOpenAPISource: strings.TrimSpace(referenceOpenAPIPath),
+		GoOpenAPISource:        strings.TrimSpace(goOpenAPIPath),
+		ReferenceSourceStatus:  referenceSpec.status,
+		GoSourceStatus:         goSpec.status,
 	}
 
 	reasons := map[string]int{}
 	for _, route := range routeReport.Matching {
-		row := buildOpenAPIDriftRow(route, pythonSpec, goSpec, contractIndex, signatures, reasons)
+		row := buildOpenAPIDriftRow(route, referenceSpec, goSpec, contractIndex, signatures, reasons)
 		if !rowHasOpenAPIComparison(row) {
 			continue
 		}
@@ -138,43 +138,43 @@ func BuildOpenAPIDriftReport(
 
 func buildOpenAPIDriftRow(
 	route RouteRef,
-	pythonSpec openAPISource,
+	referenceSpec openAPISource,
 	goSpec openAPISource,
 	contractIndex map[string]contracts.SchemaFile,
 	signatures map[string]string,
 	reasons map[string]int,
 ) OpenAPIDriftRow {
 	row := OpenAPIDriftRow{
-		Method:          route.Method,
-		Path:            route.Path,
-		Owner:           route.Owner,
-		Phase:           route.Phase,
-		PythonRequest:   route.PythonRequestContract,
-		GoRequest:       route.GoRequestContract,
-		PythonResponse:  route.PythonResponseContract,
-		GoResponse:      route.GoResponseContract,
-		RequestMatch:    true,
-		ResponseMatch:   true,
-		PathParamsMatch: true,
+		Method:            route.Method,
+		Path:              route.Path,
+		Owner:             route.Owner,
+		Phase:             route.Phase,
+		ReferenceRequest:  route.ReferenceRequestContract,
+		GoRequest:         route.GoRequestContract,
+		ReferenceResponse: route.ReferenceResponseContract,
+		GoResponse:        route.GoResponseContract,
+		RequestMatch:      true,
+		ResponseMatch:     true,
+		PathParamsMatch:   true,
 	}
 
-	pythonOp, pythonHas := pythonSpec.operation(route.Method, route.Path)
+	referenceOp, referenceHas := referenceSpec.operation(route.Method, route.Path)
 	goOp, goHas := goSpec.operation(route.Method, route.Path)
-	if pythonSpec.hasLoadedSpec() && !pythonHas {
-		addOpenAPIReason(&row, reasons, "python openapi operation missing")
+	if referenceSpec.hasLoadedSpec() && !referenceHas {
+		addOpenAPIReason(&row, reasons, "reference openapi operation missing")
 	}
 	if goSpec.hasLoadedSpec() && !goHas {
 		addOpenAPIReason(&row, reasons, "go openapi operation missing")
 	}
 
-	if pythonHas {
-		row.PythonOperationID = pythonOp.OperationID
-		row.PythonPathParams = pythonOp.PathParams
-		if pythonOp.RequestName != "" || pythonOp.RequestSchema != nil {
-			row.PythonRequest = firstNonEmptyOpenAPI(pythonOp.RequestName, route.PythonRequestContract)
+	if referenceHas {
+		row.ReferenceOperationID = referenceOp.OperationID
+		row.ReferencePathParams = referenceOp.PathParams
+		if referenceOp.RequestName != "" || referenceOp.RequestSchema != nil {
+			row.ReferenceRequest = firstNonEmptyOpenAPI(referenceOp.RequestName, route.ReferenceRequestContract)
 		}
-		if pythonOp.ResponseName != "" || pythonOp.ResponseSchema != nil {
-			row.PythonResponse = firstNonEmptyOpenAPI(pythonOp.ResponseName, route.PythonResponseContract)
+		if referenceOp.ResponseName != "" || referenceOp.ResponseSchema != nil {
+			row.ReferenceResponse = firstNonEmptyOpenAPI(referenceOp.ResponseName, route.ReferenceResponseContract)
 		}
 	}
 	if goHas {
@@ -188,32 +188,32 @@ func buildOpenAPIDriftRow(
 		}
 	}
 
-	if len(row.PythonPathParams) == 0 {
-		row.PythonPathParams = extractOpenAPIPathParams(route.Path)
+	if len(row.ReferencePathParams) == 0 {
+		row.ReferencePathParams = extractOpenAPIPathParams(route.Path)
 	}
 	if len(row.GoPathParams) == 0 {
 		row.GoPathParams = extractOpenAPIPathParams(route.Path)
 	}
-	if pythonHas && goHas {
-		row.PathParamsMatch, row.PathParamDiffs = compareStringSets(row.PythonPathParams, row.GoPathParams)
+	if referenceHas && goHas {
+		row.PathParamsMatch, row.PathParamDiffs = compareStringSets(row.ReferencePathParams, row.GoPathParams)
 		if !row.PathParamsMatch {
 			addOpenAPIReason(&row, reasons, "path params mismatch")
 		}
-		if row.PythonOperationID != "" && row.GoOperationID != "" && row.PythonOperationID != row.GoOperationID {
+		if row.ReferenceOperationID != "" && row.GoOperationID != "" && row.ReferenceOperationID != row.GoOperationID {
 			addOpenAPIReason(&row, reasons, "operation_id mismatch")
 		}
 	}
 
-	row.PythonRequestSig = openAPISchemaSignature(row.PythonRequest, pythonOp.RequestSchema, contractIndex, signatures)
+	row.ReferenceRequestSig = openAPISchemaSignature(row.ReferenceRequest, referenceOp.RequestSchema, contractIndex, signatures)
 	row.GoRequestSig = openAPISchemaSignature(row.GoRequest, goOp.RequestSchema, contractIndex, signatures)
-	row.PythonResponseSig = openAPISchemaSignature(row.PythonResponse, pythonOp.ResponseSchema, contractIndex, signatures)
+	row.ReferenceResponseSig = openAPISchemaSignature(row.ReferenceResponse, referenceOp.ResponseSchema, contractIndex, signatures)
 	row.GoResponseSig = openAPISchemaSignature(row.GoResponse, goOp.ResponseSchema, contractIndex, signatures)
 
-	row.RequestMatch, row.RequestDiffs = compareOpenAPISchemas(row.PythonRequest, row.GoRequest, row.PythonRequestSig, row.GoRequestSig, pythonOp.RequestSchema, goOp.RequestSchema, contractIndex)
+	row.RequestMatch, row.RequestDiffs = compareOpenAPISchemas(row.ReferenceRequest, row.GoRequest, row.ReferenceRequestSig, row.GoRequestSig, referenceOp.RequestSchema, goOp.RequestSchema, contractIndex)
 	if !row.RequestMatch {
 		addOpenAPIReason(&row, reasons, "request schema mismatch")
 	}
-	row.ResponseMatch, row.ResponseDiffs = compareOpenAPISchemas(row.PythonResponse, row.GoResponse, row.PythonResponseSig, row.GoResponseSig, pythonOp.ResponseSchema, goOp.ResponseSchema, contractIndex)
+	row.ResponseMatch, row.ResponseDiffs = compareOpenAPISchemas(row.ReferenceResponse, row.GoResponse, row.ReferenceResponseSig, row.GoResponseSig, referenceOp.ResponseSchema, goOp.ResponseSchema, contractIndex)
 	if !row.ResponseMatch {
 		addOpenAPIReason(&row, reasons, "response schema mismatch")
 	}
@@ -462,31 +462,31 @@ func resolveOpenAPIParameter(ref string, components map[string]any) map[string]a
 }
 
 func compareOpenAPISchemas(
-	pythonName string,
+	referenceName string,
 	goName string,
-	pythonSig string,
+	referenceSig string,
 	goSig string,
-	pythonNode any,
+	referenceNode any,
 	goNode any,
 	contractIndex map[string]contracts.SchemaFile,
 ) (bool, []string) {
-	if pythonName == "" && goName == "" && pythonNode == nil && goNode == nil {
+	if referenceName == "" && goName == "" && referenceNode == nil && goNode == nil {
 		return true, nil
 	}
-	if pythonSig == "" && goSig == "" {
+	if referenceSig == "" && goSig == "" {
 		return true, nil
 	}
-	if pythonSig == "" || goSig == "" {
+	if referenceSig == "" || goSig == "" {
 		return false, []string{"schema missing on one side"}
 	}
-	if pythonSig == goSig {
+	if referenceSig == goSig {
 		return true, nil
 	}
-	if pythonNode != nil && goNode != nil {
-		return false, diffSchemaNodes(pythonNode, goNode)
+	if referenceNode != nil && goNode != nil {
+		return false, diffSchemaNodes(referenceNode, goNode)
 	}
-	if pythonName != "" && goName != "" {
-		return false, diffContractSchemas(pythonName, goName, contractIndex)
+	if referenceName != "" && goName != "" {
+		return false, diffContractSchemas(referenceName, goName, contractIndex)
 	}
 	return false, []string{"schema signature mismatch"}
 }
@@ -526,7 +526,7 @@ func diffContractSchemas(leftName string, rightName string, contractIndex map[st
 }
 
 func rowHasOpenAPIComparison(row OpenAPIDriftRow) bool {
-	return row.PythonRequest != "" || row.GoRequest != "" || row.PythonResponse != "" || row.GoResponse != "" || row.PythonOperationID != "" || row.GoOperationID != "" || len(row.DriftReasons) > 0
+	return row.ReferenceRequest != "" || row.GoRequest != "" || row.ReferenceResponse != "" || row.GoResponse != "" || row.ReferenceOperationID != "" || row.GoOperationID != "" || len(row.DriftReasons) > 0
 }
 
 func normalizeMap(value any) any {
@@ -616,7 +616,7 @@ func compareStringSets(left []string, right []string) (bool, []string) {
 	}
 	for _, value := range right {
 		if _, ok := leftSet[value]; !ok {
-			diffs = append(diffs, value+": missing in python openapi")
+			diffs = append(diffs, value+": missing in reference openapi")
 		}
 	}
 	return len(diffs) == 0, diffs
@@ -686,10 +686,10 @@ func MarkdownOpenAPIDriftReport(report OpenAPIDriftReport) string {
 	builder.WriteString("## Summary\n\n")
 	builder.WriteString("| Surface | Count |\n")
 	builder.WriteString("| --- | ---: |\n")
-	builder.WriteString(fmt.Sprintf("| Python routes | %d |\n", report.PythonRouteCount))
+	builder.WriteString(fmt.Sprintf("| Reference routes | %d |\n", report.ReferenceRouteCount))
 	builder.WriteString(fmt.Sprintf("| Go routes | %d |\n", report.GoRouteCount))
 	builder.WriteString(fmt.Sprintf("| Matching | %d |\n", report.MatchingCount))
-	builder.WriteString(fmt.Sprintf("| Python only | %d |\n", report.PythonOnlyCount))
+	builder.WriteString(fmt.Sprintf("| Reference only | %d |\n", report.ReferenceOnlyCount))
 	builder.WriteString(fmt.Sprintf("| Go only | %d |\n", report.GoOnlyCount))
 	builder.WriteString(fmt.Sprintf("| Comparable pairs | %d |\n", report.ComparableCount))
 	builder.WriteString(fmt.Sprintf("| Matching OpenAPI contracts | %d |\n", report.MatchCount))
@@ -698,9 +698,9 @@ func MarkdownOpenAPIDriftReport(report OpenAPIDriftReport) string {
 	builder.WriteString("## Sources\n\n")
 	builder.WriteString("| Side | Source | Status |\n")
 	builder.WriteString("| --- | --- | --- |\n")
-	builder.WriteString(fmt.Sprintf("| Python | `%s` | `%s` |\n", escapeTable(report.PythonOpenAPISource), escapeTable(report.PythonSourceStatus)))
+	builder.WriteString(fmt.Sprintf("| Reference | `%s` | `%s` |\n", escapeTable(report.ReferenceOpenAPISource), escapeTable(report.ReferenceSourceStatus)))
 	builder.WriteString(fmt.Sprintf("| Go | `%s` | `%s` |\n\n", escapeTable(report.GoOpenAPISource), escapeTable(report.GoSourceStatus)))
-	if openAPISourceNeedsAttention(report.PythonSourceStatus) || openAPISourceNeedsAttention(report.GoSourceStatus) {
+	if openAPISourceNeedsAttention(report.ReferenceSourceStatus) || openAPISourceNeedsAttention(report.GoSourceStatus) {
 		builder.WriteString("Source note: at least one OpenAPI source was not loaded. This report may include route/schema metadata fallback and should not be treated as full OpenAPI proof until both sources are `loaded`.\n\n")
 	}
 
@@ -733,7 +733,7 @@ func MarkdownOpenAPIDriftReport(report OpenAPIDriftReport) string {
 			escapeTable(boolToYN(row.RequestMatch)),
 			escapeTable(boolToYN(row.ResponseMatch)),
 			escapeTable(boolToYN(row.PathParamsMatch)),
-			escapeTable(row.PythonOperationID),
+			escapeTable(row.ReferenceOperationID),
 			escapeTable(row.GoOperationID),
 			escapeTable(strings.Join(row.DriftReasons, ", ")),
 		))
