@@ -251,10 +251,10 @@ func markdownReport(report suiteReport) string {
 	var builder strings.Builder
 	builder.WriteString("# Replay Suite Report\n\n")
 	builder.WriteString("| Field | Value |\n| --- | --- |\n")
-	builder.WriteString(fmt.Sprintf("| Suite | `%s` |\n", report.Suite))
-	builder.WriteString(fmt.Sprintf("| Mode | `%s` |\n", report.Mode))
-	builder.WriteString(fmt.Sprintf("| Match | `%t` |\n", report.Match))
-	builder.WriteString(fmt.Sprintf("| Case Count | %d |\n", report.CaseCount))
+	fmt.Fprintf(&builder, "| Suite | `%s` |\n", report.Suite)
+	fmt.Fprintf(&builder, "| Mode | `%s` |\n", report.Mode)
+	fmt.Fprintf(&builder, "| Match | `%t` |\n", report.Match)
+	fmt.Fprintf(&builder, "| Case Count | %d |\n", report.CaseCount)
 	builder.WriteString("\n## Cases\n\n")
 	if len(report.Cases) == 0 {
 		builder.WriteString("| Name | Match | Reference | Go | Summary |\n")
@@ -265,7 +265,7 @@ func markdownReport(report suiteReport) string {
 	builder.WriteString("| Name | Match | Reference | Go | Reference Count | Go Count | Missing Go | Missing Reference | Diffs |\n")
 	builder.WriteString("| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
 	for _, c := range report.Cases {
-		builder.WriteString(fmt.Sprintf(
+		fmt.Fprintf(&builder,
 			"| %s | `%t` | %s | %s | %d | %d | %d | %d | %s |\n",
 			escapeTable(c.Name),
 			c.Match,
@@ -276,7 +276,7 @@ func markdownReport(report suiteReport) string {
 			c.MissingInGo,
 			c.MissingInReference,
 			escapeTable(strings.Join(c.Diffs, "; ")),
-		))
+		)
 	}
 	builder.WriteString("\n")
 	return builder.String()
