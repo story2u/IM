@@ -43,7 +43,7 @@ func TestHealthReadinessAndMetrics(t *testing.T) {
 
 	assertStatus(t, handler, "/", http.StatusOK, `"service":"cloud-backend"`)
 	assertStatus(t, handler, "/healthz", http.StatusOK, `"ok":true`)
-	assertStatus(t, handler, "/readyz", http.StatusOK, `"count":4`)
+	assertStatus(t, handler, "/readyz", http.StatusOK, `"count":6`)
 	assertStatus(t, handler, "/metrics", http.StatusOK, "im_go_contract_catalog_ok 1")
 	assertStatus(t, handler, "/api/v1/session/me", http.StatusNotFound, "404 page not found")
 	assertStatus(t, handler, "/api/v1/stream/channels", http.StatusNotFound, "404 page not found")

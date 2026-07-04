@@ -54,7 +54,7 @@ Use `-strict` in a release gate so disabled flags or missing settings fail befor
 
 Provider-specific settings are optional unless the matching connector or provider is enabled.
 
-`go-send-dispatcher` is part of the standalone worker set, but it does not assume a bundled device/RPA implementation. Leave `GO_SEND_PROVIDER_BASE_URL` empty for core/runtime validation. Set it only when an HTTP-compatible send provider is enabled for real outbound delivery.
+`go-send-dispatcher` is part of the standalone worker set, but it does not assume a bundled message platform. Leave `GO_SEND_CONNECTOR_BASE_URL` empty for core/runtime validation. Set it only when an HTTP-compatible outbound connector is enabled for real delivery. `GO_SEND_PROVIDER_BASE_URL` remains a compatibility alias.
 
 ## Runtime Roles
 

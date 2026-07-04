@@ -67,7 +67,7 @@ Core 职责：
 - 推送 realtime event。
 - 记录审计。
 
-`contracts/v1/connector-inbound-event.schema.json` 是首个通道中立 inbound contract。企微是 connector，不是 core。后续可加入 Web chat、短信、邮件、内部测试通道和其他 IM 平台。
+`contracts/v1/connector-inbound-event.schema.json`、`connector-outbound-message.schema.json` 和 `connector-delivery-receipt.schema.json` 是首批通道中立 connector contracts。企微是 connector，不是 core。后续可加入 Web chat、短信、邮件、内部测试通道和其他 IM 平台。
 
 ## 3. RPA 与自动化 Provider
 

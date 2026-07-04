@@ -1892,19 +1892,30 @@ func TestLoadReadsSessionJWTIssuerAlias(t *testing.T) {
 	}
 }
 
-func TestLoadSendProviderConfig(t *testing.T) {
-	clearSendProviderEnv(t)
+func TestLoadSendConnectorConfig(t *testing.T) {
+	clearSendConnectorEnv(t)
 	cfg := Load()
 	if cfg.SendProviderBaseURL != "" || cfg.SendProviderAPIToken != "" || cfg.SendProviderTimeoutSec != 180 {
 		t.Fatalf("default send provider config = %#v", cfg)
 	}
 
+	t.Setenv("GO_SEND_CONNECTOR_BASE_URL", " https://send-connector.local ")
+	t.Setenv("GO_SEND_CONNECTOR_API_TOKEN", " connector-token ")
+	t.Setenv("GO_SEND_CONNECTOR_TIMEOUT_SEC", "2")
+	cfg = Load()
+	if cfg.SendProviderBaseURL != "https://send-connector.local" || cfg.SendProviderAPIToken != "connector-token" || cfg.SendProviderTimeoutSec != 2 {
+		t.Fatalf("send connector env base=%q token=%q timeout=%d", cfg.SendProviderBaseURL, cfg.SendProviderAPIToken, cfg.SendProviderTimeoutSec)
+	}
+
+	t.Setenv("GO_SEND_CONNECTOR_BASE_URL", "")
+	t.Setenv("GO_SEND_CONNECTOR_API_TOKEN", "")
+	t.Setenv("GO_SEND_CONNECTOR_TIMEOUT_SEC", "")
 	t.Setenv("GO_SEND_PROVIDER_BASE_URL", " https://send-provider.local ")
 	t.Setenv("GO_SEND_PROVIDER_API_TOKEN", " provider-token ")
-	t.Setenv("GO_SEND_PROVIDER_TIMEOUT_SEC", "2")
+	t.Setenv("GO_SEND_PROVIDER_TIMEOUT_SEC", "3")
 	cfg = Load()
-	if cfg.SendProviderBaseURL != "https://send-provider.local" || cfg.SendProviderAPIToken != "provider-token" || cfg.SendProviderTimeoutSec != 2 {
-		t.Fatalf("send provider env base=%q token=%q timeout=%d", cfg.SendProviderBaseURL, cfg.SendProviderAPIToken, cfg.SendProviderTimeoutSec)
+	if cfg.SendProviderBaseURL != "https://send-provider.local" || cfg.SendProviderAPIToken != "provider-token" || cfg.SendProviderTimeoutSec != 3 {
+		t.Fatalf("send provider fallback base=%q token=%q timeout=%d", cfg.SendProviderBaseURL, cfg.SendProviderAPIToken, cfg.SendProviderTimeoutSec)
 	}
 
 	t.Setenv("GO_SEND_PROVIDER_BASE_URL", "")
@@ -1961,17 +1972,20 @@ func clearPlatformEnv(t *testing.T) {
 	}
 }
 
-func clearSendProviderEnv(t *testing.T) {
+func clearSendConnectorEnv(t *testing.T) {
 	t.Helper()
 	for _, key := range []string{
+		"GO_SEND_CONNECTOR_BASE_URL",
 		"GO_SEND_PROVIDER_BASE_URL",
 		"GO_SDK_EXECUTOR_BASE_URL",
 		"SDK_EXECUTOR_BASE_URL",
 		"P1_SDK_EXECUTOR_BASE_URL",
+		"GO_SEND_CONNECTOR_API_TOKEN",
 		"GO_SEND_PROVIDER_API_TOKEN",
 		"GO_SDK_EXECUTOR_API_TOKEN",
 		"SDK_EXECUTOR_API_TOKEN",
 		"P1_SDK_EXECUTOR_API_TOKEN",
+		"GO_SEND_CONNECTOR_TIMEOUT_SEC",
 		"GO_SEND_PROVIDER_TIMEOUT_SEC",
 		"GO_SDK_EXECUTOR_TIMEOUT_SEC",
 		"SDK_EXECUTOR_TIMEOUT_SEC",
