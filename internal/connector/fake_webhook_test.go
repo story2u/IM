@@ -90,7 +90,7 @@ func TestFakeWebhookConnectorPayloadFeedsIncomingWriteInput(t *testing.T) {
 	if input.Message.TenantID != "tenant-1" || input.Message.AccountID != "account-1" || input.Message.ChannelUserID != "channel-account-1" || input.Message.ExternalUserID != "customer-1" {
 		t.Fatalf("message identity = %+v", input.Message)
 	}
-	if input.Message.WeWorkUserID != "channel-account-1" || input.Message.MessageOrigin != "connector:internal.webhook" {
+	if input.Message.WeWorkUserID != "" || input.Message.MessageOrigin != "connector:internal.webhook" {
 		t.Fatalf("message channel fields = %+v", input.Message)
 	}
 }

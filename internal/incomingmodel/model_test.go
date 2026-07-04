@@ -5,7 +5,18 @@ import (
 	"time"
 )
 
-func TestBuildConversationIDUsesStableWeWorkIdentity(t *testing.T) {
+func TestBuildConversationIDUsesChannelIdentity(t *testing.T) {
+	message := IncomingMessage{ChannelUserID: "Channel-User", ExternalUserID: "WM-External", SenderID: "ignored"}
+	if got := BuildConversationID(message); got != "ch:channel-user:wm-external" {
+		t.Fatalf("conversation id = %q", got)
+	}
+	message = IncomingMessage{ChannelUserID: "channel-user", RoomID: "ROOM-1", ExternalUserID: "wm-external"}
+	if got := BuildConversationID(message); got != "ch:channel-user:room:room-1" {
+		t.Fatalf("room conversation id = %q", got)
+	}
+}
+
+func TestBuildConversationIDKeepsLegacyWeWorkIdentity(t *testing.T) {
 	message := IncomingMessage{WeWorkUserID: "WX-USER", ExternalUserID: "WM-External", SenderID: "ignored"}
 	if got := BuildConversationID(message); got != "ww:wxuser:wm-external" {
 		t.Fatalf("conversation id = %q", got)
@@ -32,7 +43,7 @@ func TestPrepareIncomingCreatesNewConversationPlan(t *testing.T) {
 	now := fixedTime(11)
 	plan := PrepareIncoming(IncomingMessage{
 		TenantID:         " tenant-1 ",
-		WeWorkUserID:     "WX-1",
+		ChannelUserID:    "Account-1",
 		ExternalUserID:   "Ext-1",
 		RoomID:           "Room-1",
 		DeviceID:         "device-1",
@@ -50,8 +61,11 @@ func TestPrepareIncomingCreatesNewConversationPlan(t *testing.T) {
 	if plan.Message.MessageID != 42 || plan.Message.MessageOrigin != OriginDeviceRealtime || plan.Message.CreatedAt != messageAt {
 		t.Fatalf("message defaults = %+v", plan.Message)
 	}
-	if plan.Conversation.ConversationID != "ww:wx1:room:room-1" || plan.Conversation.ConversationType != "room" {
+	if plan.Conversation.ConversationID != "ch:account-1:room:room-1" || plan.Conversation.ConversationType != "room" {
 		t.Fatalf("conversation identity = %+v", plan.Conversation)
+	}
+	if plan.Message.ChannelUserID != "account-1" || plan.Message.WeWorkUserID != "account-1" || plan.Conversation.ChannelUserID != "account-1" || plan.Conversation.WeWorkUserID != "account-1" {
+		t.Fatalf("channel identity mapping = message:%+v conversation:%+v", plan.Message, plan.Conversation)
 	}
 	if plan.Conversation.UnreadCount != 1 || plan.Conversation.LastIncomingAt == nil || !plan.Conversation.LastIncomingAt.Equal(messageAt) {
 		t.Fatalf("incoming state = %+v", plan.Conversation)

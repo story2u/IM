@@ -83,7 +83,7 @@ func TestBuildIncomingEventsSkipsAutoReplyForExistingNewOnly(t *testing.T) {
 	}
 }
 
-func TestBuildArchiveSyncSignalMirrorsPythonDefaults(t *testing.T) {
+func TestBuildArchiveSyncSignalUsesStandaloneDefaults(t *testing.T) {
 	occurredAt := time.Date(2026, 6, 30, 10, 0, 0, 0, time.UTC)
 	event := BuildArchiveSyncSignal(ArchiveSyncSignal{
 		EnterpriseID: " ent-1 ",

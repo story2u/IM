@@ -57,6 +57,7 @@ func TestServiceIngestUsesNormalizedMessageFromResultIngestor(t *testing.T) {
 		ConversationID:   "conv-1",
 		ConversationKey:  "key-1",
 		AccountID:        "account-1",
+		ChannelUserID:    "channel-account-1",
 		WeWorkUserID:     "wx-1",
 		ExternalUserID:   "ext-1",
 		ConversationType: "single",
@@ -84,10 +85,10 @@ func TestServiceIngestUsesNormalizedMessageFromResultIngestor(t *testing.T) {
 	if result.OutboxRecords[0].Payload["message_id"] != int64(99) {
 		t.Fatalf("outbox payload = %#v", result.OutboxRecords[0].Payload)
 	}
-	if store.message.MessageID != 99 || store.message.MessageOrigin != incomingmodel.OriginDeviceRealtime || store.message.WeWorkUserID != "channelaccount1" {
+	if store.message.MessageID != 99 || store.message.MessageOrigin != incomingmodel.OriginDeviceRealtime || store.message.ChannelUserID != "channel-account-1" || store.message.WeWorkUserID != "" {
 		t.Fatalf("store message = %+v", store.message)
 	}
-	if result.OutboxRecords[0].Payload["channel_user_id"] != "wx-1" || result.OutboxRecords[0].Payload["wework_user_id"] != "wx-1" {
+	if result.OutboxRecords[0].Payload["channel_user_id"] != "channel-account-1" || result.OutboxRecords[0].Payload["wework_user_id"] != "channel-account-1" {
 		t.Fatalf("channel identity not preserved: payload=%#v", result.OutboxRecords[0].Payload)
 	}
 }

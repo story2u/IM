@@ -297,6 +297,7 @@ func scanConversation(row RowScanner) (incomingmodel.ConversationSnapshot, error
 		ConversationKey:  textValue(values[2]),
 		TenantID:         textValue(values[3]),
 		AccountID:        textValue(values[4]),
+		ChannelUserID:    textValue(values[5]),
 		WeWorkUserID:     textValue(values[5]),
 		ExternalUserID:   textValue(values[6]),
 		RoomID:           textValue(values[7]),
@@ -541,6 +542,7 @@ func snapshotFromConversationRow(row incomingmodel.ConversationRow) incomingmode
 		ConversationKey:  row.ConversationKey,
 		TenantID:         row.TenantID,
 		AccountID:        row.AccountID,
+		ChannelUserID:    firstNonBlank(row.ChannelUserID, row.WeWorkUserID),
 		WeWorkUserID:     row.WeWorkUserID,
 		ExternalUserID:   row.ExternalUserID,
 		RoomID:           row.RoomID,
@@ -747,6 +749,15 @@ func textValue(value any) string {
 	default:
 		return fmt.Sprint(typed)
 	}
+}
+
+func firstNonBlank(values ...string) string {
+	for _, value := range values {
+		if trimmed := strings.TrimSpace(value); trimmed != "" {
+			return trimmed
+		}
+	}
+	return ""
 }
 
 func intValue(value any) int {

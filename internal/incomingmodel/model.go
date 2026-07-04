@@ -31,6 +31,7 @@ type IncomingMessage struct {
 	ConversationID   string
 	ConversationKey  string
 	AccountID        string
+	ChannelUserID    string
 	WeWorkUserID     string
 	ExternalUserID   string
 	RoomID           string
@@ -59,6 +60,7 @@ type ConversationSnapshot struct {
 	ConversationKey  string
 	TenantID         string
 	AccountID        string
+	ChannelUserID    string
 	WeWorkUserID     string
 	ExternalUserID   string
 	RoomID           string
@@ -88,6 +90,7 @@ type MessageRow struct {
 	ConversationID   string
 	ConversationKey  string
 	AccountID        string
+	ChannelUserID    string
 	WeWorkUserID     string
 	ExternalUserID   string
 	RoomID           string
@@ -115,6 +118,7 @@ type ConversationRow struct {
 	ConversationKey  string
 	TenantID         string
 	AccountID        string
+	ChannelUserID    string
 	WeWorkUserID     string
 	ExternalUserID   string
 	RoomID           string
@@ -200,6 +204,7 @@ func PrepareIncoming(message IncomingMessage, current *ConversationSnapshot, gen
 	if firstMessageAt.IsZero() {
 		firstMessageAt = message.Timestamp
 	}
+	storageUserID := firstNonBlank(message.WeWorkUserID, message.ChannelUserID)
 	messageRow := MessageRow{
 		MessageID:        message.MessageID,
 		ConversationPK:   cloneInt64(conversationPK),
@@ -209,7 +214,8 @@ func PrepareIncoming(message IncomingMessage, current *ConversationSnapshot, gen
 		ConversationID:   message.ConversationID,
 		ConversationKey:  message.ConversationKey,
 		AccountID:        accountID,
-		WeWorkUserID:     message.WeWorkUserID,
+		ChannelUserID:    message.ChannelUserID,
+		WeWorkUserID:     storageUserID,
 		ExternalUserID:   message.ExternalUserID,
 		RoomID:           message.RoomID,
 		ConversationType: message.ConversationType,
@@ -237,7 +243,8 @@ func PrepareIncoming(message IncomingMessage, current *ConversationSnapshot, gen
 			ConversationKey:  message.ConversationKey,
 			TenantID:         message.TenantID,
 			AccountID:        accountID,
-			WeWorkUserID:     message.WeWorkUserID,
+			ChannelUserID:    message.ChannelUserID,
+			WeWorkUserID:     storageUserID,
 			ExternalUserID:   message.ExternalUserID,
 			RoomID:           message.RoomID,
 			ConversationType: message.ConversationType,
@@ -272,6 +279,7 @@ func NormalizeIncomingMessage(message IncomingMessage, generatedMessageID int64,
 	message.ConversationID = strings.TrimSpace(message.ConversationID)
 	message.ConversationKey = strings.TrimSpace(message.ConversationKey)
 	message.AccountID = strings.TrimSpace(message.AccountID)
+	message.ChannelUserID = normalizeChannelUserID(message.ChannelUserID)
 	message.WeWorkUserID = normalizeWeWorkUserID(message.WeWorkUserID)
 	message.ExternalUserID = normalizeExternalUserID(firstNonBlank(message.ExternalUserID, message.SenderID))
 	message.RoomID = normalizeRoomID(message.RoomID)
@@ -315,11 +323,20 @@ func normalizeDirection(value string) string {
 	}
 }
 
-// BuildConversationID mirrors ChatService + repository stable identity preference.
+// BuildConversationID resolves a stable channel-neutral conversation identity.
 func BuildConversationID(message IncomingMessage) string {
+	channelUserID := normalizeChannelUserID(message.ChannelUserID)
 	weworkUserID := normalizeWeWorkUserID(message.WeWorkUserID)
 	externalUserID := normalizeExternalUserID(firstNonBlank(message.ExternalUserID, message.SenderID))
 	roomID := normalizeRoomID(message.RoomID)
+	if channelUserID != "" {
+		if roomID != "" {
+			return "ch:" + channelUserID + ":room:" + roomID
+		}
+		if externalUserID != "" {
+			return "ch:" + channelUserID + ":" + externalUserID
+		}
+	}
 	if weworkUserID != "" {
 		if roomID != "" {
 			return "ww:" + weworkUserID + ":room:" + roomID
@@ -398,6 +415,10 @@ func normalizeExternalUserID(value string) string {
 }
 
 func normalizeRoomID(value string) string {
+	return strings.ToLower(strings.TrimSpace(value))
+}
+
+func normalizeChannelUserID(value string) string {
 	return strings.ToLower(strings.TrimSpace(value))
 }
 

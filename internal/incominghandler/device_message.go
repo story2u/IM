@@ -105,7 +105,8 @@ func BuildDeviceMessageInput(payload map[string]any, now time.Time) DeviceMessag
 	messageTime := parseTime(firstText(data["timestamp"], payload["occurred_at"]), now)
 	tenantID := firstText(payload["tenant_id"], data["tenant_id"])
 	msgType := safeMessageType(firstText(data["msg_type"], "text"))
-	channelUserID := firstText(data["channel_user_id"], data["account_user_id"], data["wework_user_id"])
+	channelUserID := firstText(data["channel_user_id"], data["account_user_id"])
+	weworkUserID := firstText(data["wework_user_id"])
 	externalUserID := firstText(data["channel_contact_id"], data["external_user_id"], data["external_userid"], senderID)
 	message := incomingwrite.IncomingMessage{
 		TraceID:          traceID,
@@ -116,7 +117,7 @@ func BuildDeviceMessageInput(payload map[string]any, now time.Time) DeviceMessag
 		ConversationKey:  firstText(data["conversation_key"]),
 		AccountID:        firstText(data["account_id"]),
 		ChannelUserID:    channelUserID,
-		WeWorkUserID:     channelUserID,
+		WeWorkUserID:     weworkUserID,
 		ExternalUserID:   externalUserID,
 		RoomID:           firstText(data["room_id"]),
 		ConversationType: firstText(data["conversation_type"]),

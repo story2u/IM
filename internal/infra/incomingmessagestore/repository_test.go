@@ -61,6 +61,41 @@ func TestAddIncomingMessageInsertsMessageAndConversation(t *testing.T) {
 	}
 }
 
+func TestAddIncomingMessageUsesChannelIdentityForNewConversations(t *testing.T) {
+	tx := &fakeTx{rows: []fakeRow{
+		{err: sql.ErrNoRows},
+		{err: sql.ErrNoRows},
+	}}
+	repository := &Repository{
+		Tx:            &fakeTransactioner{tx: tx},
+		Dialect:       DialectMySQL,
+		Now:           func() time.Time { return fixedTime(11) },
+		NextMessageID: func() int64 { return 42 },
+	}
+	inserted, conversation, err := repository.AddIncomingMessage(context.Background(), incomingmodel.IncomingMessage{
+		TenantID:       "tenant-1",
+		ChannelUserID:  "Channel-Account-1",
+		ExternalUserID: "ext-1",
+		DeviceID:       "device-1",
+		SenderID:       "sender-1",
+		SenderName:     "Alice",
+		Content:        "hello",
+		Timestamp:      fixedTime(10),
+		TraceID:        "trace-1",
+	})
+	if err != nil {
+		t.Fatalf("AddIncomingMessage returned error: %v", err)
+	}
+	if !inserted || conversation.ConversationID != "ch:channel-account-1:ext-1" || conversation.ChannelUserID != "channel-account-1" {
+		t.Fatalf("conversation = %+v inserted=%t", conversation, inserted)
+	}
+	messageArgs := tx.execs[0].args
+	conversationArgs := tx.execs[1].args
+	if messageArgs[8] != "channel-account-1" || conversationArgs[5] != "channel-account-1" {
+		t.Fatalf("identity args = message:%#v conversation:%#v", messageArgs, conversationArgs)
+	}
+}
+
 func TestAddIncomingMessageReturnsExistingOnDuplicateTrace(t *testing.T) {
 	pk := int64(99)
 	tx := &fakeTx{rows: []fakeRow{
@@ -93,7 +128,7 @@ func TestGetConversationLoadsIdentitySnapshot(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetConversation returned error: %v", err)
 	}
-	if !ok || conversation.ConversationPK == nil || *conversation.ConversationPK != pk || conversation.TenantID != "tenant-1" || conversation.AccountID != "account-1" || conversation.WeWorkUserID != "wx-1" {
+	if !ok || conversation.ConversationPK == nil || *conversation.ConversationPK != pk || conversation.TenantID != "tenant-1" || conversation.AccountID != "account-1" || conversation.ChannelUserID != "wx-1" || conversation.WeWorkUserID != "wx-1" {
 		t.Fatalf("conversation ok=%t snapshot=%+v", ok, conversation)
 	}
 	if tx.committed || !tx.rolledBack || len(tx.queries) != 1 || !strings.Contains(tx.queries[0].query, "FROM conversations") || tx.queries[0].args[0] != "conv-1" {
