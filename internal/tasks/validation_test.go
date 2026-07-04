@@ -104,6 +104,31 @@ func TestValidateCreateJSONSupportsShareBundleSend(t *testing.T) {
 	}
 }
 
+func TestValidateCreateJSONSupportsRPACallTaskTypes(t *testing.T) {
+	cases := []struct {
+		name    string
+		task    string
+		payload string
+	}{
+		{name: "voice", task: "rpa_voice_call", payload: `"username":"Qiu","receiver":"Alice","call_type":"voice"`},
+		{name: "video", task: "rpa_video_call", payload: `"username":"Qiu","receiver":"Alice","call_type":"video"`},
+		{name: "hangup", task: "rpa_hangup_call", payload: `"username":"Qiu","receiver":"Alice"`},
+		{name: "prepare-audio", task: "rpa_prepare_call_audio_output", payload: `"username":"__device__"`},
+	}
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			body := `{"task_id":"task-rpa-` + testCase.name + `","source":"cloud-web","target":{"agent_id":"sdk:zimo","device_id":"zimo"},"task_type":"` + testCase.task + `","payload":{` + testCase.payload + `},"created_at":"2026-06-29T09:00:00Z"}`
+			request, err := ValidateCreateJSON([]byte(body))
+			if err != nil {
+				t.Fatalf("ValidateCreateJSON returned error: %v", err)
+			}
+			if request.TaskType != testCase.task {
+				t.Fatalf("TaskType = %q, want %q", request.TaskType, testCase.task)
+			}
+		})
+	}
+}
+
 func validTaskCreateBody() string {
 	return `{"task_id":"task-golden-0001","source":"cloud-web","target":{"agent_id":"sdk:zimo","device_id":"zimo"},"task_type":"send_text","payload":{"username":"Qiu","receiver":"Qiu","text":"hello","queue":"fast","client_batch_id":"batch-1","client_batch_index":0},"created_at":"2026-06-29T09:00:00Z","trace_id":"trace-golden-0001"}`
 }

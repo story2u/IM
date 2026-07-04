@@ -7,8 +7,8 @@ import (
 	"im-go/internal/tasks"
 )
 
-// TestDurableSDKDispatchTaskTypesMatchesPythonSortedSet freezes claim task scope.
-func TestDurableSDKDispatchTaskTypesMatchesPythonSortedSet(t *testing.T) {
+// TestDurableSDKDispatchTaskTypesIsStable freezes claim task scope.
+func TestDurableSDKDispatchTaskTypesIsStable(t *testing.T) {
 	got := DurableSDKDispatchTaskTypes()
 	want := []string{
 		"appointment_billing",

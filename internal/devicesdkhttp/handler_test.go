@@ -704,7 +704,7 @@ func TestPrepareCallAudioOutputHandlerSubmitsVideoTask(t *testing.T) {
 	request.SetPathValue("device_id", "device-1")
 	handler.PrepareCallAudioOutputHandler(response, request)
 
-	if response.Code != http.StatusOK || service.controlTaskType != "wework_prepare_call_audio_output" || service.controlPayloadArg["call_type"] != "video" {
+	if response.Code != http.StatusOK || service.controlTaskType != "rpa_prepare_call_audio_output" || service.controlPayloadArg["call_type"] != "video" {
 		t.Fatalf("response=%d %s service=%+v", response.Code, response.Body.String(), service)
 	}
 }

@@ -36,7 +36,7 @@ func TestCallCreatesVoiceCallTaskFromConversationSnapshot(t *testing.T) {
 	if creator.request.TaskID != "task-call-02" || creator.request.TraceID == nil || *creator.request.TraceID != "trace-call-01" {
 		t.Fatalf("task identifiers = %#v trace=%v", creator.request.TaskID, creator.request.TraceID)
 	}
-	if creator.request.Source != "system" || creator.request.Target.AgentID != "agent-1" || creator.request.Target.DeviceID != "device-1" || creator.request.TaskType != "wework_voice_call" {
+	if creator.request.Source != "system" || creator.request.Target.AgentID != "agent-1" || creator.request.Target.DeviceID != "device-1" || creator.request.TaskType != "rpa_voice_call" {
 		t.Fatalf("create request = %#v", creator.request)
 	}
 	want := map[string]any{
@@ -77,7 +77,7 @@ func TestCallCreatesVideoTaskAndGeneratedReservation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Call returned error: %v", err)
 	}
-	if creator.request.TaskType != "wework_video_call" || creator.request.Payload["receiver"] != "external-1" || payload["reservation_id"] != "reservation-01" {
+	if creator.request.TaskType != "rpa_video_call" || creator.request.Payload["receiver"] != "external-1" || payload["reservation_id"] != "reservation-01" {
 		t.Fatalf("task=%#v payload=%#v", creator.request, payload)
 	}
 }
@@ -90,7 +90,7 @@ func TestHangupCreatesHangupTask(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Hangup returned error: %v", err)
 	}
-	if payload["success"] != true || creator.request.TaskType != "wework_hangup_call" || creator.request.Payload["receiver"] != "Alice" {
+	if payload["success"] != true || creator.request.TaskType != "rpa_hangup_call" || creator.request.Payload["receiver"] != "Alice" {
 		t.Fatalf("payload=%#v task=%#v", payload, creator.request)
 	}
 }

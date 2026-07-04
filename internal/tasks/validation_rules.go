@@ -1,4 +1,4 @@
-// Task validation rule tables mirror the legacy task-create schema.
+// Task validation rule tables define the product task-create schema.
 // They are kept separate from validation logic so future task type additions
 // can be reviewed against contract drift in one small file.
 package tasks
@@ -30,6 +30,10 @@ var validTaskTypes = map[string]bool{
 	"send_address":                     true,
 	"request_money":                    true,
 	"transfer_money":                   true,
+	"rpa_voice_call":                   true,
+	"rpa_video_call":                   true,
+	"rpa_hangup_call":                  true,
+	"rpa_prepare_call_audio_output":    true,
 	"wework_voice_call":                true,
 	"wework_video_call":                true,
 	"wework_hangup_call":               true,
@@ -126,6 +130,10 @@ var taskRequiredPayloadFields = map[string][]string{
 	"request_money":                    {"username", "receiver", "entity", "money", "msg_id"},
 	"transfer_money":                   {"username", "receiver", "entity", "msg_id", "note"},
 	"send_voice":                       {"username", "media_url"},
+	"rpa_voice_call":                   {"username", "receiver", "call_type"},
+	"rpa_video_call":                   {"username", "receiver", "call_type"},
+	"rpa_hangup_call":                  {"username", "receiver"},
+	"rpa_prepare_call_audio_output":    {"username"},
 	"wework_voice_call":                {"username", "receiver", "call_type"},
 	"wework_video_call":                {"username", "receiver", "call_type"},
 	"wework_hangup_call":               {"username", "receiver"},

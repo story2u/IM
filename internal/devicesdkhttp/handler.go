@@ -527,7 +527,7 @@ func (handler Handler) PrepareCallAudioOutputHandler(w http.ResponseWriter, r *h
 		writeError(w, http.StatusUnprocessableEntity, "call_type must be voice or video")
 		return
 	}
-	handler.writeControlResponse(w, r, "wework_prepare_call_audio_output", map[string]any{
+	handler.writeControlResponse(w, r, "rpa_prepare_call_audio_output", map[string]any{
 		"username":  "__device__",
 		"call_type": callType,
 	})

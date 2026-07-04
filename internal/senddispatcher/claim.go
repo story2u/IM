@@ -42,7 +42,7 @@ type BatchClaimRequest struct {
 	Now             time.Time
 }
 
-// DurableSDKDispatchTaskTypes returns Python sorted(DURABLE_SDK_DISPATCH_TASK_TYPES).
+// DurableSDKDispatchTaskTypes returns the stable ordered SDK dispatch task scope.
 func DurableSDKDispatchTaskTypes() []string {
 	return append([]string(nil), durableSDKDispatchTaskTypes...)
 }

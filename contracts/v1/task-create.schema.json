@@ -42,6 +42,10 @@
         "send_address",
         "request_money",
         "transfer_money",
+        "rpa_voice_call",
+        "rpa_video_call",
+        "rpa_hangup_call",
+        "rpa_prepare_call_audio_output",
         "wework_voice_call",
         "wework_video_call",
         "wework_hangup_call",
@@ -644,7 +648,7 @@
     {
       "if": {
         "properties": {
-          "task_type": { "enum": ["wework_voice_call", "wework_video_call"] }
+          "task_type": { "enum": ["rpa_voice_call", "rpa_video_call", "wework_voice_call", "wework_video_call"] }
         }
       },
       "then": {
@@ -658,7 +662,7 @@
     {
       "if": {
         "properties": {
-          "task_type": { "const": "wework_hangup_call" }
+          "task_type": { "enum": ["rpa_hangup_call", "wework_hangup_call"] }
         }
       },
       "then": {
@@ -672,7 +676,7 @@
     {
       "if": {
         "properties": {
-          "task_type": { "const": "wework_prepare_call_audio_output" }
+          "task_type": { "enum": ["rpa_prepare_call_audio_output", "wework_prepare_call_audio_output"] }
         }
       },
       "then": {
