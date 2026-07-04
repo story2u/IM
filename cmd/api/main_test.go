@@ -1107,10 +1107,10 @@ func TestBuildHandlerCanMountAgentRetiredCandidateWithoutDatabase(t *testing.T) 
 	}
 
 	response = httptest.NewRecorder()
-	request = httptest.NewRequest(http.MethodPost, "/agents/wework/login/event", strings.NewReader(`{"device_id":"device-1","status":"normal"}`))
+	request = httptest.NewRequest(http.MethodPost, "/api/v1/agents/connectors/login/event", strings.NewReader(`{"device_id":"device-1","status":"normal"}`))
 	request.Header.Set("X-Agent-Token", "agent-token")
 	handler.ServeHTTP(response, request)
-	if response.Code != http.StatusGone || !strings.Contains(response.Body.String(), "legacy App/HTTP-Agent login callback is disabled") {
+	if response.Code != http.StatusGone || !strings.Contains(response.Body.String(), "connector login callback is disabled") {
 		t.Fatalf("login event response = %d %s", response.Code, response.Body.String())
 	}
 }

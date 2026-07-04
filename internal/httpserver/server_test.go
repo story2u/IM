@@ -169,17 +169,24 @@ func TestNewWithModulesCanMountAgentRetiredCandidate(t *testing.T) {
 	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{AgentRetired: &agentRetiredHandler, AgentRetiredCandidate: true})
 
 	assertPostStatus(t, handler, "/api/v1/agents/heartbeat", http.StatusGone, "legacy App/HTTP-Agent heartbeat is disabled")
+	assertPostStatus(t, handler, "/api/v1/agents/connectors/login/event", http.StatusUnauthorized, "authentication required")
 	assertPostStatus(t, handler, "/agents/wework/login/event", http.StatusUnauthorized, "authentication required")
-	request := httptest.NewRequest(http.MethodPost, "/agents/wework/login/event", strings.NewReader(`{"device_id":"device-1","status":"normal"}`))
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/agents/connectors/login/event", strings.NewReader(`{"device_id":"device-1","status":"normal"}`))
 	request.Header.Set("X-Agent-Token", "agent-token")
-	assertResponse(t, handler, request, "/agents/wework/login/event", http.StatusGone, "legacy App/HTTP-Agent login callback is disabled")
+	assertResponse(t, handler, request, "/api/v1/agents/connectors/login/event", http.StatusGone, "connector login callback is disabled")
 
 	routes := RoutesWithModules(Modules{AgentRetired: &agentRetiredHandler, AgentRetiredCandidate: true})
-	if len(routes) != 6 {
-		t.Fatalf("len(RoutesWithModules()) = %d, want 6", len(routes))
+	if len(routes) != 7 {
+		t.Fatalf("len(RoutesWithModules()) = %d, want 7", len(routes))
 	}
-	for index, route := range routes[4:] {
-		if route.Phase != "phase4-agent-retired-candidate" {
+	expected := []Route{
+		{Method: http.MethodPost, Path: "/api/v1/agents/heartbeat", Phase: "phase4-agent-retired-candidate"},
+		{Method: http.MethodPost, Path: "/api/v1/agents/connectors/login/event", Phase: "phase4-agent-connector-login-candidate"},
+		{Method: http.MethodPost, Path: "/agents/wework/login/event", Phase: "phase4-agent-retired-candidate"},
+	}
+	for index, want := range expected {
+		route := routes[len(routes)-3+index]
+		if route.Path != want.Path || route.Method != want.Method || route.Phase != want.Phase {
 			t.Fatalf("unexpected agent retired route metadata at %d: %+v", index, route)
 		}
 	}
@@ -190,15 +197,20 @@ func TestNewWithModulesCanMountWeWorkUserInfoLastCandidate(t *testing.T) {
 	weworkUserInfoHandler := weworkuserinfohttp.New(auth.Guard{}, nil)
 	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{WeWorkUserInfo: &weworkUserInfoHandler, WeWorkUserInfoLastCandidate: true})
 
+	assertStatus(t, handler, "/api/v1/connectors/user-info/last?device_id=device-1", http.StatusUnauthorized, "missing bearer token")
 	assertStatus(t, handler, "/wework/user-info/last?device_id=device-1", http.StatusUnauthorized, "missing bearer token")
 
 	routes := RoutesWithModules(Modules{WeWorkUserInfo: &weworkUserInfoHandler, WeWorkUserInfoLastCandidate: true})
-	if len(routes) != 5 {
-		t.Fatalf("len(RoutesWithModules()) = %d, want 5", len(routes))
+	if len(routes) != 6 {
+		t.Fatalf("len(RoutesWithModules()) = %d, want 6", len(routes))
 	}
-	route := routes[len(routes)-1]
-	if route.Path != "/wework/user-info/last" || route.Method != http.MethodGet || route.Phase != "phase4-wework-user-info-last-candidate" {
-		t.Fatalf("unexpected wework user info route metadata: %+v", route)
+	neutralRoute := routes[len(routes)-2]
+	legacyRoute := routes[len(routes)-1]
+	if neutralRoute.Path != "/api/v1/connectors/user-info/last" || neutralRoute.Method != http.MethodGet || neutralRoute.Phase != "phase4-connector-user-info-last-candidate" {
+		t.Fatalf("unexpected connector user info route metadata: %+v", neutralRoute)
+	}
+	if legacyRoute.Path != "/wework/user-info/last" || legacyRoute.Method != http.MethodGet || legacyRoute.Phase != "phase4-wework-user-info-last-candidate" {
+		t.Fatalf("unexpected wework user info route metadata: %+v", legacyRoute)
 	}
 }
 
@@ -207,15 +219,20 @@ func TestNewWithModulesCanMountWeWorkLoginQRCodeCandidate(t *testing.T) {
 	weworkLoginHandler := weworkloginhttp.New(auth.Guard{}, nil)
 	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{WeWorkLogin: &weworkLoginHandler, WeWorkLoginQRCode: true})
 
+	assertPostStatus(t, handler, "/api/v1/connectors/sessions/qrcode", http.StatusUnauthorized, "missing bearer token")
 	assertPostStatus(t, handler, "/wework/login/qrcode", http.StatusUnauthorized, "missing bearer token")
 
 	routes := RoutesWithModules(Modules{WeWorkLogin: &weworkLoginHandler, WeWorkLoginQRCode: true})
-	if len(routes) != 5 {
-		t.Fatalf("len(RoutesWithModules()) = %d, want 5", len(routes))
+	if len(routes) != 6 {
+		t.Fatalf("len(RoutesWithModules()) = %d, want 6", len(routes))
 	}
-	route := routes[len(routes)-1]
-	if route.Path != "/wework/login/qrcode" || route.Method != http.MethodPost || route.Phase != "phase4-wework-login-qrcode-candidate" {
-		t.Fatalf("unexpected wework login qrcode route metadata: %+v", route)
+	neutralRoute := routes[len(routes)-2]
+	legacyRoute := routes[len(routes)-1]
+	if neutralRoute.Path != "/api/v1/connectors/sessions/qrcode" || neutralRoute.Method != http.MethodPost || neutralRoute.Phase != "phase4-connector-login-qrcode-candidate" {
+		t.Fatalf("unexpected connector login qrcode route metadata: %+v", neutralRoute)
+	}
+	if legacyRoute.Path != "/wework/login/qrcode" || legacyRoute.Method != http.MethodPost || legacyRoute.Phase != "phase4-wework-login-qrcode-candidate" {
+		t.Fatalf("unexpected wework login qrcode route metadata: %+v", legacyRoute)
 	}
 }
 
@@ -224,15 +241,20 @@ func TestNewWithModulesCanMountWeWorkLoginVerifyCandidate(t *testing.T) {
 	weworkLoginHandler := weworkloginhttp.New(auth.Guard{}, nil)
 	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{WeWorkLogin: &weworkLoginHandler, WeWorkLoginVerify: true})
 
+	assertPostStatus(t, handler, "/api/v1/connectors/sessions/verify-code", http.StatusUnauthorized, "missing bearer token")
 	assertPostStatus(t, handler, "/wework/login/verify-code", http.StatusUnauthorized, "missing bearer token")
 
 	routes := RoutesWithModules(Modules{WeWorkLogin: &weworkLoginHandler, WeWorkLoginVerify: true})
-	if len(routes) != 5 {
-		t.Fatalf("len(RoutesWithModules()) = %d, want 5", len(routes))
+	if len(routes) != 6 {
+		t.Fatalf("len(RoutesWithModules()) = %d, want 6", len(routes))
 	}
-	route := routes[len(routes)-1]
-	if route.Path != "/wework/login/verify-code" || route.Method != http.MethodPost || route.Phase != "phase4-wework-login-verify-candidate" {
-		t.Fatalf("unexpected wework login verify route metadata: %+v", route)
+	neutralRoute := routes[len(routes)-2]
+	legacyRoute := routes[len(routes)-1]
+	if neutralRoute.Path != "/api/v1/connectors/sessions/verify-code" || neutralRoute.Method != http.MethodPost || neutralRoute.Phase != "phase4-connector-login-verify-candidate" {
+		t.Fatalf("unexpected connector login verify route metadata: %+v", neutralRoute)
+	}
+	if legacyRoute.Path != "/wework/login/verify-code" || legacyRoute.Method != http.MethodPost || legacyRoute.Phase != "phase4-wework-login-verify-candidate" {
+		t.Fatalf("unexpected wework login verify route metadata: %+v", legacyRoute)
 	}
 }
 
@@ -241,15 +263,20 @@ func TestNewWithModulesCanMountWeWorkLogoutCandidate(t *testing.T) {
 	weworkLoginHandler := weworkloginhttp.New(auth.Guard{}, nil)
 	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{WeWorkLogin: &weworkLoginHandler, WeWorkLogout: true})
 
+	assertPostStatus(t, handler, "/api/v1/connectors/sessions/logout", http.StatusUnauthorized, "missing bearer token")
 	assertPostStatus(t, handler, "/wework/logout", http.StatusUnauthorized, "missing bearer token")
 
 	routes := RoutesWithModules(Modules{WeWorkLogin: &weworkLoginHandler, WeWorkLogout: true})
-	if len(routes) != 5 {
-		t.Fatalf("len(RoutesWithModules()) = %d, want 5", len(routes))
+	if len(routes) != 6 {
+		t.Fatalf("len(RoutesWithModules()) = %d, want 6", len(routes))
 	}
-	route := routes[len(routes)-1]
-	if route.Path != "/wework/logout" || route.Method != http.MethodPost || route.Phase != "phase4-wework-logout-candidate" {
-		t.Fatalf("unexpected wework logout route metadata: %+v", route)
+	neutralRoute := routes[len(routes)-2]
+	legacyRoute := routes[len(routes)-1]
+	if neutralRoute.Path != "/api/v1/connectors/sessions/logout" || neutralRoute.Method != http.MethodPost || neutralRoute.Phase != "phase4-connector-logout-candidate" {
+		t.Fatalf("unexpected connector logout route metadata: %+v", neutralRoute)
+	}
+	if legacyRoute.Path != "/wework/logout" || legacyRoute.Method != http.MethodPost || legacyRoute.Phase != "phase4-wework-logout-candidate" {
+		t.Fatalf("unexpected wework logout route metadata: %+v", legacyRoute)
 	}
 }
 
@@ -258,15 +285,20 @@ func TestNewWithModulesCanMountWeWorkLoginStatusCandidate(t *testing.T) {
 	weworkLoginHandler := weworkloginhttp.New(auth.Guard{}, nil)
 	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{WeWorkLogin: &weworkLoginHandler, WeWorkLoginStatus: true})
 
+	assertStatus(t, handler, "/api/v1/connectors/sessions/status?device_id=device-1", http.StatusUnauthorized, "missing bearer token")
 	assertStatus(t, handler, "/wework/login/status?device_id=device-1", http.StatusUnauthorized, "missing bearer token")
 
 	routes := RoutesWithModules(Modules{WeWorkLogin: &weworkLoginHandler, WeWorkLoginStatus: true})
-	if len(routes) != 5 {
-		t.Fatalf("len(RoutesWithModules()) = %d, want 5", len(routes))
+	if len(routes) != 6 {
+		t.Fatalf("len(RoutesWithModules()) = %d, want 6", len(routes))
 	}
-	route := routes[len(routes)-1]
-	if route.Path != "/wework/login/status" || route.Method != http.MethodGet || route.Phase != "phase4-wework-login-status-candidate" {
-		t.Fatalf("unexpected wework login status route metadata: %+v", route)
+	neutralRoute := routes[len(routes)-2]
+	legacyRoute := routes[len(routes)-1]
+	if neutralRoute.Path != "/api/v1/connectors/sessions/status" || neutralRoute.Method != http.MethodGet || neutralRoute.Phase != "phase4-connector-login-status-candidate" {
+		t.Fatalf("unexpected connector login status route metadata: %+v", neutralRoute)
+	}
+	if legacyRoute.Path != "/wework/login/status" || legacyRoute.Method != http.MethodGet || legacyRoute.Phase != "phase4-wework-login-status-candidate" {
+		t.Fatalf("unexpected wework login status route metadata: %+v", legacyRoute)
 	}
 }
 
@@ -275,15 +307,20 @@ func TestNewWithModulesCanMountWeWorkUserInfoRequestCandidate(t *testing.T) {
 	weworkUserInfoHandler := weworkuserinfohttp.NewWithRequest(auth.Guard{}, nil, nil, nil)
 	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{WeWorkUserInfo: &weworkUserInfoHandler, WeWorkUserInfoRequest: true})
 
+	assertPostStatus(t, handler, "/api/v1/connectors/user-info/request", http.StatusUnauthorized, "missing bearer token")
 	assertPostStatus(t, handler, "/wework/user-info/request", http.StatusUnauthorized, "missing bearer token")
 
 	routes := RoutesWithModules(Modules{WeWorkUserInfo: &weworkUserInfoHandler, WeWorkUserInfoRequest: true})
-	if len(routes) != 5 {
-		t.Fatalf("len(RoutesWithModules()) = %d, want 5", len(routes))
+	if len(routes) != 6 {
+		t.Fatalf("len(RoutesWithModules()) = %d, want 6", len(routes))
 	}
-	route := routes[len(routes)-1]
-	if route.Path != "/wework/user-info/request" || route.Method != http.MethodPost || route.Phase != "phase4-wework-user-info-request-candidate" {
-		t.Fatalf("unexpected wework user info request route metadata: %+v", route)
+	neutralRoute := routes[len(routes)-2]
+	legacyRoute := routes[len(routes)-1]
+	if neutralRoute.Path != "/api/v1/connectors/user-info/request" || neutralRoute.Method != http.MethodPost || neutralRoute.Phase != "phase4-connector-user-info-request-candidate" {
+		t.Fatalf("unexpected connector user info request route metadata: %+v", neutralRoute)
+	}
+	if legacyRoute.Path != "/wework/user-info/request" || legacyRoute.Method != http.MethodPost || legacyRoute.Phase != "phase4-wework-user-info-request-candidate" {
+		t.Fatalf("unexpected wework user info request route metadata: %+v", legacyRoute)
 	}
 }
 
@@ -292,15 +329,20 @@ func TestNewWithModulesCanMountWeWorkUserInfoCandidatesCandidate(t *testing.T) {
 	weworkUserInfoHandler := weworkuserinfohttp.New(auth.Guard{}, nil)
 	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{WeWorkUserInfo: &weworkUserInfoHandler, WeWorkUserInfoCandidates: true})
 
+	assertStatus(t, handler, "/api/v1/connectors/user-info/candidates?device_id=device-1", http.StatusUnauthorized, "missing bearer token")
 	assertStatus(t, handler, "/wework/user-info/candidates?device_id=device-1", http.StatusUnauthorized, "missing bearer token")
 
 	routes := RoutesWithModules(Modules{WeWorkUserInfo: &weworkUserInfoHandler, WeWorkUserInfoCandidates: true})
-	if len(routes) != 5 {
-		t.Fatalf("len(RoutesWithModules()) = %d, want 5", len(routes))
+	if len(routes) != 6 {
+		t.Fatalf("len(RoutesWithModules()) = %d, want 6", len(routes))
 	}
-	route := routes[len(routes)-1]
-	if route.Path != "/wework/user-info/candidates" || route.Method != http.MethodGet || route.Phase != "phase4-wework-user-info-candidates-candidate" {
-		t.Fatalf("unexpected wework user info candidates route metadata: %+v", route)
+	neutralRoute := routes[len(routes)-2]
+	legacyRoute := routes[len(routes)-1]
+	if neutralRoute.Path != "/api/v1/connectors/user-info/candidates" || neutralRoute.Method != http.MethodGet || neutralRoute.Phase != "phase4-connector-user-info-candidates-candidate" {
+		t.Fatalf("unexpected connector user info candidates route metadata: %+v", neutralRoute)
+	}
+	if legacyRoute.Path != "/wework/user-info/candidates" || legacyRoute.Method != http.MethodGet || legacyRoute.Phase != "phase4-wework-user-info-candidates-candidate" {
+		t.Fatalf("unexpected wework user info candidates route metadata: %+v", legacyRoute)
 	}
 }
 

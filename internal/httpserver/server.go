@@ -392,27 +392,35 @@ func NewWithModules(cfg config.Config, modules Modules) http.Handler {
 	}
 	if modules.AgentRetired != nil && modules.AgentRetiredCandidate {
 		mux.HandleFunc(http.MethodPost+" "+"/api/v1/agents/heartbeat", modules.AgentRetired.HeartbeatHandler)
+		mux.HandleFunc(http.MethodPost+" "+"/api/v1/agents/connectors/login/event", modules.AgentRetired.LoginEventHandler)
 		mux.HandleFunc(http.MethodPost+" "+"/agents/wework/login/event", modules.AgentRetired.LoginEventHandler)
 	}
 	if modules.WeWorkLogin != nil && modules.WeWorkLoginQRCode {
+		mux.HandleFunc(http.MethodPost+" "+"/api/v1/connectors/sessions/qrcode", modules.WeWorkLogin.QRCodeHandler)
 		mux.HandleFunc(http.MethodPost+" "+"/wework/login/qrcode", modules.WeWorkLogin.QRCodeHandler)
 	}
 	if modules.WeWorkLogin != nil && modules.WeWorkLoginVerify {
+		mux.HandleFunc(http.MethodPost+" "+"/api/v1/connectors/sessions/verify-code", modules.WeWorkLogin.VerifyCodeHandler)
 		mux.HandleFunc(http.MethodPost+" "+"/wework/login/verify-code", modules.WeWorkLogin.VerifyCodeHandler)
 	}
 	if modules.WeWorkLogin != nil && modules.WeWorkLogout {
+		mux.HandleFunc(http.MethodPost+" "+"/api/v1/connectors/sessions/logout", modules.WeWorkLogin.LogoutHandler)
 		mux.HandleFunc(http.MethodPost+" "+"/wework/logout", modules.WeWorkLogin.LogoutHandler)
 	}
 	if modules.WeWorkLogin != nil && modules.WeWorkLoginStatus {
+		mux.HandleFunc(http.MethodGet+" "+"/api/v1/connectors/sessions/status", modules.WeWorkLogin.StatusHandler)
 		mux.HandleFunc(http.MethodGet+" "+"/wework/login/status", modules.WeWorkLogin.StatusHandler)
 	}
 	if modules.WeWorkUserInfo != nil && modules.WeWorkUserInfoLastCandidate {
+		mux.HandleFunc(http.MethodGet+" "+"/api/v1/connectors/user-info/last", modules.WeWorkUserInfo.LastHandler)
 		mux.HandleFunc(http.MethodGet+" "+"/wework/user-info/last", modules.WeWorkUserInfo.LastHandler)
 	}
 	if modules.WeWorkUserInfo != nil && modules.WeWorkUserInfoRequest {
+		mux.HandleFunc(http.MethodPost+" "+"/api/v1/connectors/user-info/request", modules.WeWorkUserInfo.RequestHandler)
 		mux.HandleFunc(http.MethodPost+" "+"/wework/user-info/request", modules.WeWorkUserInfo.RequestHandler)
 	}
 	if modules.WeWorkUserInfo != nil && modules.WeWorkUserInfoCandidates {
+		mux.HandleFunc(http.MethodGet+" "+"/api/v1/connectors/user-info/candidates", modules.WeWorkUserInfo.CandidatesHandler)
 		mux.HandleFunc(http.MethodGet+" "+"/wework/user-info/candidates", modules.WeWorkUserInfo.CandidatesHandler)
 	}
 	if modules.DeviceSDK != nil && modules.DevicesList {

@@ -12,7 +12,7 @@ import (
 
 const (
 	heartbeatDisabledDetail  = "legacy App/HTTP-Agent heartbeat is disabled; device status is sourced from the device SDK/provider"
-	loginEventDisabledDetail = "legacy App/HTTP-Agent login callback is disabled; use device SDK/provider login status"
+	loginEventDisabledDetail = "connector login callback is disabled; use connector/provider login status"
 )
 
 // Handler owns retired legacy agent route serialization.
@@ -36,7 +36,7 @@ func (handler Handler) HeartbeatHandler(w http.ResponseWriter, r *http.Request) 
 	writeError(w, http.StatusGone, heartbeatDisabledDetail)
 }
 
-// LoginEventHandler serializes POST /agents/wework/login/event.
+// LoginEventHandler serializes connector login callback retirement responses.
 func (handler Handler) LoginEventHandler(w http.ResponseWriter, r *http.Request) {
 	if !handler.requireOptionalAgentAuth(w, r) {
 		return

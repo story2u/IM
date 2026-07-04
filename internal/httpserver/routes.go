@@ -860,34 +860,42 @@ var deviceCallAudioBridgeRoutes = []Route{
 
 var agentRetiredRoutes = []Route{
 	{Method: http.MethodPost, Path: "/api/v1/agents/heartbeat", Owner: "go", Phase: "phase4-agent-retired-candidate"},
+	{Method: http.MethodPost, Path: "/api/v1/agents/connectors/login/event", Owner: "go", Phase: "phase4-agent-connector-login-candidate"},
 	{Method: http.MethodPost, Path: "/agents/wework/login/event", Owner: "go", Phase: "phase4-agent-retired-candidate"},
 }
 
 var weworkLoginStatusRoutes = []Route{
+	{Method: http.MethodGet, Path: "/api/v1/connectors/sessions/status", Owner: "go", Phase: "phase4-connector-login-status-candidate"},
 	{Method: http.MethodGet, Path: "/wework/login/status", Owner: "go", Phase: "phase4-wework-login-status-candidate"},
 }
 
 var weworkLoginQRCODERoutes = []Route{
+	{Method: http.MethodPost, Path: "/api/v1/connectors/sessions/qrcode", Owner: "go", Phase: "phase4-connector-login-qrcode-candidate"},
 	{Method: http.MethodPost, Path: "/wework/login/qrcode", Owner: "go", Phase: "phase4-wework-login-qrcode-candidate"},
 }
 
 var weworkLoginVerifyRoutes = []Route{
+	{Method: http.MethodPost, Path: "/api/v1/connectors/sessions/verify-code", Owner: "go", Phase: "phase4-connector-login-verify-candidate"},
 	{Method: http.MethodPost, Path: "/wework/login/verify-code", Owner: "go", Phase: "phase4-wework-login-verify-candidate"},
 }
 
 var weworkLogoutRoutes = []Route{
+	{Method: http.MethodPost, Path: "/api/v1/connectors/sessions/logout", Owner: "go", Phase: "phase4-connector-logout-candidate"},
 	{Method: http.MethodPost, Path: "/wework/logout", Owner: "go", Phase: "phase4-wework-logout-candidate"},
 }
 
 var weworkUserInfoLastRoutes = []Route{
+	{Method: http.MethodGet, Path: "/api/v1/connectors/user-info/last", Owner: "go", Phase: "phase4-connector-user-info-last-candidate"},
 	{Method: http.MethodGet, Path: "/wework/user-info/last", Owner: "go", Phase: "phase4-wework-user-info-last-candidate"},
 }
 
 var weworkUserInfoRequestRoutes = []Route{
+	{Method: http.MethodPost, Path: "/api/v1/connectors/user-info/request", Owner: "go", Phase: "phase4-connector-user-info-request-candidate"},
 	{Method: http.MethodPost, Path: "/wework/user-info/request", Owner: "go", Phase: "phase4-wework-user-info-request-candidate"},
 }
 
 var weworkUserInfoCandidatesRoutes = []Route{
+	{Method: http.MethodGet, Path: "/api/v1/connectors/user-info/candidates", Owner: "go", Phase: "phase4-connector-user-info-candidates-candidate"},
 	{Method: http.MethodGet, Path: "/wework/user-info/candidates", Owner: "go", Phase: "phase4-wework-user-info-candidates-candidate"},
 }
 
