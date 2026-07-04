@@ -46,11 +46,10 @@ func main() {
 }
 
 type suiteCase struct {
-	Name                      string   `json:"name"`
-	ReferenceEventsPath       string   `json:"reference,omitempty"`
-	LegacyReferenceEventsPath string   `json:"python,omitempty"`
-	GoEventsPath              string   `json:"go"`
-	IgnoreJSONFields          []string `json:"ignore_json_fields,omitempty"`
+	Name                string   `json:"name"`
+	ReferenceEventsPath string   `json:"reference,omitempty"`
+	GoEventsPath        string   `json:"go"`
+	IgnoreJSONFields    []string `json:"ignore_json_fields,omitempty"`
 }
 
 type suiteOptions struct {
@@ -279,10 +278,7 @@ func markdownReport(report suiteReport) string {
 }
 
 func (c suiteCase) referenceEventsPath() string {
-	if value := strings.TrimSpace(c.ReferenceEventsPath); value != "" {
-		return value
-	}
-	return strings.TrimSpace(c.LegacyReferenceEventsPath)
+	return strings.TrimSpace(c.ReferenceEventsPath)
 }
 
 func resolveFixturePath(suitePath, fixturePath string) string {

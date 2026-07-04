@@ -44,7 +44,7 @@ func TestValidationReportLoadErrors(t *testing.T) {
 	}
 }
 
-func TestLoadSuiteKeepsLegacyReferenceFixtureAlias(t *testing.T) {
+func TestLoadSuiteUsesReferenceFixturePath(t *testing.T) {
 	dir := t.TempDir()
 	referencePath := filepath.Join(dir, "reference.json")
 	goPath := filepath.Join(dir, "go.json")
@@ -55,7 +55,7 @@ func TestLoadSuiteKeepsLegacyReferenceFixtureAlias(t *testing.T) {
 		t.Fatalf("write go fixture: %v", err)
 	}
 	suitePath := filepath.Join(dir, "suite.json")
-	suiteJSON := `{"name":"legacy-suite","cases":[{"name":"legacy alias","python":"reference.json","go":"go.json"}]}`
+	suiteJSON := `{"name":"reference-suite","cases":[{"name":"reference case","reference":"reference.json","go":"go.json"}]}`
 	if err := os.WriteFile(suitePath, []byte(suiteJSON), 0o600); err != nil {
 		t.Fatalf("write suite: %v", err)
 	}
