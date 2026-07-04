@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/tasks"
-	"wework-go/internal/workbench"
+	"im-go/internal/tasks"
+	"im-go/internal/workbench"
 )
 
 func TestQRCodeReusesCachedSession(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/tasks"
+	"im-go/internal/tasks"
 )
 
 var sdkDispatchBatchableTaskTypes = map[string]struct{}{

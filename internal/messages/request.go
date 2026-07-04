@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 // Request is the normalized input for /api/v1/conversations/{id}/messages.

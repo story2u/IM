@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/realtime"
+	"im-go/internal/realtime"
 )
 
 func TestHubPublishesToMatchingChannelAndTopics(t *testing.T) {

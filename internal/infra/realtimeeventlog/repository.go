@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/realtime"
+	"im-go/internal/realtime"
 )
 
 const (

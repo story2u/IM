@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/incomingmodel"
-	"wework-go/internal/outbox"
+	"im-go/internal/incomingmodel"
+	"im-go/internal/outbox"
 )
 
 // ChatIngestor is the durable chat write boundary used by Service.

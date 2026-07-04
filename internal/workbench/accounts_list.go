@@ -9,9 +9,9 @@ import (
 	"regexp"
 	"strings"
 
-	"wework-go/internal/archivemedia"
-	"wework-go/internal/auth"
-	"wework-go/internal/contacts"
+	"im-go/internal/archivemedia"
+	"im-go/internal/auth"
+	"im-go/internal/contacts"
 )
 
 // AccountProfileStore loads cached internal WeCom user profiles for account cards.

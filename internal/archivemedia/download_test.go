@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/infra/archivemediatask"
+	"im-go/internal/infra/archivemediatask"
 )
 
 func TestDownloadTaskReadsLocalArchiveMediaFile(t *testing.T) {

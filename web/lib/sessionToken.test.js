@@ -40,6 +40,20 @@ test("setSessionToken and clearSessionToken use role-specific storage keys", () 
   assert.equal(getSessionToken("admin", { storage }), "admin-token");
 });
 
+test("getSessionToken reads legacy browser keys during namespace transition", () => {
+  const storage = new MemoryStorage();
+  const tabStorage = new MemoryStorage();
+  storage.setItem("wework.sessionToken", "legacy-local-token");
+  tabStorage.setItem("wework.sessionToken.tab", "legacy-tab-token");
+
+  assert.equal(getSessionToken("cs", { storage, tabStorage }), "legacy-tab-token");
+  assert.equal(getSessionTokenSource("cs", { storage, tabStorage }), "tab");
+
+  clearSessionToken("cs", { storage, tabStorage });
+  assert.equal(storage.getItem("wework.sessionToken"), "");
+  assert.equal(tabStorage.getItem("wework.sessionToken.tab"), "");
+});
+
 test("tab scoped CS token overrides local token without replacing it", () => {
   const storage = new MemoryStorage();
   const tabStorage = new MemoryStorage();

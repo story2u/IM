@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/archivecallback"
-	"wework-go/internal/archivereconcile"
+	"im-go/internal/archivecallback"
+	"im-go/internal/archivereconcile"
 )
 
 // RowScanner is the subset shared by *sql.Row and test fakes.

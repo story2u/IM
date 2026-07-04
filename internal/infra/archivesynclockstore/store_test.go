@@ -8,7 +8,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"wework-go/internal/archivesync"
+	"im-go/internal/archivesync"
 )
 
 func TestStoreNoOpsWithoutClient(t *testing.T) {

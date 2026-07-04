@@ -12,15 +12,15 @@ import (
 	"strconv"
 	"strings"
 
-	"wework-go/internal/archiveadmin"
-	"wework-go/internal/archivecontacts"
-	"wework-go/internal/archiveeventnotify"
-	"wework-go/internal/archiveingest"
-	"wework-go/internal/archiveintegration"
-	"wework-go/internal/archivemedia"
-	"wework-go/internal/archivesdk"
-	"wework-go/internal/archivesync"
-	"wework-go/internal/auth"
+	"im-go/internal/archiveadmin"
+	"im-go/internal/archivecontacts"
+	"im-go/internal/archiveeventnotify"
+	"im-go/internal/archiveingest"
+	"im-go/internal/archiveintegration"
+	"im-go/internal/archivemedia"
+	"im-go/internal/archivesdk"
+	"im-go/internal/archivesync"
+	"im-go/internal/auth"
 )
 
 type statusService interface {

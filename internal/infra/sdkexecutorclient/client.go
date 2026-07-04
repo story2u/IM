@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/senddispatcher"
+	"im-go/internal/senddispatcher"
 )
 
 const defaultTimeout = 180 * time.Second

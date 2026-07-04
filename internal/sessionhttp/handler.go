@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"strings"
 
-	"wework-go/internal/session"
+	"im-go/internal/session"
 )
 
 // CurrentUserService is the service contract needed by the /me handler.

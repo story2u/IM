@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"wework-go/internal/aioutreach"
+	"im-go/internal/aioutreach"
 )
 
 // Service is the AI outreach behavior required by the HTTP adapter.

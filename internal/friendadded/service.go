@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/readmodelcache"
+	"im-go/internal/readmodelcache"
 )
 
 var (

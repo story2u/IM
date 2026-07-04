@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/clienterrors"
-	"wework-go/internal/infra/sqldb"
+	"im-go/internal/clienterrors"
+	"im-go/internal/infra/sqldb"
 )
 
 func TestCaptureClientEventInsertsMySQLRecord(t *testing.T) {

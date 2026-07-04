@@ -93,7 +93,7 @@ func NewVerifier(secret string, issuer string) (Verifier, error) {
 	}
 	issuer = strings.TrimSpace(issuer)
 	if issuer == "" {
-		issuer = "wework-cloud"
+		issuer = "im-cloud"
 	}
 	return Verifier{Secret: secret, Issuer: issuer, Now: time.Now}, nil
 }
@@ -306,7 +306,7 @@ func randomJTI() (string, error) {
 func (verifier Verifier) issuer() string {
 	issuer := strings.TrimSpace(verifier.Issuer)
 	if issuer == "" {
-		return "wework-cloud"
+		return "im-cloud"
 	}
 	return issuer
 }

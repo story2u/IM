@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // TestReplyScriptUpsertHandlerSerializesServicePayload verifies body wiring.
@@ -19,7 +19,7 @@ func TestReplyScriptUpsertHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -45,7 +45,7 @@ func TestReplyScriptUpsertHandlerRejectsBlankTitle(t *testing.T) {
 	service := &fakeReplyScriptWriteService{err: workbench.ErrReplyScriptTitleRequired}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -64,7 +64,7 @@ func TestReplyScriptDeleteHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeReplyScriptWriteService{deletePayload: workbench.Payload{"success": true}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "sup-001",
 		"role": "supervisor",
 		"exp":  int64(2000),
@@ -85,7 +85,7 @@ func TestReplyScriptDeleteHandlerSerializesServicePayload(t *testing.T) {
 func TestReplyScriptWriteHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

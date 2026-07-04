@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"wework-go/internal/senddispatcher"
+	"im-go/internal/senddispatcher"
 )
 
 // MemoryStore is a process-local fallback for SDK device health cooldowns.

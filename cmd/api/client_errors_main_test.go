@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/config"
+	"im-go/internal/config"
 )
 
 // TestBuildHandlerMountsClientErrorsWithoutDatabase keeps log reports lightweight.

@@ -7,8 +7,8 @@ import (
 	"errors"
 	"net/http"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/voicetranscription"
+	"im-go/internal/auth"
+	"im-go/internal/voicetranscription"
 )
 
 // Service is the voice transcription behavior required by the HTTP adapter.

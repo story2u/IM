@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // TestKnowledgeDocsHandlerSerializesServicePayload keeps admin payloads intact.
@@ -21,7 +21,7 @@ func TestKnowledgeDocsHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -46,7 +46,7 @@ func TestKnowledgeDocUploadHandlerReadsMultipartFile(t *testing.T) {
 	service := &fakeKnowledgeDocsService{payload: workbench.Payload{"success": true, "document": map[string]any{"doc_id": "doc-1"}}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -67,7 +67,7 @@ func TestKnowledgeDocUploadHandlerReadsMultipartFile(t *testing.T) {
 func TestKnowledgeDocUploadHandlerRequiresFile(t *testing.T) {
 	handler := New(testGuard(t), &fakeKnowledgeDocsService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -89,7 +89,7 @@ func TestKnowledgeDocUpdateHandlerMapsNotFound(t *testing.T) {
 	service := &fakeKnowledgeDocsService{err: workbench.ErrKnowledgeDocNotFound}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -111,7 +111,7 @@ func TestKnowledgeSearchHandlerAllowsCSRole(t *testing.T) {
 	service := &fakeKnowledgeDocsService{payload: workbench.Payload{"results": []any{map[string]any{"doc_id": "doc-1"}}}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -136,7 +136,7 @@ func TestAdminKnowledgeSearchHandlerMapsQueryRequired(t *testing.T) {
 	service := &fakeKnowledgeDocsService{err: workbench.ErrKnowledgeSearchQueryRequired}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -158,7 +158,7 @@ func TestKnowledgeDialogueHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeKnowledgeDocsService{payload: workbench.Payload{"reply": "pong", "mode": "knowledge_qa"}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -183,7 +183,7 @@ func TestKnowledgeDialogueHandlerMapsQuestionRequired(t *testing.T) {
 	service := &fakeKnowledgeDocsService{err: workbench.ErrKnowledgeDialogueQuestionRequired}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -204,7 +204,7 @@ func TestKnowledgeDialogueHandlerMapsQuestionRequired(t *testing.T) {
 func TestKnowledgeDocsHandlerRejectsCSRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeKnowledgeDocsService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -222,7 +222,7 @@ func TestKnowledgeDocsHandlerRejectsCSRole(t *testing.T) {
 func TestKnowledgeDocsHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

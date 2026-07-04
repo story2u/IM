@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"os"
 
-	"wework-go/internal/contracts"
-	"wework-go/internal/harness/routediff"
-	"wework-go/internal/httpserver"
-	"wework-go/internal/inventory"
+	"im-go/internal/contracts"
+	"im-go/internal/harness/routediff"
+	"im-go/internal/httpserver"
+	"im-go/internal/inventory"
 )
 
 func main() {

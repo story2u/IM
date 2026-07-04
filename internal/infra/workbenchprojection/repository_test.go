@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // TestListRowsBuildsScopedUnionQuery verifies all-account workbench scope.

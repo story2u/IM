@@ -1,7 +1,7 @@
 /*
- * API constants for the Next.js rewrite.
+ * API constants for the standalone Next.js console.
  * Business filtering and permission decisions must stay on the backend; this
- * module only centralizes transport paths for future page migrations.
+ * module only centralizes transport paths for console pages.
  */
 import { clientLogger } from "./clientLogger.js";
 
@@ -10,7 +10,7 @@ export const realtimePath = "/ws/{channel}";
 const clientLogPath = "/client-logs";
 const retryableGatewayStatuses = new Set([502, 503, 504]);
 const defaultSafeGetRetryDelaysMs = [350, 900];
-const requestBreakerStorageKey = "wework.api.breaker.until";
+const requestBreakerStorageKey = "im.api.breaker.until";
 const externalUpstreamGatewayPathPrefixes = ["/platform/", "/archive/sdk/"];
 const globalRequestBreaker = createRequestBreaker();
 

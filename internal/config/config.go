@@ -379,7 +379,7 @@ func Load() Config {
 		OutboxNotifyChannel:                          envString("CLOUD_OUTBOX_NOTIFY_CHANNEL", "outbox:notify"),
 		OutboxRedisNotifyEnabled:                     envBoolDefault("CLOUD_REDIS_OUTBOX_NOTIFY_ENABLED", true),
 		SessionJWTSecret:                             envString("SESSION_JWT_SECRET", ""),
-		SessionJWTIssuer:                             firstEnvDefault("wework-cloud", "SESSION_JWT_ISS", "SESSION_JWT_ISSUER"),
+		SessionJWTIssuer:                             firstEnvDefault("im-cloud", "SESSION_JWT_ISS", "SESSION_JWT_ISSUER"),
 		AgentAPIToken:                                envString("AGENT_API_TOKEN", ""),
 		SendProviderBaseURL:                          firstEnv("GO_SEND_PROVIDER_BASE_URL", "GO_SDK_EXECUTOR_BASE_URL", "SDK_EXECUTOR_BASE_URL", "P1_SDK_EXECUTOR_BASE_URL"),
 		SendProviderAPIToken:                         firstEnv("GO_SEND_PROVIDER_API_TOKEN", "GO_SDK_EXECUTOR_API_TOKEN", "SDK_EXECUTOR_API_TOKEN", "P1_SDK_EXECUTOR_API_TOKEN"),

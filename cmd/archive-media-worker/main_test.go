@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/archivemedia"
-	"wework-go/internal/infra/enterprisestore"
+	"im-go/internal/archivemedia"
+	"im-go/internal/infra/enterprisestore"
 )
 
 func TestRunLoopSleepsWhenIdleAndStopsOnCancel(t *testing.T) {

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/workbench"
+	"im-go/internal/auth"
+	"im-go/internal/workbench"
 )
 
 func TestAccountAIEnabledHandlerSerializesServicePayload(t *testing.T) {
@@ -19,7 +19,7 @@ func TestAccountAIEnabledHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "cs-001",
 		"role":        "cs",
 		"assignee_id": "cs-001",
@@ -41,7 +41,7 @@ func TestAccountAIEnabledHandlerMapsServiceErrors(t *testing.T) {
 	service := &fakeAccountAIEnabledService{err: workbench.ErrAccountAIEnabledRequired}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -69,7 +69,7 @@ func TestAccountAIEnabledHandlerMapsServiceErrors(t *testing.T) {
 func TestAccountAIEnabledHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

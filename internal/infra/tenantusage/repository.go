@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/conversationreply"
+	"im-go/internal/conversationreply"
 )
 
 const (

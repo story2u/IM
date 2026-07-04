@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/tasks"
+	"im-go/internal/auth"
+	"im-go/internal/tasks"
 )
 
 var (

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/archivereconcile"
-	"wework-go/internal/incomingwrite"
+	"im-go/internal/archivereconcile"
+	"im-go/internal/incomingwrite"
 )
 
 func TestBuildDeviceMessageInputMapsQueuedPayload(t *testing.T) {

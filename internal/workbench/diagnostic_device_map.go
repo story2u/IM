@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 // DiagnosticDeviceMapRequest carries the authenticated admin session.

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // TestDiagnosticHistoricalTimezoneCutoverHandlerSerializesServicePayload keeps maintenance summaries intact.
@@ -19,7 +19,7 @@ func TestDiagnosticHistoricalTimezoneCutoverHandlerSerializesServicePayload(t *t
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -43,7 +43,7 @@ func TestDiagnosticHistoricalTimezoneCutoverHandlerSerializesServicePayload(t *t
 func TestDiagnosticHistoricalTimezoneCutoverHandlerRejectsSupervisorRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeDiagnosticHistoricalTimezoneCutoverService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "sup-001",
 		"role": "supervisor",
 		"exp":  int64(2000),
@@ -61,7 +61,7 @@ func TestDiagnosticHistoricalTimezoneCutoverHandlerRejectsSupervisorRole(t *test
 func TestDiagnosticHistoricalTimezoneCutoverHandlerRejectsInvalidPayload(t *testing.T) {
 	handler := New(testGuard(t), &fakeDiagnosticHistoricalTimezoneCutoverService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -83,7 +83,7 @@ func TestDiagnosticHistoricalTimezoneCutoverHandlerRejectsInvalidPayload(t *test
 func TestDiagnosticHistoricalTimezoneCutoverHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 func TestAssignmentClaimHandlerSerializesServicePayload(t *testing.T) {
@@ -20,7 +20,7 @@ func TestAssignmentClaimHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "admin-001",
 		"role":        "admin",
 		"assignee_id": "admin-001",
@@ -45,7 +45,7 @@ func TestAssignmentClaimHandlerMapsConflict(t *testing.T) {
 	service := &fakeAssignmentWriteHTTPService{err: workbench.AssignmentConflictError{Detail: "conversation already assigned"}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -63,7 +63,7 @@ func TestAssignmentReleaseHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeAssignmentWriteHTTPService{releasePayload: workbench.Payload{"success": true}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "cs-001",
 		"role":        "cs",
 		"assignee_id": "cs-001",
@@ -84,7 +84,7 @@ func TestAssignmentReleaseHandlerSerializesServicePayload(t *testing.T) {
 func TestAssignmentReleaseHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -102,7 +102,7 @@ func TestAssignmentPurgeAllHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeAssignmentWriteHTTPService{purgePayload: workbench.Payload{"success": true, "deleted": 4}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":       "wework-cloud",
+		"iss":       "im-cloud",
 		"sub":       "admin-001",
 		"role":      "admin",
 		"tenant_id": "tenant-a",
@@ -124,7 +124,7 @@ func TestAssignmentPurgeAllHandlerRejectsCSRole(t *testing.T) {
 	service := &fakeAssignmentWriteHTTPService{purgePayload: workbench.Payload{"success": true}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -141,7 +141,7 @@ func TestAssignmentPurgeAllHandlerRejectsCSRole(t *testing.T) {
 func TestAssignmentPurgeAllHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -159,7 +159,7 @@ func TestAssignmentAutoAssignHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeAssignmentWriteHTTPService{autoPayload: workbench.Payload{"success": true, "assigned_count": 2, "skipped_count": 0}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":       "wework-cloud",
+		"iss":       "im-cloud",
 		"sub":       "supervisor-001",
 		"role":      "supervisor",
 		"tenant_id": "tenant-a",
@@ -181,7 +181,7 @@ func TestAssignmentAutoAssignHandlerRejectsCSRole(t *testing.T) {
 	service := &fakeAssignmentWriteHTTPService{autoPayload: workbench.Payload{"success": true}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -198,7 +198,7 @@ func TestAssignmentAutoAssignHandlerRejectsCSRole(t *testing.T) {
 func TestAssignmentAutoAssignHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

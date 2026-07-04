@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // TestDiagnosticArchiveMissingOutboxCheckHandlerSerializesServicePayload keeps admin diagnostic payloads intact.
@@ -19,7 +19,7 @@ func TestDiagnosticArchiveMissingOutboxCheckHandlerSerializesServicePayload(t *t
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -43,7 +43,7 @@ func TestDiagnosticArchiveMissingOutboxCheckHandlerSerializesServicePayload(t *t
 func TestDiagnosticArchiveMissingOutboxCheckHandlerRejectsSupervisorRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeDiagnosticArchiveMissingOutboxCheckService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "sup-001",
 		"role": "supervisor",
 		"exp":  int64(2000),
@@ -61,7 +61,7 @@ func TestDiagnosticArchiveMissingOutboxCheckHandlerRejectsSupervisorRole(t *test
 func TestDiagnosticArchiveMissingOutboxCheckHandlerRejectsInvalidBody(t *testing.T) {
 	handler := New(testGuard(t), &fakeDiagnosticArchiveMissingOutboxCheckService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -79,7 +79,7 @@ func TestDiagnosticArchiveMissingOutboxCheckHandlerRejectsInvalidBody(t *testing
 func TestDiagnosticArchiveMissingOutboxCheckHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -102,7 +102,7 @@ func TestDiagnosticArchiveMissingOutboxReplayHandlerSerializesServicePayload(t *
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -127,7 +127,7 @@ func TestDiagnosticArchiveMissingOutboxReplayHandlerMapsOutboxUnavailable(t *tes
 	service := &fakeDiagnosticArchiveMissingOutboxReplayService{err: workbench.ErrDiagnosticArchiveMissingOutboxReplayUnavailable}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -145,7 +145,7 @@ func TestDiagnosticArchiveMissingOutboxReplayHandlerMapsOutboxUnavailable(t *tes
 func TestDiagnosticArchiveMissingOutboxReplayHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

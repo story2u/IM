@@ -10,7 +10,7 @@ import (
 
 	parquet "github.com/parquet-go/parquet-go"
 
-	coldstore "wework-go/internal/infra/archivecoldstorage"
+	coldstore "im-go/internal/infra/archivecoldstorage"
 )
 
 func TestParquetFileWriterWritesPythonColdArchiveSchema(t *testing.T) {

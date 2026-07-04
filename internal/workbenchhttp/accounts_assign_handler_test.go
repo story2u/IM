@@ -7,14 +7,14 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 func TestAccountAssignHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeAccountAssignService{payload: workbench.Payload{"success": true}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "admin-001",
 		"role":        "admin",
 		"assignee_id": "admin-001",
@@ -36,7 +36,7 @@ func TestAccountUnassignHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeAccountAssignService{payload: workbench.Payload{"success": true}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "sup-001",
 		"role":        "supervisor",
 		"assignee_id": "sup-001",
@@ -58,7 +58,7 @@ func TestAccountAssignHandlersRejectCSRole(t *testing.T) {
 	service := &fakeAccountAssignService{payload: workbench.Payload{"success": true}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "cs-001",
 		"role":        "cs",
 		"assignee_id": "cs-001",
@@ -84,7 +84,7 @@ func TestAccountAssignHandlerMapsServiceErrors(t *testing.T) {
 	service := &fakeAccountAssignService{err: workbench.ErrAccountAssigneeRequired}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -111,7 +111,7 @@ func TestAccountAssignHandlerMapsServiceErrors(t *testing.T) {
 func TestAccountAssignHandlersRequireConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/contacts"
+	"im-go/internal/auth"
+	"im-go/internal/contacts"
 )
 
 type externalContactService interface {

@@ -13,9 +13,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"wework-go/internal/contracts"
-	"wework-go/internal/httpserver"
-	"wework-go/internal/inventory"
+	"im-go/internal/contracts"
+	"im-go/internal/httpserver"
+	"im-go/internal/inventory"
 )
 
 const maxOpenAPIDriftRows = 60

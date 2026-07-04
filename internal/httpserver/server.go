@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"wework-go/internal/config"
-	"wework-go/internal/contracts"
-	"wework-go/internal/observability"
+	"im-go/internal/config"
+	"im-go/internal/contracts"
+	"im-go/internal/observability"
 )
 
 // New builds an HTTP handler with compatibility health probes only.
@@ -544,7 +544,7 @@ func NewWithModules(cfg config.Config, modules Modules) http.Handler {
 	if modules.Realtime != nil && modules.RealtimeSnapshotCandidate {
 		mux.HandleFunc(http.MethodGet+" "+"/api/v1/realtime/snapshot/workbench", modules.Realtime.SnapshotWorkbenchHandler)
 	}
-	return observability.HTTPMiddleware(observability.NewLogger("wework-go-api"), withCommonHeaders(mux))
+	return observability.HTTPMiddleware(observability.NewLogger("im-go-api"), withCommonHeaders(mux))
 }
 
 func rootHandler(_ config.Config) http.HandlerFunc {

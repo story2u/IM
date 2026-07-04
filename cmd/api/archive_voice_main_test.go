@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"wework-go/internal/config"
-	"wework-go/internal/infra/sqldb"
+	"im-go/internal/config"
+	"im-go/internal/infra/sqldb"
 )
 
 // TestBuildHandlerRequiresDatabaseForArchiveVoiceRetry keeps manual retry durable.
@@ -14,7 +14,7 @@ func TestBuildHandlerRequiresDatabaseForArchiveVoiceRetry(t *testing.T) {
 	handler, cleanup, err := buildHandler(context.Background(), config.Config{
 		ArchiveVoiceTranscriptionRetryCandidate: true,
 		SessionJWTSecret:                        "session-secret",
-		SessionJWTIssuer:                        "wework-cloud",
+		SessionJWTIssuer:                        "im-cloud",
 	})
 
 	if !errors.Is(err, sqldb.ErrMissingDSN) {

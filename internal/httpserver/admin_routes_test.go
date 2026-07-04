@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"testing"
 
-	"wework-go/internal/archivehttp"
-	"wework-go/internal/auth"
-	"wework-go/internal/config"
-	"wework-go/internal/sopmediahttp"
-	"wework-go/internal/sopplatformhttp"
-	"wework-go/internal/workbenchhttp"
+	"im-go/internal/archivehttp"
+	"im-go/internal/auth"
+	"im-go/internal/config"
+	"im-go/internal/sopmediahttp"
+	"im-go/internal/sopplatformhttp"
+	"im-go/internal/workbenchhttp"
 )
 
 // TestNewWithModulesCanMountAccountsListCandidate keeps account list opt-in.

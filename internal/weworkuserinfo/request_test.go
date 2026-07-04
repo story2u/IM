@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/readmodelcache"
-	"wework-go/internal/tasks"
-	"wework-go/internal/workbench"
+	"im-go/internal/readmodelcache"
+	"im-go/internal/tasks"
+	"im-go/internal/workbench"
 )
 
 func TestRequestUserInfoCreatesDurableTask(t *testing.T) {

@@ -1,6 +1,6 @@
 import { buildApiPath, requestJSON } from "./api.js";
 
-const cursorStorageKey = "wework.realtime.cursors";
+const cursorStorageKey = "im.realtime.cursors";
 const maxReplayGap = 100;
 const pools = new Map();
 const scopeCursors = new Map();

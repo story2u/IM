@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"strings"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/devicesdk"
+	"im-go/internal/auth"
+	"im-go/internal/devicesdk"
 )
 
 // Service builds SDK helper payloads.

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/infra/enterprisestore"
+	"im-go/internal/infra/enterprisestore"
 )
 
 func TestPullUsesEnterpriseCredentialsAndDefaultLimit(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/realtime"
+	"im-go/internal/realtime"
 )
 
 func TestRepositoryListsEventsAfterCursor(t *testing.T) {

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/httpserver"
-	"wework-go/internal/inventory"
+	"im-go/internal/httpserver"
+	"im-go/internal/inventory"
 )
 
 func TestBuildOpenAPIDriftReportComparesOpenAPISchemas(t *testing.T) {

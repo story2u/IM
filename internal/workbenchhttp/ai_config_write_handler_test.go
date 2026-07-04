@@ -7,14 +7,14 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 func TestAIConfigWriteHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeAIConfigWriteService{payload: workbench.Payload{"success": true, "config": map[string]any{"model": "deepseek-chat"}}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -35,7 +35,7 @@ func TestAIConfigWriteHandlerMapsValidationErrors(t *testing.T) {
 	service := &fakeAIConfigWriteService{err: workbench.ErrAIConfigBaseURLRequired}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -57,7 +57,7 @@ func TestAIConfigWriteHandlerMapsValidationErrors(t *testing.T) {
 func TestAIConfigWriteHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

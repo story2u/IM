@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	readiness "wework-go/internal/cutover"
-	"wework-go/internal/httpserver"
+	readiness "im-go/internal/cutover"
+	"im-go/internal/httpserver"
 )
 
 func TestResolveSelectedProfiles(t *testing.T) {

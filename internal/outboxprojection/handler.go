@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/outbox"
-	"wework-go/internal/projectionupdate"
-	"wework-go/internal/readmodelcache"
+	"im-go/internal/outbox"
+	"im-go/internal/projectionupdate"
+	"im-go/internal/readmodelcache"
 )
 
 const (

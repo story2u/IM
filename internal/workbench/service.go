@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/contactidentity"
-	"wework-go/internal/tasks"
+	"im-go/internal/contactidentity"
+	"im-go/internal/tasks"
 )
 
 const (

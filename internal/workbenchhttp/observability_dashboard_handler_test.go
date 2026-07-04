@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // TestObservabilityDashboardHandlerSerializesServicePayload keeps admin monitoring payloads intact.
@@ -19,7 +19,7 @@ func TestObservabilityDashboardHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -43,7 +43,7 @@ func TestObservabilityDashboardHandlerSerializesServicePayload(t *testing.T) {
 func TestObservabilityDashboardHandlerRejectsCSRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeObservabilityDashboardService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -61,7 +61,7 @@ func TestObservabilityDashboardHandlerRejectsCSRole(t *testing.T) {
 func TestObservabilityDashboardHandlerRejectsInvalidQuery(t *testing.T) {
 	handler := New(testGuard(t), &fakeObservabilityDashboardService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -79,7 +79,7 @@ func TestObservabilityDashboardHandlerRejectsInvalidQuery(t *testing.T) {
 func TestObservabilityDashboardHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -102,7 +102,7 @@ func TestStage6HealthHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -126,7 +126,7 @@ func TestStage6HealthHandlerSerializesServicePayload(t *testing.T) {
 func TestStage6HealthHandlerRejectsCSRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeObservabilityDashboardService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -144,7 +144,7 @@ func TestStage6HealthHandlerRejectsCSRole(t *testing.T) {
 func TestStage6HealthHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

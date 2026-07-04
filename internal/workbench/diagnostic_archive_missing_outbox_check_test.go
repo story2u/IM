@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/outbox"
+	"im-go/internal/auth"
+	"im-go/internal/outbox"
 )
 
 // TestNewArchiveMissingOutboxCheckRequestNormalizesBody keeps FastAPI body rules stable.

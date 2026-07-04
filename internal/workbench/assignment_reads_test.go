@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"testing"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 // TestNewAssignmentsListRequestValidatesQuery pins FastAPI-compatible bounds.

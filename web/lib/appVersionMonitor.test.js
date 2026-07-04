@@ -76,7 +76,7 @@ test("pollAppVersion reloads on remote version mismatch", async () => {
 
   assert.deepEqual(result, { checked: true, reloaded: true, remoteVersion: "remote-2" });
   assert.equal(windowRef.replacements[0], "https://console.example/?tab=cs&fresh=1");
-  const payload = JSON.parse(windowRef.storage.get("wework.web.version.reload.pending"));
+  const payload = JSON.parse(windowRef.storage.get("im.web.version.reload.pending"));
   assert.equal(payload.from, "local-1");
   assert.equal(payload.to, "remote-2");
 });
@@ -114,7 +114,7 @@ test("reloadForVersionMismatch preserves current URL and records reason", () => 
     true,
   );
   assert.equal(windowRef.replacements[0], "https://console.example/admin?mode=ops&fresh=1");
-  const payload = JSON.parse(windowRef.storage.get("wework.web.version.reload.pending"));
+  const payload = JSON.parse(windowRef.storage.get("im.web.version.reload.pending"));
   assert.equal(payload.reason, "focus");
   assert.equal(payload.at, 2000);
 });

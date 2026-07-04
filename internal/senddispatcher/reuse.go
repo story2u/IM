@@ -3,7 +3,7 @@ package senddispatcher
 import (
 	"strings"
 
-	"wework-go/internal/tasks"
+	"im-go/internal/tasks"
 )
 
 var currentChatReuseTaskTypes = map[string]struct{}{

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/outbox"
+	"im-go/internal/outbox"
 )
 
 const (

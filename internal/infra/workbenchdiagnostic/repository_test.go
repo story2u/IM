@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // TestRepositoryReadsOrphanConversations keeps SQL aligned to Python diagnostic.py.

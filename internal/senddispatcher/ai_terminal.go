@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/tasks"
+	"im-go/internal/tasks"
 )
 
 // AITerminalSyncer persists SDK terminal state into AI/SOP attempt runtime stores.

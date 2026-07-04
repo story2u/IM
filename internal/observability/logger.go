@@ -58,7 +58,7 @@ func (logger Logger) logf(level string, format string, args ...any) {
 func cleanLoggerName(name string) string {
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return "wework-go"
+		return "im-go"
 	}
 	return name
 }

@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/conversationcall"
-	"wework-go/internal/sendguard"
-	"wework-go/internal/sendtarget"
+	"im-go/internal/auth"
+	"im-go/internal/conversationcall"
+	"im-go/internal/sendguard"
+	"im-go/internal/sendtarget"
 )
 
 func TestCallHandlerRequiresBearer(t *testing.T) {
@@ -181,7 +181,7 @@ func (service *recordingService) Hangup(ctx context.Context, conversationID stri
 
 func guardWithToken(t *testing.T, role string) (auth.Guard, string) {
 	t.Helper()
-	verifier, err := auth.NewVerifier("secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier error: %v", err)
 	}

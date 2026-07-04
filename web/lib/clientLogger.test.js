@@ -56,7 +56,7 @@ test("createClientLogger flushes JSON batch with bearer token", async () => {
     autoFlush: false,
     now: () => new Date("2026-07-01T00:00:00.000Z"),
     readStorage: (key) => {
-      if (key === "wework.adminToken") return "Bearer admin-token";
+      if (key === "im.adminToken") return "Bearer admin-token";
       return "";
     },
     fetchImpl: () => async (url, init) => {

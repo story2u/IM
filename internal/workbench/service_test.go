@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/contacts"
+	"im-go/internal/auth"
+	"im-go/internal/contacts"
 )
 
 func TestServiceBootstrapBuildsProjectionCandidatePayload(t *testing.T) {

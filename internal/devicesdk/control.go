@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/tasks"
+	"im-go/internal/tasks"
 )
 
 // TaskCreator stores one SDK control task.

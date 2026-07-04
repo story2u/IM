@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/incomingmodel"
-	"wework-go/internal/outbox"
-	"wework-go/internal/tasks"
-	"wework-go/internal/workbench"
+	"im-go/internal/incomingmodel"
+	"im-go/internal/outbox"
+	"im-go/internal/tasks"
+	"im-go/internal/workbench"
 )
 
 func TestSendCreatesDurableTasksFromReplyMessages(t *testing.T) {

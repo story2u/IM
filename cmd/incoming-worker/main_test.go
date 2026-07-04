@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/incomingqueue"
+	"im-go/internal/incomingqueue"
 )
 
 func TestRunLoopSleepsWhenIdleAndStopsOnCancel(t *testing.T) {

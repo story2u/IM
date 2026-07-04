@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/session"
+	"im-go/internal/session"
 )
 
 func TestMeSerializesCurrentUser(t *testing.T) {

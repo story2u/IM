@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/incomingmodel"
+	"im-go/internal/incomingmodel"
 )
 
 func TestBuildArchiveMessageOutboxPayloadMirrorsPythonFields(t *testing.T) {

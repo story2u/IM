@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // ListAutoAssignCandidates returns unassigned unread projection rows for bulk assignment.

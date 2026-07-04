@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"wework-go/internal/messages"
+	"im-go/internal/messages"
 )
 
 func applyArchiveRawMetadata(record *messages.Record, raw map[string]any) {

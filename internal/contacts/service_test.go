@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/contactidentity"
+	"im-go/internal/contactidentity"
 )
 
 func TestServiceExternalContactReturnsCachedPayload(t *testing.T) {

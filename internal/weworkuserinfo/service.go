@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/readmodelcache"
-	"wework-go/internal/workbench"
+	"im-go/internal/readmodelcache"
+	"im-go/internal/workbench"
 )
 
 var (

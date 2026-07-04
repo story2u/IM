@@ -10,19 +10,19 @@ import (
 	"syscall"
 	"time"
 
-	"wework-go/internal/app"
-	"wework-go/internal/archivemedia"
-	"wework-go/internal/avatarstorage"
-	"wework-go/internal/config"
-	"wework-go/internal/contactsmodule"
-	"wework-go/internal/contactsyncscheduler"
-	"wework-go/internal/observability"
+	"im-go/internal/app"
+	"im-go/internal/archivemedia"
+	"im-go/internal/avatarstorage"
+	"im-go/internal/config"
+	"im-go/internal/contactsmodule"
+	"im-go/internal/contactsyncscheduler"
+	"im-go/internal/observability"
 )
 
 func main() {
 	cfg := config.Load()
 	cfg.RuntimeRole = "contact_sync_worker"
-	logger := observability.NewLogger("wework-go-contact-sync-worker")
+	logger := observability.NewLogger("im-go-contact-sync-worker")
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"wework-go/internal/contracts"
+	"im-go/internal/contracts"
 )
 
 // schemaSignature returns a stable schema digest for a contract file name.

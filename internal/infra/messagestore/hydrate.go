@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"wework-go/internal/messages"
+	"im-go/internal/messages"
 )
 
 func (repository *Repository) hydrateRecords(ctx context.Context, records []messages.Record) ([]messages.Record, error) {

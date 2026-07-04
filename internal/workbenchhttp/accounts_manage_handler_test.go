@@ -9,14 +9,14 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 func TestAccountUpsertHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeAccountManageService{payload: workbench.Payload{"success": true}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "admin-001",
 		"role":        "admin",
 		"assignee_id": "admin-001",
@@ -38,7 +38,7 @@ func TestAccountDeleteHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeAccountManageService{payload: workbench.Payload{"success": true}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "sup-001",
 		"role":        "supervisor",
 		"assignee_id": "sup-001",
@@ -60,7 +60,7 @@ func TestAccountBatchUpsertHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeAccountManageService{payload: workbench.Payload{"success": true, "count": 1}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "admin-001",
 		"role":        "admin",
 		"assignee_id": "admin-001",
@@ -82,7 +82,7 @@ func TestAccountManageHandlersRejectCSRole(t *testing.T) {
 	service := &fakeAccountManageService{payload: workbench.Payload{"success": true}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "cs-001",
 		"role":        "cs",
 		"assignee_id": "cs-001",
@@ -113,7 +113,7 @@ func TestAccountManageHandlerMapsServiceErrors(t *testing.T) {
 	service := &fakeAccountManageService{err: workbench.ErrAccountNameRequired}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -135,7 +135,7 @@ func TestAccountManageHandlerMapsServiceErrors(t *testing.T) {
 func TestAccountManageHandlersRequireConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

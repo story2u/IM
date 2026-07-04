@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/tasks"
+	"im-go/internal/tasks"
 )
 
 // RowScanner is the subset shared by *sql.Row and test fakes.

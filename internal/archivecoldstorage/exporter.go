@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	coldstore "wework-go/internal/infra/archivecoldstorage"
+	coldstore "im-go/internal/infra/archivecoldstorage"
 )
 
 // FileWriter serializes encrypted rows into the local cold archive target file.

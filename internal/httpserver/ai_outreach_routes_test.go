@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/aioutreach"
-	"wework-go/internal/aioutreachhttp"
-	"wework-go/internal/config"
+	"im-go/internal/aioutreach"
+	"im-go/internal/aioutreachhttp"
+	"im-go/internal/config"
 )
 
 // TestNewWithModulesCanMountAIOutreachCandidate keeps platform-agent outreach opt-in.

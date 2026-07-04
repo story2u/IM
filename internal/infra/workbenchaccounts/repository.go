@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"strings"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // RowsScanner is the database/sql row cursor shape used by Repository.

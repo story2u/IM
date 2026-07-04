@@ -5,7 +5,7 @@ package workbenchhttp
 import (
 	"net/http"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // ScriptLibraryHandler serializes /api/v1/scripts.

@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"strings"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/tasks"
+	"im-go/internal/auth"
+	"im-go/internal/tasks"
 )
 
 // Service is the task behavior required by the HTTP adapter.

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"wework-go/internal/inventory"
+	"im-go/internal/inventory"
 )
 
 func main() {

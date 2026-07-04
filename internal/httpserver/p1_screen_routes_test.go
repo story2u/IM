@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"testing"
 
-	"wework-go/internal/config"
-	"wework-go/internal/p1screen"
-	"wework-go/internal/p1screenhttp"
+	"im-go/internal/config"
+	"im-go/internal/p1screen"
+	"im-go/internal/p1screenhttp"
 )
 
 func TestNewWithModulesCanMountP1ScreenCandidate(t *testing.T) {

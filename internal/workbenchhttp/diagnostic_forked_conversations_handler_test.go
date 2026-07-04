@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // TestDiagnosticForkedConversationsHandlerSerializesServicePayload keeps admin diagnostic payloads intact.
@@ -18,7 +18,7 @@ func TestDiagnosticForkedConversationsHandlerSerializesServicePayload(t *testing
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -42,7 +42,7 @@ func TestDiagnosticForkedConversationsHandlerSerializesServicePayload(t *testing
 func TestDiagnosticForkedConversationsHandlerRejectsSupervisorRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeDiagnosticForkedConversationsService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "sup-001",
 		"role": "supervisor",
 		"exp":  int64(2000),
@@ -60,7 +60,7 @@ func TestDiagnosticForkedConversationsHandlerRejectsSupervisorRole(t *testing.T)
 func TestDiagnosticForkedConversationsHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

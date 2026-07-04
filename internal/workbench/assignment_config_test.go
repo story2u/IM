@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 func TestServiceAssignmentConfigBuildsSortedPayload(t *testing.T) {

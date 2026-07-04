@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 // DiagnosticForkedConversationsRequest carries the authenticated admin session.

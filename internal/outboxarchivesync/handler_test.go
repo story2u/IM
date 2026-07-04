@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/archivecallback"
-	"wework-go/internal/outbox"
+	"im-go/internal/archivecallback"
+	"im-go/internal/outbox"
 )
 
 func TestBuildRequestMirrorsPythonDefaults(t *testing.T) {

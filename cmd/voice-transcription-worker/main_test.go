@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/infra/enterprisestore"
-	"wework-go/internal/voicetranscription"
+	"im-go/internal/infra/enterprisestore"
+	"im-go/internal/voicetranscription"
 )
 
 func TestRunLoopSleepsWhenIdleAndStopsOnCancel(t *testing.T) {

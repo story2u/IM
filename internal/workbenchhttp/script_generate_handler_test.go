@@ -7,14 +7,14 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 func TestScriptGenerateHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeScriptGenerateService{payload: workbench.Payload{"success": true, "content": "生成话术"}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -38,7 +38,7 @@ func TestScriptGenerateHandlerMapsValidationAndGenerationErrors(t *testing.T) {
 	service := &fakeScriptGenerateService{err: workbench.ErrScriptPromptRequired}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "sup-001",
 		"role": "supervisor",
 		"exp":  int64(2000),
@@ -60,7 +60,7 @@ func TestScriptGenerateHandlerMapsValidationAndGenerationErrors(t *testing.T) {
 func TestScriptGenerateHandlerRejectsUnknownRoleAndMissingService(t *testing.T) {
 	handler := New(testGuard(t), &fakeScriptGenerateService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "guest-001",
 		"role": "guest",
 		"exp":  int64(2000),
@@ -74,7 +74,7 @@ func TestScriptGenerateHandlerRejectsUnknownRoleAndMissingService(t *testing.T) 
 
 	handler = Handler{Guard: testGuard(t)}
 	token = signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),

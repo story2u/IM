@@ -11,11 +11,11 @@ import (
 	"syscall"
 	"time"
 
-	"wework-go/internal/app"
-	"wework-go/internal/archivemedia"
-	"wework-go/internal/config"
-	"wework-go/internal/infra/enterprisestore"
-	"wework-go/internal/observability"
+	"im-go/internal/app"
+	"im-go/internal/archivemedia"
+	"im-go/internal/config"
+	"im-go/internal/infra/enterprisestore"
+	"im-go/internal/observability"
 )
 
 const (
@@ -26,7 +26,7 @@ const (
 func main() {
 	cfg := config.Load()
 	cfg.RuntimeRole = "archive_media_worker"
-	logger := observability.NewLogger("wework-go-archive-media-worker")
+	logger := observability.NewLogger("im-go-archive-media-worker")
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

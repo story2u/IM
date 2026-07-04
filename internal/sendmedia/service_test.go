@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/archivemedia"
-	"wework-go/internal/sendguard"
-	"wework-go/internal/sendtarget"
-	"wework-go/internal/tasks"
-	"wework-go/internal/workbench"
+	"im-go/internal/archivemedia"
+	"im-go/internal/sendguard"
+	"im-go/internal/sendtarget"
+	"im-go/internal/tasks"
+	"im-go/internal/workbench"
 )
 
 func TestSendCreatesImageTask(t *testing.T) {

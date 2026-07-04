@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"strings"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/clienterrors"
+	"im-go/internal/auth"
+	"im-go/internal/clienterrors"
 )
 
 // Service receives normalized frontend error reports.

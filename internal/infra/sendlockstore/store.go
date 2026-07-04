@@ -7,7 +7,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"wework-go/internal/senddispatcher"
+	"im-go/internal/senddispatcher"
 )
 
 // RedisClient is the small go-redis surface needed by device locks.

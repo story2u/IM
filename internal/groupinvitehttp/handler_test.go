@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/groupinvite"
-	"wework-go/internal/sendguard"
-	"wework-go/internal/tasks"
+	"im-go/internal/auth"
+	"im-go/internal/groupinvite"
+	"im-go/internal/sendguard"
+	"im-go/internal/tasks"
 )
 
 func TestInviteHandlerRequiresBearer(t *testing.T) {
@@ -117,7 +117,7 @@ func (service *recordingService) Invite(ctx context.Context, request groupinvite
 
 func guardWithToken(t *testing.T, role string) (auth.Guard, string) {
 	t.Helper()
-	verifier, err := auth.NewVerifier("secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier error: %v", err)
 	}

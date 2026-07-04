@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // TestSOPAnalyticsStageStatsHandlerSerializesServicePayload verifies query wiring.
@@ -23,7 +23,7 @@ func TestSOPAnalyticsStageStatsHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -50,7 +50,7 @@ func TestSOPAnalyticsFactsHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "sup-001",
 		"role": "supervisor",
 		"exp":  int64(2000),
@@ -71,7 +71,7 @@ func TestSOPAnalyticsFactsHandlerSerializesServicePayload(t *testing.T) {
 func TestSOPAnalyticsFactsHandlerRejectsInvalidPage(t *testing.T) {
 	handler := New(testGuard(t), &fakeSOPAnalyticsService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -96,7 +96,7 @@ func TestSOPDispatchTasksHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -123,7 +123,7 @@ func TestSOPDispatchTasksResendHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "sup-001",
 		"role": "supervisor",
 		"exp":  int64(2000),
@@ -143,7 +143,7 @@ func TestSOPDispatchTasksResendHandlerSerializesServicePayload(t *testing.T) {
 func TestSOPDispatchTasksResendHandlerRejectsMissingFlowID(t *testing.T) {
 	handler := New(testGuard(t), &fakeSOPAnalyticsService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -161,7 +161,7 @@ func TestSOPDispatchTasksResendHandlerRejectsMissingFlowID(t *testing.T) {
 func TestSOPAnalyticsHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

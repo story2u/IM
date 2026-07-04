@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/sendguard"
-	"wework-go/internal/sendmedia"
+	"im-go/internal/auth"
+	"im-go/internal/sendguard"
+	"im-go/internal/sendmedia"
 )
 
 func TestImageHandlerRequiresBearer(t *testing.T) {
@@ -153,7 +153,7 @@ func multipartRequest(t *testing.T, path string, fields map[string]string, fileF
 
 func guardWithToken(t *testing.T, role string) (auth.Guard, string) {
 	t.Helper()
-	verifier, err := auth.NewVerifier("secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier error: %v", err)
 	}

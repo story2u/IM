@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/clienterrors"
-	"wework-go/internal/infra/sqldb"
+	"im-go/internal/clienterrors"
+	"im-go/internal/infra/sqldb"
 )
 
 var beijingLocation = time.FixedZone("Asia/Shanghai", 8*60*60)

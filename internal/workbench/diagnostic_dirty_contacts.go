@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/url"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 var (

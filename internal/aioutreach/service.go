@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/incomingmodel"
-	"wework-go/internal/messages"
-	"wework-go/internal/outbox"
-	"wework-go/internal/workbench"
+	"im-go/internal/incomingmodel"
+	"im-go/internal/messages"
+	"im-go/internal/outbox"
+	"im-go/internal/workbench"
 )
 
 const (

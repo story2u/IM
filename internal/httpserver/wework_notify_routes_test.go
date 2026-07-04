@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"testing"
 
-	"wework-go/internal/config"
-	"wework-go/internal/weworknotifyhttp"
+	"im-go/internal/config"
+	"im-go/internal/weworknotifyhttp"
 )
 
 // TestNewWithModulesCanMountWeWorkNotifyCandidate keeps notify callback opt-in.

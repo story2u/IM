@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 var beijingLocation = time.FixedZone("Asia/Shanghai", 8*60*60)

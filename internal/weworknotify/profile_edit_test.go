@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/contactidentity"
-	"wework-go/internal/contacts"
-	"wework-go/internal/customerrelation"
+	"im-go/internal/contactidentity"
+	"im-go/internal/contacts"
+	"im-go/internal/customerrelation"
 )
 
 func TestCachedProfileEditServiceBuildsProfileUpdatedPayload(t *testing.T) {

@@ -11,11 +11,11 @@ import (
 	"syscall"
 	"time"
 
-	"wework-go/internal/app"
-	"wework-go/internal/config"
-	"wework-go/internal/infra/enterprisestore"
-	"wework-go/internal/observability"
-	"wework-go/internal/voicetranscription"
+	"im-go/internal/app"
+	"im-go/internal/config"
+	"im-go/internal/infra/enterprisestore"
+	"im-go/internal/observability"
+	"im-go/internal/voicetranscription"
 )
 
 const (
@@ -26,7 +26,7 @@ const (
 func main() {
 	cfg := config.Load()
 	cfg.RuntimeRole = "voice_transcription_worker"
-	logger := observability.NewLogger("wework-go-voice-transcription-worker")
+	logger := observability.NewLogger("im-go-voice-transcription-worker")
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

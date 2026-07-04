@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/archivemedia"
-	"wework-go/internal/infra/archivemediatask"
-	"wework-go/internal/infra/archiveraw"
+	"im-go/internal/archivemedia"
+	"im-go/internal/infra/archivemediatask"
+	"im-go/internal/infra/archiveraw"
 )
 
 var (

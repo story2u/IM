@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/contactidentity"
+	"im-go/internal/auth"
+	"im-go/internal/contactidentity"
 )
 
 const defaultCustomerTagGroupName = "客服工作台"

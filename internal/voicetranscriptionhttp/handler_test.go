@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/voicetranscription"
+	"im-go/internal/auth"
+	"im-go/internal/voicetranscription"
 )
 
 func TestRetryHandlerRequiresAllowedRole(t *testing.T) {
@@ -120,7 +120,7 @@ func (service *fakeRetryService) RetryArchiveVoiceTranscription(ctx context.Cont
 
 func testVerifier(t *testing.T) auth.Verifier {
 	t.Helper()
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}

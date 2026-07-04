@@ -9,8 +9,8 @@ import (
 	"errors"
 	"net/http"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/messages"
+	"im-go/internal/auth"
+	"im-go/internal/messages"
 )
 
 // Service builds the legacy conversation message page payload.

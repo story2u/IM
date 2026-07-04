@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/tasks"
+	"im-go/internal/tasks"
 )
 
 // TestUpdateOutgoingMessageDeliveryStatusBuildsLegacySQL protects send_status writes.

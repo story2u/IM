@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"wework-go/internal/platformproxy"
+	"im-go/internal/platformproxy"
 )
 
 // Service is the platform proxy behavior required by the HTTP adapter.

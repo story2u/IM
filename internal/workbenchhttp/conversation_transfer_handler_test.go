@@ -7,14 +7,14 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 func TestConversationTransferHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeConversationTransferService{payload: workbench.Payload{"success": true, "transfer": workbench.Payload{"to_assignee_id": "cs-002"}}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "admin-001",
 		"role":        "admin",
 		"assignee_id": "admin-001",
@@ -36,7 +36,7 @@ func TestConversationTransferHandlerRejectsCSRole(t *testing.T) {
 	service := &fakeConversationTransferService{payload: workbench.Payload{"success": true}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "cs-001",
 		"role":        "cs",
 		"assignee_id": "cs-001",
@@ -58,7 +58,7 @@ func TestConversationTransferHandlerMapsTargetRequired(t *testing.T) {
 	service := &fakeConversationTransferService{err: workbench.ErrConversationTransferTargetRequired}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "sup-001",
 		"role": "supervisor",
 		"exp":  int64(2000),

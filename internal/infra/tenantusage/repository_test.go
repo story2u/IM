@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/conversationreply"
+	"im-go/internal/conversationreply"
 )
 
 func TestRecordDailyUsageUpsertsMySQLOutboundBucket(t *testing.T) {

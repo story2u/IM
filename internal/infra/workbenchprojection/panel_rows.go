@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // ListPanelRows returns bounded projection rows for management panel bootstrap.

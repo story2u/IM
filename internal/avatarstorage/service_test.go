@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/archivemedia"
+	"im-go/internal/archivemedia"
 )
 
 func TestPersistAvatarReferenceUploadsInlineDataURI(t *testing.T) {

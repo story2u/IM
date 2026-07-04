@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"wework-go/internal/outbox"
+	"im-go/internal/outbox"
 )
 
 const (

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/conversationreply"
-	"wework-go/internal/customerrelation"
+	"im-go/internal/conversationreply"
+	"im-go/internal/customerrelation"
 )
 
 func TestGetCustomerRelationReadsDeletedSnapshot(t *testing.T) {

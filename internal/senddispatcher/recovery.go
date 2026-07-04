@@ -7,7 +7,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"wework-go/internal/tasks"
+	"im-go/internal/tasks"
 )
 
 const sdkLastErrorMaxLen = 500

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/friendadded"
-	"wework-go/internal/incomingmodel"
+	"im-go/internal/friendadded"
+	"im-go/internal/incomingmodel"
 )
 
 const (

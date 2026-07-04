@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/contactidentity"
-	"wework-go/internal/contacts"
-	"wework-go/internal/customerrelation"
+	"im-go/internal/contactidentity"
+	"im-go/internal/contacts"
+	"im-go/internal/customerrelation"
 )
 
 // ContactProfileStore reads the local WeCom external-contact cache.

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/incomingqueue"
+	"im-go/internal/incomingqueue"
 )
 
 // Queue enqueues one incoming event payload into the durable ingest stream.

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // TestListSOPPoliciesReadsLegacyOrder keeps DB mapping and normalization stable.

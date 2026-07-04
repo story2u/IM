@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/devicebridge"
-	"wework-go/internal/senddispatcher"
+	"im-go/internal/devicebridge"
+	"im-go/internal/senddispatcher"
 )
 
 // LoginSessionReader reads the current WeCom login fact for a device.

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/tasks"
+	"im-go/internal/tasks"
 )
 
 // TerminalDecision describes a pre-SDK terminal outcome for a claimed task.

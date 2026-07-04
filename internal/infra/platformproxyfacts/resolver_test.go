@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/platformproxy"
-	"wework-go/internal/sendtarget"
+	"im-go/internal/platformproxy"
+	"im-go/internal/sendtarget"
 )
 
 func TestResolverResolveSendTargetReadsProjection(t *testing.T) {

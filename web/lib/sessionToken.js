@@ -1,6 +1,12 @@
 import { buildApiPath, requestJSON } from "./api.js";
 
 export const sessionTokenKeys = {
+  cs: "im.sessionToken",
+  csTab: "im.sessionToken.tab",
+  admin: "im.adminToken",
+};
+
+const legacySessionTokenKeys = {
   cs: "wework.sessionToken",
   csTab: "wework.sessionToken.tab",
   admin: "wework.adminToken",
@@ -34,10 +40,12 @@ export function getSessionToken(kind = "cs", options = {}) {
   const storage = resolveStorage(options.storage);
   const tabStorage = resolveTabStorage(options.tabStorage);
   if (String(kind || "cs").trim() === "cs") {
-    const tabToken = readStorage(tabStorage, sessionTokenKeys.csTab);
+    const tabToken =
+      readStorage(tabStorage, sessionTokenKeys.csTab) ||
+      readStorage(tabStorage, legacySessionTokenKeys.csTab);
     if (tabToken) return tabToken;
   }
-  return readStorage(storage, tokenKey(kind));
+  return readStorage(storage, tokenKey(kind)) || readStorage(storage, legacyTokenKey(kind));
 }
 
 export function setSessionToken(kind = "cs", token = "", options = {}) {
@@ -61,16 +69,21 @@ export function clearSessionToken(kind = "cs", options = {}) {
   const scope = String(options.scope || "").trim();
   if (normalizedKind === "cs" && scope !== "local") {
     tabStorage?.removeItem(sessionTokenKeys.csTab);
+    tabStorage?.removeItem(legacySessionTokenKeys.csTab);
   }
   if (scope !== "tab") {
     storage?.removeItem(tokenKey(kind));
+    storage?.removeItem(legacyTokenKey(kind));
   }
 }
 
 export function getSessionTokenSource(kind = "cs", options = {}) {
   if (String(kind || "cs").trim() !== "cs") return "local";
   const tabStorage = resolveTabStorage(options.tabStorage);
-  return readStorage(tabStorage, sessionTokenKeys.csTab) ? "tab" : "local";
+  const hasTabToken =
+    readStorage(tabStorage, sessionTokenKeys.csTab) ||
+    readStorage(tabStorage, legacySessionTokenKeys.csTab);
+  return hasTabToken ? "tab" : "local";
 }
 
 export async function ensureSessionTokenFresh(kind = "cs", options = {}) {
@@ -158,6 +171,11 @@ export async function requestSessionJSON(kind, path, options = {}) {
 function tokenKey(kind) {
   const normalizedKind = String(kind || "cs").trim();
   return sessionTokenKeys[normalizedKind] || sessionTokenKeys.cs;
+}
+
+function legacyTokenKey(kind) {
+  const normalizedKind = String(kind || "cs").trim();
+  return legacySessionTokenKeys[normalizedKind] || legacySessionTokenKeys.cs;
 }
 
 function sessionTokenExpiresAt(token) {

@@ -13,13 +13,13 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/config"
-	"wework-go/internal/messages"
+	"im-go/internal/auth"
+	"im-go/internal/config"
+	"im-go/internal/messages"
 )
 
 func TestNewRejectsMissingSessionSecret(t *testing.T) {
-	_, err := New(Options{Config: config.Config{SessionJWTIssuer: "wework-cloud"}})
+	_, err := New(Options{Config: config.Config{SessionJWTIssuer: "im-cloud"}})
 	if !errors.Is(err, auth.ErrMissingSecret) {
 		t.Fatalf("New error = %v, want %v", err, auth.ErrMissingSecret)
 	}
@@ -48,7 +48,7 @@ func TestNewBuildsUnmountedMessagesHandler(t *testing.T) {
 	module, err := New(Options{
 		Config: config.Config{
 			SessionJWTSecret: "session-secret",
-			SessionJWTIssuer: "wework-cloud",
+			SessionJWTIssuer: "im-cloud",
 		},
 		Store: moduleStore{page: messages.Page{Records: []messages.Record{{
 			MessageID:      &messageID,
@@ -74,7 +74,7 @@ func TestNewBuildsUnmountedMessagesHandler(t *testing.T) {
 	}
 
 	token := signMessagesModuleToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),

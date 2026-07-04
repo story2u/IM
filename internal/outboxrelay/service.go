@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/outbox"
+	"im-go/internal/outbox"
 )
 
 // ClaimOptions controls the relay claim call.

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/incomingmodel"
+	"im-go/internal/incomingmodel"
 )
 
 func TestAddIncomingMessageInsertsMessageAndConversation(t *testing.T) {

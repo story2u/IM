@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/messages"
+	"im-go/internal/auth"
+	"im-go/internal/messages"
 )
 
 func TestListHandlerSerializesServicePayload(t *testing.T) {
@@ -24,7 +24,7 @@ func TestListHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signMessagesToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -49,7 +49,7 @@ func TestListHandlerAllowsAdminSupervisorAndCSRoles(t *testing.T) {
 		t.Run(role, func(t *testing.T) {
 			handler := New(testGuard(t), &fakeMessageService{payload: messages.Payload{"messages": []any{}}})
 			token := signMessagesToken(t, "session-secret", map[string]any{
-				"iss":  "wework-cloud",
+				"iss":  "im-cloud",
 				"sub":  role + "-001",
 				"role": role,
 				"exp":  int64(2000),
@@ -82,7 +82,7 @@ func TestListHandlerMapsLegacyAuthErrors(t *testing.T) {
 func TestListHandlerRejectsOtherRoles(t *testing.T) {
 	handler := New(testGuard(t), &fakeMessageService{})
 	token := signMessagesToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "agent-001",
 		"role": "agent",
 		"exp":  int64(2000),
@@ -99,7 +99,7 @@ func TestListHandlerRejectsOtherRoles(t *testing.T) {
 func TestListHandlerRequiresConfiguredService(t *testing.T) {
 	handler := New(testGuard(t), nil)
 	token := signMessagesToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -116,7 +116,7 @@ func TestListHandlerRequiresConfiguredService(t *testing.T) {
 func TestListHandlerMapsServiceErrorsToInternalServerError(t *testing.T) {
 	handler := New(testGuard(t), &fakeMessageService{err: errors.New("messages unavailable")})
 	token := signMessagesToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),

@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"wework-go/internal/contracts"
+	"im-go/internal/contracts"
 )
 
 func TestSchemaSignatureStableForEquivalentSchemas(t *testing.T) {

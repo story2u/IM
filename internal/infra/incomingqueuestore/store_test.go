@@ -8,7 +8,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"wework-go/internal/incomingqueue"
+	"im-go/internal/incomingqueue"
 )
 
 // TestStoreEnsureGroupIgnoresBusyGroup mirrors Python xgroup_create best effort.

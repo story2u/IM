@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 const accountStatsPendingClause = "(COALESCE(p.last_direction, '') = 'incoming' OR (COALESCE(p.last_direction, '') = '' AND p.last_incoming_at IS NOT NULL AND (p.last_message_at IS NULL OR p.last_message_at = p.last_incoming_at)))"

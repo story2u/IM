@@ -9,7 +9,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"wework-go/internal/conversationcall"
+	"im-go/internal/conversationcall"
 )
 
 func TestStoreReserveWritesJSONWithSetNX(t *testing.T) {

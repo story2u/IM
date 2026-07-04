@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // SearchRows searches scoped projection contact fields without touching messages.content.

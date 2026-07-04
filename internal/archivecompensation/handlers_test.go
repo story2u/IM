@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/archivemedia"
-	"wework-go/internal/archivesync"
-	"wework-go/internal/infra/archivecompensationtask"
+	"im-go/internal/archivemedia"
+	"im-go/internal/archivesync"
+	"im-go/internal/infra/archivecompensationtask"
 )
 
 func TestCallbackTimeoutHandlerRunsArchiveSync(t *testing.T) {

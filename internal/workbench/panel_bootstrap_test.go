@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 func TestServicePanelBootstrapBuildsAssignmentPayload(t *testing.T) {

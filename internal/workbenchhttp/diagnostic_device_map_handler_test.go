@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // TestDiagnosticDeviceMapHandlerSerializesServicePayload keeps admin diagnostic payloads intact.
@@ -18,7 +18,7 @@ func TestDiagnosticDeviceMapHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -42,7 +42,7 @@ func TestDiagnosticDeviceMapHandlerSerializesServicePayload(t *testing.T) {
 func TestDiagnosticDeviceMapHandlerRejectsSupervisorRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeDiagnosticDeviceMapService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "sup-001",
 		"role": "supervisor",
 		"exp":  int64(2000),
@@ -60,7 +60,7 @@ func TestDiagnosticDeviceMapHandlerRejectsSupervisorRole(t *testing.T) {
 func TestDiagnosticDeviceMapHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

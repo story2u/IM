@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"wework-go/internal/infra/enterprisestore"
-	"wework-go/internal/messages"
-	"wework-go/internal/workbench"
+	"im-go/internal/infra/enterprisestore"
+	"im-go/internal/messages"
+	"im-go/internal/workbench"
 )
 
 // ProjectionStore is the workbench projection read shape needed for conversation lookup.

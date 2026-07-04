@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/config"
-	"wework-go/internal/infra/sqldb"
-	"wework-go/internal/senddispatcher"
-	"wework-go/internal/tasks"
+	"im-go/internal/config"
+	"im-go/internal/infra/sqldb"
+	"im-go/internal/senddispatcher"
+	"im-go/internal/tasks"
 )
 
 // TestNewBuildsMemoryStoreWhenDBMissing keeps lightweight candidate startup.
@@ -67,7 +67,7 @@ func TestNewBuildsSQLStoreWithDatabase(t *testing.T) {
 	defer database.DB.Close()
 
 	module, err := New(Options{
-		Config:    config.Config{SessionJWTSecret: "session-secret", SessionJWTIssuer: "wework-cloud"},
+		Config:    config.Config{SessionJWTSecret: "session-secret", SessionJWTIssuer: "im-cloud"},
 		DB:        database.DB,
 		DBDialect: database.Dialect,
 	})

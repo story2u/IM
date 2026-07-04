@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/observability"
-	"wework-go/internal/senddispatcher"
+	"im-go/internal/observability"
+	"im-go/internal/senddispatcher"
 )
 
 func TestRunLoopSleepsForTickDelayAndStopsOnCancel(t *testing.T) {

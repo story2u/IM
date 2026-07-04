@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/infra/archivemediatask"
+	"im-go/internal/infra/archivemediatask"
 )
 
 const (

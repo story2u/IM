@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // AccountsListHandler serializes /api/v1/accounts.

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 // CSUsersStatusRequest carries the authenticated admin session.

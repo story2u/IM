@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/platformproxy"
-	"wework-go/internal/sendtarget"
+	"im-go/internal/platformproxy"
+	"im-go/internal/sendtarget"
 )
 
 const profileFreshnessTTL = 30 * 24 * time.Hour

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/clienterrors"
+	"im-go/internal/clienterrors"
 )
 
 // TestWriteSystemLogAppendsPythonCompatibleJSONL verifies field names and masks.

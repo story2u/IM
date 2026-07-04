@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 // TestServiceDiagnosticForkedConversationsBuildsPythonShape keeps grouped payloads stable.

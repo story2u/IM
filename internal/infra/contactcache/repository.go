@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/contacts"
-	"wework-go/internal/weworkuserinfo"
+	"im-go/internal/contacts"
+	"im-go/internal/weworkuserinfo"
 )
 
 // RowsScanner is the database/sql row cursor shape used by Repository.

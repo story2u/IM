@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 // TestServiceSOPFlowsBuildsPayload keeps the legacy flows[] shape stable.

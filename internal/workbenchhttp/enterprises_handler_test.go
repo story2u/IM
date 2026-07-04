@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // TestEnterprisesHandlerSerializesServicePayload keeps admin payloads intact.
@@ -17,7 +17,7 @@ func TestEnterprisesHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -41,7 +41,7 @@ func TestEnterprisesHandlerSerializesServicePayload(t *testing.T) {
 func TestEnterprisesHandlerRejectsCSRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeEnterprisesService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -59,7 +59,7 @@ func TestEnterprisesHandlerRejectsCSRole(t *testing.T) {
 func TestEnterprisesHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -81,7 +81,7 @@ func TestEnterpriseUpsertHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -103,7 +103,7 @@ func TestEnterpriseUpsertHandlerMapsValidation(t *testing.T) {
 	service := &fakeEnterprisesService{err: workbench.ErrEnterpriseCorpIDRequired}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -122,7 +122,7 @@ func TestEnterpriseDeleteHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeEnterprisesService{deletePayload: workbench.Payload{"success": true}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -143,7 +143,7 @@ func TestEnterpriseDeleteHandlerSerializesServicePayload(t *testing.T) {
 func TestEnterpriseWriteHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

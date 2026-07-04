@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/tasks"
+	"im-go/internal/tasks"
 )
 
 // SDKDispatchClaimQuery describes the durable SDK task claim selector.

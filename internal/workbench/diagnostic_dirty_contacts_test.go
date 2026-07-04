@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"testing"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 // TestNewDiagnosticDirtyContactsRequestValidatesLimit keeps FastAPI Query bounds.

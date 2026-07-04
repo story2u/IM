@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/tasks"
+	"im-go/internal/tasks"
 )
 
 // TestRunningTaskRecoveryPolicyUsesProviderEnvRules protects watchdog env parsing.

@@ -9,10 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	"wework-go/internal/app"
-	"wework-go/internal/config"
-	"wework-go/internal/observability"
-	"wework-go/internal/senddispatcher"
+	"im-go/internal/app"
+	"im-go/internal/config"
+	"im-go/internal/observability"
+	"im-go/internal/senddispatcher"
 )
 
 const errorDelay = 5 * time.Second
@@ -20,7 +20,7 @@ const errorDelay = 5 * time.Second
 func main() {
 	cfg := config.Load()
 	cfg.RuntimeRole = "send_dispatcher"
-	logger := observability.NewLogger("wework-go-send-dispatcher")
+	logger := observability.NewLogger("im-go-send-dispatcher")
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

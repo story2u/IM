@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // TestStatsOverviewHandlerSerializesServicePayload keeps admin payloads intact.
@@ -22,7 +22,7 @@ func TestStatsOverviewHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -46,7 +46,7 @@ func TestStatsOverviewHandlerSerializesServicePayload(t *testing.T) {
 func TestStatsOverviewHandlerRejectsCSRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeStatsOverviewService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -64,7 +64,7 @@ func TestStatsOverviewHandlerRejectsCSRole(t *testing.T) {
 func TestStatsOverviewHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -85,7 +85,7 @@ func TestStatsTrendHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -106,7 +106,7 @@ func TestStatsTrendHandlerSerializesServicePayload(t *testing.T) {
 func TestStatsTrendHandlerRejectsInvalidDays(t *testing.T) {
 	handler := New(testGuard(t), &fakeStatsOverviewService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -124,7 +124,7 @@ func TestStatsTrendHandlerRejectsInvalidDays(t *testing.T) {
 func TestStatsTrendHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -145,7 +145,7 @@ func TestStatsAgentsHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -166,7 +166,7 @@ func TestStatsAgentsHandlerSerializesServicePayload(t *testing.T) {
 func TestStatsAgentsHandlerRejectsCSRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeStatsOverviewService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -184,7 +184,7 @@ func TestStatsAgentsHandlerRejectsCSRole(t *testing.T) {
 func TestStatsAgentsHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -207,7 +207,7 @@ func TestStatsAIReplyOverviewHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -228,7 +228,7 @@ func TestStatsAIReplyOverviewHandlerSerializesServicePayload(t *testing.T) {
 func TestStatsAIReplyOverviewHandlerRejectsInvalidDate(t *testing.T) {
 	handler := New(testGuard(t), &fakeStatsOverviewService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -246,7 +246,7 @@ func TestStatsAIReplyOverviewHandlerRejectsInvalidDate(t *testing.T) {
 func TestStatsAIReplyOverviewHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -267,7 +267,7 @@ func TestStatsAIReplyTrendHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -288,7 +288,7 @@ func TestStatsAIReplyTrendHandlerSerializesServicePayload(t *testing.T) {
 func TestStatsAIReplyTrendHandlerRejectsInvalidDays(t *testing.T) {
 	handler := New(testGuard(t), &fakeStatsOverviewService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -306,7 +306,7 @@ func TestStatsAIReplyTrendHandlerRejectsInvalidDays(t *testing.T) {
 func TestStatsAIReplyTrendHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -328,7 +328,7 @@ func TestStatsAIReplyBreakdownHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -349,7 +349,7 @@ func TestStatsAIReplyBreakdownHandlerSerializesServicePayload(t *testing.T) {
 func TestStatsAIReplyBreakdownHandlerRejectsInvalidDate(t *testing.T) {
 	handler := New(testGuard(t), &fakeStatsOverviewService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -367,7 +367,7 @@ func TestStatsAIReplyBreakdownHandlerRejectsInvalidDate(t *testing.T) {
 func TestStatsAIReplyBreakdownHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

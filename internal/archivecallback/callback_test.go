@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/outbox"
+	"im-go/internal/outbox"
 )
 
 func TestBuildEventKeyMirrorsPythonPayload(t *testing.T) {

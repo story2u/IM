@@ -10,13 +10,13 @@ import (
 	"syscall"
 	"time"
 
-	"wework-go/internal/app"
-	"wework-go/internal/archivecompensation"
-	"wework-go/internal/archivemaintenance"
-	"wework-go/internal/archivesync"
-	"wework-go/internal/config"
-	"wework-go/internal/observability"
-	"wework-go/internal/outboxarchivesync"
+	"im-go/internal/app"
+	"im-go/internal/archivecompensation"
+	"im-go/internal/archivemaintenance"
+	"im-go/internal/archivesync"
+	"im-go/internal/config"
+	"im-go/internal/observability"
+	"im-go/internal/outboxarchivesync"
 )
 
 const (
@@ -27,7 +27,7 @@ const (
 func main() {
 	cfg := config.Load()
 	cfg.RuntimeRole = "archive_sync_worker"
-	logger := observability.NewLogger("wework-go-archive-sync-worker")
+	logger := observability.NewLogger("im-go-archive-sync-worker")
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

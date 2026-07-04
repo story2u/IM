@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/archivemedia"
-	"wework-go/internal/config"
-	"wework-go/internal/contacts"
-	"wework-go/internal/contactsyncscheduler"
+	"im-go/internal/archivemedia"
+	"im-go/internal/config"
+	"im-go/internal/contacts"
+	"im-go/internal/contactsyncscheduler"
 )
 
 func TestNextContactSyncDelayUsesNearestDue(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/tasks"
+	"im-go/internal/tasks"
 )
 
 // TestClaimSDKDispatchRowMarksRunningWithStatusGuard protects the durable claim transition.

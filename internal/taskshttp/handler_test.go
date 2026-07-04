@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/tasks"
+	"im-go/internal/auth"
+	"im-go/internal/tasks"
 )
 
 // TestCreateHandlerAcceptsAgentTokenAndStoresAcceptedTask covers the SDK path.
@@ -92,7 +92,7 @@ func TestHandlersPublishTaskChangeEventsAfterSuccessfulWrites(t *testing.T) {
 
 func testHandler(t *testing.T) Handler {
 	t.Helper()
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}
@@ -105,7 +105,7 @@ func testHandler(t *testing.T) Handler {
 
 func issueSessionToken(t *testing.T, role string) string {
 	t.Helper()
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}

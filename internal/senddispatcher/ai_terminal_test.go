@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/tasks"
+	"im-go/internal/tasks"
 )
 
 // TestBuildAITerminalSyncUpdateSuccess mirrors sent attempt/runtime decisions.

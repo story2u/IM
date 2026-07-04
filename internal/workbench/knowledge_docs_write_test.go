@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 func TestServiceUploadKnowledgeDocWritesFileAndRegistersMetadata(t *testing.T) {

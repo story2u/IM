@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/platformproxy"
-	"wework-go/internal/tasks"
+	"im-go/internal/platformproxy"
+	"im-go/internal/tasks"
 )
 
 func TestOptionsHandlerSoftDegradesUpstreamErrors(t *testing.T) {

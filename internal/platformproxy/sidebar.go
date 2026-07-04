@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/sendtarget"
-	"wework-go/internal/tasks"
+	"im-go/internal/sendtarget"
+	"im-go/internal/tasks"
 )
 
 var ErrTaskServiceNotConfigured = errors.New("task service is not configured")

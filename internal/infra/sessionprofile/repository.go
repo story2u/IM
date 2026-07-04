@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/session"
+	"im-go/internal/session"
 )
 
 const (

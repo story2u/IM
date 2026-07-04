@@ -7,15 +7,15 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/workbench"
+	"im-go/internal/auth"
+	"im-go/internal/workbench"
 )
 
 func TestConversationAIHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeConversationAIService{payload: workbench.Payload{"success": true, "ai_auto_reply": true}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "cs-001",
 		"role":        "cs",
 		"assignee_id": "cs-001",
@@ -37,7 +37,7 @@ func TestConversationAIHandlerMapsServiceErrors(t *testing.T) {
 	service := &fakeConversationAIService{err: workbench.ErrConversationAIEnabledRequired}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -66,7 +66,7 @@ func TestConversationAIBulkHandlerMapsPermission(t *testing.T) {
 	service := &fakeConversationAIService{err: auth.ErrPermissionDenied}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "cs-001",
 		"role":        "cs",
 		"assignee_id": "cs-001",

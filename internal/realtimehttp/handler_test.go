@@ -11,15 +11,15 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/realtime"
+	"im-go/internal/auth"
+	"im-go/internal/realtime"
 )
 
 func TestReplayEventsHandlerSerializesPayload(t *testing.T) {
 	service := &fakeRealtimeService{replayPayload: realtime.Payload{"events": []realtime.Payload{{"cursor": int64(2)}}, "has_more": false, "latest_cursor": int64(2)}}
 	handler := New(testGuard(t), service)
 	response := perform(handler.ReplayEventsHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -38,7 +38,7 @@ func TestSnapshotWorkbenchHandlerSerializesPayload(t *testing.T) {
 	service := &fakeRealtimeService{snapshotPayload: realtime.Payload{"cursors": map[string]int64{"chat:identity.updated": 7}, "resync_required": false, "timestamp": "2026-07-01T08:00:00Z"}}
 	handler := New(testGuard(t), service)
 	response := perform(handler.SnapshotWorkbenchHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(4102444800),
@@ -55,7 +55,7 @@ func TestSnapshotWorkbenchHandlerSerializesPayload(t *testing.T) {
 
 func TestReplayEventsHandlerRejectsInvalidQuery(t *testing.T) {
 	token := "Bearer " + signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(4102444800),
@@ -76,7 +76,7 @@ func TestReplayEventsHandlerRejectsInvalidQuery(t *testing.T) {
 func TestSnapshotWorkbenchRequiresCSRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeRealtimeService{})
 	response := perform(handler.SnapshotWorkbenchHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -95,7 +95,7 @@ func TestHandlersRequireBearerAndConfiguredService(t *testing.T) {
 		t.Fatalf("missing bearer response = %d %s", response.Code, response.Body.String())
 	}
 	token := "Bearer " + signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(4102444800),
@@ -148,7 +148,7 @@ func perform(handler http.HandlerFunc, authorization string, target string) *htt
 
 func testGuard(t *testing.T) auth.Guard {
 	t.Helper()
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}

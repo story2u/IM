@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/tasks"
+	"im-go/internal/tasks"
 )
 
 // TaskStatusEvent is the legacy ws_hub.publish envelope for task.status.

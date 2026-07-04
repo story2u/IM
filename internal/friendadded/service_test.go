@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/outbox"
-	"wework-go/internal/readmodelcache"
-	"wework-go/internal/workbench"
+	"im-go/internal/outbox"
+	"im-go/internal/readmodelcache"
+	"im-go/internal/workbench"
 )
 
 func TestDecodeRequestJSONPreservesDefaultsAndOptionalNulls(t *testing.T) {

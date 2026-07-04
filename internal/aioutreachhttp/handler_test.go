@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/aioutreach"
+	"im-go/internal/aioutreach"
 )
 
 func TestConversationHandlerReturnsOKEnvelope(t *testing.T) {

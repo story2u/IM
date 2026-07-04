@@ -6,13 +6,13 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/archivecompensation"
-	"wework-go/internal/archivemaintenance"
-	"wework-go/internal/archivepull"
-	"wework-go/internal/archivesync"
-	"wework-go/internal/config"
-	"wework-go/internal/infra/archivesynccursor"
-	"wework-go/internal/infra/enterprisestore"
+	"im-go/internal/archivecompensation"
+	"im-go/internal/archivemaintenance"
+	"im-go/internal/archivepull"
+	"im-go/internal/archivesync"
+	"im-go/internal/config"
+	"im-go/internal/infra/archivesynccursor"
+	"im-go/internal/infra/enterprisestore"
 )
 
 func TestRunLoopSleepsWhenIdleAndStopsOnCancel(t *testing.T) {

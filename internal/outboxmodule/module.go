@@ -6,13 +6,13 @@ import (
 	"database/sql"
 	"errors"
 
-	"wework-go/internal/infra/outboxstore"
-	"wework-go/internal/infra/projectionwriter"
-	"wework-go/internal/outbox"
-	"wework-go/internal/outboxarchivesync"
-	"wework-go/internal/outboxdispatch"
-	"wework-go/internal/outboxprojection"
-	"wework-go/internal/outboxrelay"
+	"im-go/internal/infra/outboxstore"
+	"im-go/internal/infra/projectionwriter"
+	"im-go/internal/outbox"
+	"im-go/internal/outboxarchivesync"
+	"im-go/internal/outboxdispatch"
+	"im-go/internal/outboxprojection"
+	"im-go/internal/outboxrelay"
 )
 
 // ErrStoreRequired means outbox assembly was requested without a store.

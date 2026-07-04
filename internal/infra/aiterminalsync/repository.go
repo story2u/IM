@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/senddispatcher"
+	"im-go/internal/senddispatcher"
 )
 
 const (

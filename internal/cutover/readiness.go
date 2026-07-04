@@ -12,7 +12,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"wework-go/internal/httpserver"
+	"im-go/internal/httpserver"
 )
 
 const (

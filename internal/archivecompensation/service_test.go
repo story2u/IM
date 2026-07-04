@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/archivecallback"
-	"wework-go/internal/infra/archivecompensationtask"
-	"wework-go/internal/infra/archivemediatask"
-	"wework-go/internal/infra/archivesynccursor"
+	"im-go/internal/archivecallback"
+	"im-go/internal/infra/archivecompensationtask"
+	"im-go/internal/infra/archivemediatask"
+	"im-go/internal/infra/archivesynccursor"
 )
 
 func TestEnqueueCallbackTimeoutsCreatesTasksForPendingReceipts(t *testing.T) {

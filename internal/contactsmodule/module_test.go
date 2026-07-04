@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/contacts"
-	"wework-go/internal/contactsyncscheduler"
-	"wework-go/internal/infra/enterprisestore"
+	"im-go/internal/contacts"
+	"im-go/internal/contactsyncscheduler"
+	"im-go/internal/infra/enterprisestore"
 )
 
 func TestNewRequiresContactStore(t *testing.T) {

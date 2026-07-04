@@ -8,7 +8,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"wework-go/internal/realtime"
+	"im-go/internal/realtime"
 )
 
 // TestRedisHubPublishesLegacyBrokerPayload protects the Python ws broker envelope.

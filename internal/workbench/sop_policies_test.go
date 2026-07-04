@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 // TestServiceSOPPoliciesBuildsGroupedPayload keeps Python list_policy_groups shape.

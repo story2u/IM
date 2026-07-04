@@ -9,14 +9,14 @@ import (
 	"errors"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/config"
-	"wework-go/internal/infra/sessionblacklist"
-	"wework-go/internal/infra/sessionprofile"
-	"wework-go/internal/infra/workbenchauditlogs"
-	"wework-go/internal/session"
-	"wework-go/internal/sessionhttp"
-	"wework-go/internal/workbench"
+	"im-go/internal/auth"
+	"im-go/internal/config"
+	"im-go/internal/infra/sessionblacklist"
+	"im-go/internal/infra/sessionprofile"
+	"im-go/internal/infra/workbenchauditlogs"
+	"im-go/internal/session"
+	"im-go/internal/sessionhttp"
+	"im-go/internal/workbench"
 )
 
 // ErrProfileStoreRequired means route-ready assembly was requested without DB.

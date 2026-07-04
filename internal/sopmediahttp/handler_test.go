@@ -15,8 +15,8 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/sopmedia"
+	"im-go/internal/auth"
+	"im-go/internal/sopmedia"
 )
 
 func TestUploadHandlerSerializesMultipartForAdmin(t *testing.T) {
@@ -31,7 +31,7 @@ func TestUploadHandlerSerializesMultipartForAdmin(t *testing.T) {
 	handler := New(testGuard(t), service)
 
 	response := performMultipartUpload(handler.UploadHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -49,7 +49,7 @@ func TestUploadHandlerSerializesMultipartForAdmin(t *testing.T) {
 func TestUploadHandlerMapsValidationErrors(t *testing.T) {
 	handler := New(testGuard(t), &fakeService{err: sopmedia.ValidationError{Err: sopmedia.ErrUnsupportedMIME, Detail: "不支持的文件类型：text/plain"}})
 	response := performMultipartUpload(handler.UploadHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "supervisor-001",
 		"role": "supervisor",
 		"exp":  int64(4102444800),
@@ -69,7 +69,7 @@ func TestUploadHandlerRequiresAdminOrSupervisor(t *testing.T) {
 	}
 
 	response = performMultipartUpload(handler.UploadHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(4102444800),
@@ -83,7 +83,7 @@ func TestUploadHandlerRequiresAdminOrSupervisor(t *testing.T) {
 func TestUploadHandlerRequiresConfiguredService(t *testing.T) {
 	handler := New(testGuard(t), nil)
 	response := performMultipartUpload(handler.UploadHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -98,7 +98,7 @@ func TestUploadHandlerRequiresConfiguredService(t *testing.T) {
 func TestUploadHandlerRequiresFile(t *testing.T) {
 	handler := New(testGuard(t), &fakeService{})
 	response := performUploadWithoutFile(handler.UploadHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -113,7 +113,7 @@ func TestUploadHandlerRequiresFile(t *testing.T) {
 func TestUploadHandlerMapsUnexpectedServiceError(t *testing.T) {
 	handler := New(testGuard(t), &fakeService{err: errors.New("boom")})
 	response := performMultipartUpload(handler.UploadHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),

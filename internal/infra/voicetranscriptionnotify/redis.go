@@ -8,7 +8,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"wework-go/internal/infra/voicetranscriptiontask"
+	"im-go/internal/infra/voicetranscriptiontask"
 )
 
 const (

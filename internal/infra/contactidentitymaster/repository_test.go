@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/contactidentity"
+	"im-go/internal/contactidentity"
 )
 
 func TestRepositoryUpsertFromContactProfileWritesMasterAndScopedIndex(t *testing.T) {

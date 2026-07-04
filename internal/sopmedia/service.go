@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"wework-go/internal/archivemedia"
+	"im-go/internal/archivemedia"
 )
 
 const MaxUploadBytes = 50 * 1024 * 1024

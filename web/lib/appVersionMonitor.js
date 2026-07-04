@@ -2,7 +2,7 @@ import { comparableBuildVersion } from "./appVersion.js";
 
 const VERSION_CHECK_INTERVAL_MS = 60000;
 const VERSION_URL = "/version.txt";
-const VERSION_RELOAD_FLAG_KEY = "wework.web.version.reload.pending";
+const VERSION_RELOAD_FLAG_KEY = "im.web.version.reload.pending";
 
 let started = false;
 

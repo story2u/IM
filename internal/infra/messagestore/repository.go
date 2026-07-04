@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/messages"
-	"wework-go/internal/tasks"
+	"im-go/internal/messages"
+	"im-go/internal/tasks"
 )
 
 var beijingLocation = time.FixedZone("Asia/Shanghai", 8*60*60)

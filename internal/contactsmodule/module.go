@@ -9,13 +9,13 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/contacts"
-	"wework-go/internal/contactsyncscheduler"
-	"wework-go/internal/infra/contactcache"
-	"wework-go/internal/infra/contactidentitymaster"
-	"wework-go/internal/infra/customerrelations"
-	"wework-go/internal/infra/enterprisestore"
-	"wework-go/internal/infra/weworkcontactapi"
+	"im-go/internal/contacts"
+	"im-go/internal/contactsyncscheduler"
+	"im-go/internal/infra/contactcache"
+	"im-go/internal/infra/contactidentitymaster"
+	"im-go/internal/infra/customerrelations"
+	"im-go/internal/infra/enterprisestore"
+	"im-go/internal/infra/weworkcontactapi"
 )
 
 var (

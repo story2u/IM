@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 func TestAssignmentWorkloadsHandlerSerializesServicePayload(t *testing.T) {
@@ -19,7 +19,7 @@ func TestAssignmentWorkloadsHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "cs-001",
 		"assignee_id": "cs-001",
 		"role":        "cs",
@@ -40,7 +40,7 @@ func TestAssignmentWorkloadsHandlerSerializesServicePayload(t *testing.T) {
 func TestAssignmentWorkloadsHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

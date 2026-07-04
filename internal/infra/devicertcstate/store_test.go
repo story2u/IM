@@ -8,7 +8,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"wework-go/internal/devicesdk"
+	"im-go/internal/devicesdk"
 )
 
 func TestStoreMarkBridgeActiveUsesLegacyKeys(t *testing.T) {

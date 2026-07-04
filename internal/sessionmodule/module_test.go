@@ -16,13 +16,13 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/config"
+	"im-go/internal/auth"
+	"im-go/internal/config"
 )
 
 // TestNewRejectsMissingSessionSecret keeps SESSION_JWT_SECRET fail-fast.
 func TestNewRejectsMissingSessionSecret(t *testing.T) {
-	_, err := New(Options{Config: config.Config{SessionJWTIssuer: "wework-cloud"}})
+	_, err := New(Options{Config: config.Config{SessionJWTIssuer: "im-cloud"}})
 	if !errors.Is(err, auth.ErrMissingSecret) {
 		t.Fatalf("New error = %v, want %v", err, auth.ErrMissingSecret)
 	}
@@ -55,7 +55,7 @@ func TestNewBuildsUnmountedSessionHandler(t *testing.T) {
 	module, err := New(Options{
 		Config: config.Config{
 			SessionJWTSecret: "session-secret",
-			SessionJWTIssuer: "wework-cloud",
+			SessionJWTIssuer: "im-cloud",
 		},
 		Now: func() time.Time {
 			return time.Unix(1000, 0).UTC()
@@ -69,7 +69,7 @@ func TestNewBuildsUnmountedSessionHandler(t *testing.T) {
 	}
 
 	token := signModuleToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"name": "客服一",
 		"role": "cs",
@@ -157,7 +157,7 @@ func TestNewWiresBlacklist(t *testing.T) {
 		t.Fatal("service revoker is nil, want blacklist-backed revoker")
 	}
 	token := signModuleToken(t, "session-secret", map[string]any{
-		"iss": "wework-cloud",
+		"iss": "im-cloud",
 		"sub": "cs-001",
 		"exp": int64(2000),
 		"jti": "jwt-revoked",

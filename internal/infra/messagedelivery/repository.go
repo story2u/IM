@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"wework-go/internal/tasks"
+	"im-go/internal/tasks"
 )
 
 // Queryer is the database/sql shape needed by Repository.

@@ -8,7 +8,7 @@ import (
 
 	parquet "github.com/parquet-go/parquet-go"
 
-	coldstore "wework-go/internal/infra/archivecoldstorage"
+	coldstore "im-go/internal/infra/archivecoldstorage"
 )
 
 // ParquetFileWriter writes encrypted_messages rows with the Python cold archive schema.

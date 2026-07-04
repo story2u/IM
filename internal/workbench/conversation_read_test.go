@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 func TestServiceMarkConversationReadSkipsPendingConversation(t *testing.T) {

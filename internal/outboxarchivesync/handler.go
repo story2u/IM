@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/archivecallback"
-	"wework-go/internal/outbox"
+	"im-go/internal/archivecallback"
+	"im-go/internal/outbox"
 )
 
 const (

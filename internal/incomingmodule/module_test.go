@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/incomingmodel"
-	"wework-go/internal/incomingwrite"
-	"wework-go/internal/infra/sqldb"
-	"wework-go/internal/outbox"
+	"im-go/internal/incomingmodel"
+	"im-go/internal/incomingwrite"
+	"im-go/internal/infra/sqldb"
+	"im-go/internal/outbox"
 )
 
 func TestNewRequiresStores(t *testing.T) {

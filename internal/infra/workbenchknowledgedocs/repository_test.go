@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // TestListKnowledgeDocsReadsLegacyOrder keeps DB mapping and defaults stable.

@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"strings"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/devicebridge"
+	"im-go/internal/auth"
+	"im-go/internal/devicebridge"
 )
 
 // Service reads and writes bridge status entries.

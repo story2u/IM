@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 // AIConfigTestBody is the JSON input for POST /admin/ai-config/test.

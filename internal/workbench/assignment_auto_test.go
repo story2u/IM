@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 func TestServiceAutoAssignUsesRulePoolClaimsPublishesAndCommitsState(t *testing.T) {

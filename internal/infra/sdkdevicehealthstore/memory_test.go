@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/senddispatcher"
+	"im-go/internal/senddispatcher"
 )
 
 // TestMemoryStoreRecordsAndReadsTransportFailure mirrors Python local fallback map.

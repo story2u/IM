@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/senddispatcher"
+	"im-go/internal/senddispatcher"
 )
 
 // TestPublisherPublishesTaskStatusEnvelope protects the ws_hub.publish adapter shape.

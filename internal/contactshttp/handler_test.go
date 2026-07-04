@@ -11,15 +11,15 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/contacts"
+	"im-go/internal/auth"
+	"im-go/internal/contacts"
 )
 
 func TestExternalContactHandlerSerializesPayload(t *testing.T) {
 	service := &fakeContactsService{externalPayload: contacts.Payload{"enterprise_id": "ent-1", "external_userid": "wm-1"}}
 	handler := New(testGuard(t), service)
 	response := perform(handler.ExternalContactHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "supervisor-001",
 		"role": "supervisor",
 		"exp":  int64(4102444800),
@@ -38,7 +38,7 @@ func TestCorpUserHandlerSerializesPayload(t *testing.T) {
 	service := &fakeContactsService{corpPayload: contacts.Payload{"enterprise_id": "ent-1", "userid": "zhangsan"}}
 	handler := New(testGuard(t), service)
 	response := perform(handler.CorpUserHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -57,7 +57,7 @@ func TestSyncExternalContactHandlerSerializesPayload(t *testing.T) {
 	service := &fakeContactsService{syncPayload: contacts.Payload{"enterprise_id": "ent-1", "external_userid": "wm-1"}}
 	handler := New(testGuard(t), service)
 	response := performMethod(handler.SyncExternalContactHandler, http.MethodPost, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -81,7 +81,7 @@ func TestSyncFullHandlerSerializesPayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	response := performMethod(handler.SyncFullHandler, http.MethodPost, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "supervisor-001",
 		"role": "supervisor",
 		"exp":  int64(4102444800),
@@ -105,7 +105,7 @@ func TestRefreshStaleHandlerSerializesPayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	response := performMethod(handler.RefreshStaleHandler, http.MethodPost, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -124,7 +124,7 @@ func TestRefreshStaleHandlerUsesDefaultLimit(t *testing.T) {
 	service := &fakeContactsService{refreshStalePayload: contacts.Payload{"enterprise_id": nil}}
 	handler := New(testGuard(t), service)
 	response := performMethod(handler.RefreshStaleHandler, http.MethodPost, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -141,7 +141,7 @@ func TestRefreshStaleHandlerUsesDefaultLimit(t *testing.T) {
 
 func TestHandlersMapMissingRows(t *testing.T) {
 	token := "Bearer " + signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -162,7 +162,7 @@ func TestHandlersMapMissingRows(t *testing.T) {
 func TestHandlersRequireAdminOrSupervisor(t *testing.T) {
 	handler := New(testGuard(t), &fakeContactsService{})
 	response := perform(handler.ExternalContactHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(4102444800),
@@ -176,7 +176,7 @@ func TestHandlersRequireAdminOrSupervisor(t *testing.T) {
 
 func TestHandlersReturnServiceUnavailableWhenUnconfigured(t *testing.T) {
 	token := "Bearer " + signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -294,7 +294,7 @@ func performMethod(handler http.HandlerFunc, method string, authorization string
 
 func testGuard(t *testing.T) auth.Guard {
 	t.Helper()
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}

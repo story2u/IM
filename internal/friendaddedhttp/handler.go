@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"strings"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/friendadded"
+	"im-go/internal/auth"
+	"im-go/internal/friendadded"
 )
 
 // Service is the friend-added behavior required by the HTTP adapter.

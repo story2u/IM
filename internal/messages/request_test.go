@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"testing"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 func TestNewRequestAppliesLegacyDefaults(t *testing.T) {

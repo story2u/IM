@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/incomingmodel"
-	"wework-go/internal/infra/archivemediatask"
-	"wework-go/internal/infra/archiveraw"
-	"wework-go/internal/outbox"
+	"im-go/internal/incomingmodel"
+	"im-go/internal/infra/archivemediatask"
+	"im-go/internal/infra/archiveraw"
+	"im-go/internal/outbox"
 )
 
 func TestRawBatchIngestorUpsertsRawMessagesAndMarksDecryptStarted(t *testing.T) {

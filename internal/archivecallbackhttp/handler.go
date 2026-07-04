@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	"wework-go/internal/archivecallback"
-	"wework-go/internal/auth"
+	"im-go/internal/archivecallback"
+	"im-go/internal/auth"
 )
 
 const maxCallbackBodyBytes = 1 << 20

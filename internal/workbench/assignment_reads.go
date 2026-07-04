@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"strings"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 var (

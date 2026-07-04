@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/projectionupdate"
+	"im-go/internal/projectionupdate"
 )
 
 func TestUpsertMessageEventUsesMySQLConflictRules(t *testing.T) {

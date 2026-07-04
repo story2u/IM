@@ -56,8 +56,14 @@ export function buildClientLogItem({ level, module, action, detail, extra = {}, 
     module: normalizedModule,
     action: normalizedAction,
     detail: normalizedDetail,
-    operator: trimLogText(firstNonEmpty(readStorage("cloud.assignee_id"), readStorage("wework.assignee_id")), 120),
-    tenant_id: trimLogText(firstNonEmpty(readStorage("cloud.tenant_id"), readStorage("wework.tenant_id")), 160),
+    operator: trimLogText(
+      firstNonEmpty(readStorage("cloud.assignee_id"), readStorage("im.assignee_id"), readStorage("wework.assignee_id")),
+      120,
+    ),
+    tenant_id: trimLogText(
+      firstNonEmpty(readStorage("cloud.tenant_id"), readStorage("im.tenant_id"), readStorage("wework.tenant_id")),
+      160,
+    ),
     extra: sanitizeLogExtra(extra || {}),
   };
 }
@@ -126,7 +132,14 @@ export function createClientLogger(options = {}) {
     }
     try {
       const headers = { "Content-Type": "application/json" };
-      const token = normalizeBearerToken(firstNonEmpty(readStorage("wework.adminToken"), readStorage("wework.sessionToken")));
+      const token = normalizeBearerToken(
+        firstNonEmpty(
+          readStorage("im.adminToken"),
+          readStorage("im.sessionToken"),
+          readStorage("wework.adminToken"),
+          readStorage("wework.sessionToken"),
+        ),
+      );
       if (token) headers.Authorization = `Bearer ${token}`;
       const response = await fetchFn(endpoint, {
         method: "POST",

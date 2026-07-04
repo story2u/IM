@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"wework-go/internal/senddispatcher"
+	"im-go/internal/senddispatcher"
 )
 
 // Hub is the minimal realtime publish shape used by the adapter.

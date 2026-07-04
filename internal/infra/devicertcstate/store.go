@@ -11,7 +11,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"wework-go/internal/devicesdk"
+	"im-go/internal/devicesdk"
 )
 
 // RedisClient is the go-redis command subset used by the RTC state store.

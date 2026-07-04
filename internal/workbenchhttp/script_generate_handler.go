@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // ScriptGenerateHandler serializes POST /api/v1/scripts/generate.

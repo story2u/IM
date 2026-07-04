@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/contactidentity"
+	"im-go/internal/contactidentity"
 )
 
 // ExternalContactGetter fetches one externalcontact/get payload from WeCom.

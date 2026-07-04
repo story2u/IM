@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/tasks"
+	"im-go/internal/tasks"
 )
 
 // TestClaimNextSDKDispatchTaskSelectsAndClaimsInTransaction freezes the claim sequence.

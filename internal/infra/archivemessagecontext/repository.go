@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"wework-go/internal/archivemedia"
+	"im-go/internal/archivemedia"
 )
 
 // RowScanner is the subset shared by *sql.Row and test fakes.

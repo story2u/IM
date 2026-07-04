@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 // TestServiceDiagnosticDeviceMapBuildsPythonShape keeps archive_user mapping stable.

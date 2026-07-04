@@ -6,9 +6,9 @@ import (
 	"errors"
 	"time"
 
-	"wework-go/internal/incomingwrite"
-	"wework-go/internal/infra/incomingmessagestore"
-	"wework-go/internal/infra/outboxstore"
+	"im-go/internal/incomingwrite"
+	"im-go/internal/infra/incomingmessagestore"
+	"im-go/internal/infra/outboxstore"
 )
 
 // ErrMessageStoreRequired means incoming writes were assembled without a message store.

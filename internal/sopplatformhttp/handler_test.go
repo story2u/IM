@@ -12,15 +12,15 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/sopplatform"
+	"im-go/internal/auth"
+	"im-go/internal/sopplatform"
 )
 
 func TestTestHandlerSerializesServicePayloadForAdmin(t *testing.T) {
 	service := &fakeService{result: sopplatform.Result{Success: true, Message: "连接成功 (HTTP 204)"}}
 	handler := New(testGuard(t), service)
 	response := performPost(handler.TestHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -38,7 +38,7 @@ func TestTestHandlerSerializesServicePayloadForAdmin(t *testing.T) {
 func TestTestHandlerMapsValidationError(t *testing.T) {
 	handler := New(testGuard(t), &fakeService{err: sopplatform.ErrTaskURLRequired})
 	response := performPost(handler.TestHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "supervisor-001",
 		"role": "supervisor",
 		"exp":  int64(4102444800),
@@ -58,7 +58,7 @@ func TestTestHandlerRequiresAdminOrSupervisor(t *testing.T) {
 	}
 
 	response = performPost(handler.TestHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(4102444800),
@@ -72,7 +72,7 @@ func TestTestHandlerRequiresAdminOrSupervisor(t *testing.T) {
 func TestTestHandlerRequiresConfiguredService(t *testing.T) {
 	handler := New(testGuard(t), nil)
 	response := performPost(handler.TestHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -87,7 +87,7 @@ func TestTestHandlerRequiresConfiguredService(t *testing.T) {
 func TestTestHandlerRejectsInvalidJSON(t *testing.T) {
 	handler := New(testGuard(t), &fakeService{})
 	response := performPost(handler.TestHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -148,7 +148,7 @@ func signToken(t *testing.T, secret string, claims map[string]any) string {
 func TestTestHandlerMapsUnexpectedServiceError(t *testing.T) {
 	handler := New(testGuard(t), &fakeService{err: errors.New("boom")})
 	response := performPost(handler.TestHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),

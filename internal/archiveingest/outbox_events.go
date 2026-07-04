@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/incomingmodel"
-	"wework-go/internal/outbox"
+	"im-go/internal/incomingmodel"
+	"im-go/internal/outbox"
 )
 
 const (

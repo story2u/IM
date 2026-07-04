@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/archivecallback"
-	"wework-go/internal/auth"
+	"im-go/internal/archivecallback"
+	"im-go/internal/auth"
 )
 
 func TestVerifyHandlerReturnsPlainEcho(t *testing.T) {
@@ -100,7 +100,7 @@ func TestReceiptsHandlerSerializesPaginatedPayload(t *testing.T) {
 	}
 	handler := NewWithReceipts(nil, testGuard(t), receipts)
 	response := performReceipts(handler, "Bearer "+signArchiveCallbackToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -122,7 +122,7 @@ func TestReceiptsHandlerSerializesPaginatedPayload(t *testing.T) {
 func TestReceiptsHandlerRejectsNonAdminRole(t *testing.T) {
 	handler := NewWithReceipts(nil, testGuard(t), &fakeReceiptStore{})
 	response := performReceipts(handler, "Bearer "+signArchiveCallbackToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -137,7 +137,7 @@ func TestReceiptsHandlerRejectsNonAdminRole(t *testing.T) {
 func TestReceiptsHandlerRequiresConfiguredStore(t *testing.T) {
 	handler := NewWithReceipts(nil, testGuard(t), nil)
 	response := performReceipts(handler, "Bearer "+signArchiveCallbackToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -152,7 +152,7 @@ func TestReceiptsHandlerRequiresConfiguredStore(t *testing.T) {
 func TestReceiptsHandlerRejectsInvalidLimit(t *testing.T) {
 	handler := NewWithReceipts(nil, testGuard(t), &fakeReceiptStore{})
 	response := performReceipts(handler, "Bearer "+signArchiveCallbackToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/contactidentity"
+	"im-go/internal/contactidentity"
 )
 
 const (

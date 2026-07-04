@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"time"
 
-	"wework-go/internal/infra/contactidentitymaster"
-	"wework-go/internal/infra/weworkcontactapi"
-	"wework-go/internal/workbench"
+	"im-go/internal/infra/contactidentitymaster"
+	"im-go/internal/infra/weworkcontactapi"
+	"im-go/internal/workbench"
 )
 
 func newCustomerProfileContactClient(now func() time.Time) workbench.CustomerProfileContactClient {

@@ -11,7 +11,7 @@ func TestGuardRequireRolesAcceptsAllowedRole(t *testing.T) {
 	verifier := testVerifier(t)
 	guard := Guard{Verifier: verifier}
 	token := signTestToken(t, verifier.Secret, map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"name": "客服一",
 		"role": "cs",
@@ -44,7 +44,7 @@ func TestGuardRequireRolesRejectsForbiddenRole(t *testing.T) {
 	verifier := testVerifier(t)
 	guard := Guard{Verifier: verifier}
 	token := signTestToken(t, verifier.Secret, map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -63,7 +63,7 @@ func TestGuardRequireRolesPropagatesBlacklistStoreErrors(t *testing.T) {
 	verifier.Blacklist = failingBlacklist{err: storeErr}
 	guard := Guard{Verifier: verifier}
 	token := signTestToken(t, verifier.Secret, map[string]any{
-		"iss": "wework-cloud",
+		"iss": "im-cloud",
 		"sub": "cs-001",
 		"exp": int64(2000),
 		"jti": "jwt-guard",
@@ -79,7 +79,7 @@ func TestGuardRequireRolesAllowsAnyRoleWhenNoRolesSpecified(t *testing.T) {
 	verifier := testVerifier(t)
 	guard := Guard{Verifier: verifier}
 	token := signTestToken(t, verifier.Secret, map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin",
 		"role": "admin",
 		"exp":  time.Unix(2000, 0).Unix(),

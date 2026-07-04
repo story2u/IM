@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"testing"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 func TestNewBootstrapRequestNormalizesLegacyDefaults(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 	"errors"
 	"net/http"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 // Service builds the stream channel catalog payload.

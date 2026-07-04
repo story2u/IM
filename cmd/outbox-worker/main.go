@@ -9,9 +9,9 @@ import (
 	"syscall"
 	"time"
 
-	"wework-go/internal/app"
-	"wework-go/internal/config"
-	"wework-go/internal/observability"
+	"im-go/internal/app"
+	"im-go/internal/config"
+	"im-go/internal/observability"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 func main() {
 	cfg := config.Load()
 	cfg.RuntimeRole = "outbox_worker"
-	logger := observability.NewLogger("wework-go-outbox-worker")
+	logger := observability.NewLogger("im-go-outbox-worker")
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 func TestAuthenticatorAcceptsSessionAgentAndLegacyBypass(t *testing.T) {
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}

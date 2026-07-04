@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 func TestListAIReplyLogsBuildsFilteredPage(t *testing.T) {

@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"strings"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // ErrScopeRequired prevents accidental full projection scans from Go candidates.

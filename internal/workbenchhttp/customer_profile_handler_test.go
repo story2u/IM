@@ -8,14 +8,14 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 func TestCustomerProfileHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeCustomerProfileService{payload: workbench.Payload{"editor_update": workbench.ProjectionRow{"remark_name": "新备注"}}}
 	handler := Handler{Guard: testGuard(t), CustomerProfile: service}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "admin-1",
 		"role":        "admin",
 		"exp":         int64(2000),
@@ -40,7 +40,7 @@ func TestCustomerProfileHandlerMapsRemoteError(t *testing.T) {
 	service := &fakeCustomerProfileService{err: workbench.CustomerProfileRemoteError{Operation: "externalcontact/remark", Err: errors.New("bad gateway")}}
 	handler := Handler{Guard: testGuard(t), CustomerProfile: service}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-1",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -57,7 +57,7 @@ func TestCustomerProfileHandlerMapsRemoteError(t *testing.T) {
 func TestCustomerProfileHandlerRejectsMissingService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-1",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -75,7 +75,7 @@ func TestContactProfileResolveHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeContactProfileResolveService{payload: workbench.Payload{"conversation_id": "conv-1", "changed_fields": []string{"sender_remark"}}}
 	handler := Handler{Guard: testGuard(t), ContactResolve: service}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "cs-1",
 		"role":        "cs",
 		"exp":         int64(2000),
@@ -100,7 +100,7 @@ func TestContactProfileResolveHandlerMapsUnavailable(t *testing.T) {
 	service := &fakeContactProfileResolveService{err: workbench.ErrContactProfileResolveUnavailable}
 	handler := Handler{Guard: testGuard(t), ContactResolve: service}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-1",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -118,7 +118,7 @@ func TestContactProfileRefreshHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeContactProfileRefreshService{payload: workbench.Payload{"conversation_id": "conv-1", "conversation_ids": []string{"conv-1"}}}
 	handler := Handler{Guard: testGuard(t), ContactRefresh: service}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "cs-1",
 		"role":        "cs",
 		"exp":         int64(2000),

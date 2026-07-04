@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/harness/golden"
+	"im-go/internal/harness/golden"
 )
 
 func main() {

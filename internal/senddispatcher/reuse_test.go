@@ -3,7 +3,7 @@ package senddispatcher
 import (
 	"testing"
 
-	"wework-go/internal/tasks"
+	"im-go/internal/tasks"
 )
 
 // TestCurrentChatReuseKeyMirrorsPythonRules protects conservative reuse identity.

@@ -8,13 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/clienterrors"
+	"im-go/internal/auth"
+	"im-go/internal/clienterrors"
 )
 
 // TestReportHandlerSerializesClientError verifies success and operator parsing.
 func TestReportHandlerSerializesClientError(t *testing.T) {
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}
@@ -43,7 +43,7 @@ func TestReportHandlerSerializesClientError(t *testing.T) {
 
 // TestReportHandlerFallsBackToOperatorHintForInvalidToken matches Python verify.
 func TestReportHandlerFallsBackToOperatorHintForInvalidToken(t *testing.T) {
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}
@@ -77,7 +77,7 @@ func TestReportHandlerRequiresService(t *testing.T) {
 
 // TestClientLogsHandlerSerializesBatch verifies client log attribution and IP.
 func TestClientLogsHandlerSerializesBatch(t *testing.T) {
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}

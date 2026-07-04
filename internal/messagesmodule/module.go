@@ -8,13 +8,13 @@ import (
 	"errors"
 	"time"
 
-	"wework-go/internal/archivemedia"
-	"wework-go/internal/auth"
-	"wework-go/internal/config"
-	"wework-go/internal/infra/messagestore"
-	"wework-go/internal/infra/sessionblacklist"
-	"wework-go/internal/messages"
-	"wework-go/internal/messageshttp"
+	"im-go/internal/archivemedia"
+	"im-go/internal/auth"
+	"im-go/internal/config"
+	"im-go/internal/infra/messagestore"
+	"im-go/internal/infra/sessionblacklist"
+	"im-go/internal/messages"
+	"im-go/internal/messageshttp"
 )
 
 // ErrStoreRequired means route-ready assembly was requested without a store.

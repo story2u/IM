@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/archivemedia"
-	"wework-go/internal/voicetranscription"
+	"im-go/internal/archivemedia"
+	"im-go/internal/voicetranscription"
 )
 
 func TestEnqueueVoiceTranscriptionInsertsNewMySQLTask(t *testing.T) {

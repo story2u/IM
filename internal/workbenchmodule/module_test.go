@@ -16,13 +16,13 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/config"
-	"wework-go/internal/workbench"
+	"im-go/internal/auth"
+	"im-go/internal/config"
+	"im-go/internal/workbench"
 )
 
 func TestNewRejectsMissingSessionSecret(t *testing.T) {
-	_, err := New(Options{Config: config.Config{SessionJWTIssuer: "wework-cloud"}})
+	_, err := New(Options{Config: config.Config{SessionJWTIssuer: "im-cloud"}})
 	if !errors.Is(err, auth.ErrMissingSecret) {
 		t.Fatalf("New error = %v, want %v", err, auth.ErrMissingSecret)
 	}
@@ -51,7 +51,7 @@ func TestNewBuildsUnmountedWorkbenchHandler(t *testing.T) {
 	module, err := New(Options{
 		Config: config.Config{
 			SessionJWTSecret: "session-secret",
-			SessionJWTIssuer: "wework-cloud",
+			SessionJWTIssuer: "im-cloud",
 		},
 		Accounts: moduleAccounts{
 			{AccountID: "acc-001", AssigneeID: "cs-001", WeWorkUserID: "DY-1801", EnterpriseID: "ent-a"},
@@ -75,7 +75,7 @@ func TestNewBuildsUnmountedWorkbenchHandler(t *testing.T) {
 	}
 
 	token := signWorkbenchModuleToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),

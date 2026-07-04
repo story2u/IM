@@ -8,7 +8,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"wework-go/internal/incomingqueue"
+	"im-go/internal/incomingqueue"
 )
 
 // RedisStreamClient is the go-redis stream command subset used by Store.

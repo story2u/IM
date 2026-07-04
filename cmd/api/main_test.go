@@ -16,10 +16,10 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/app"
-	"wework-go/internal/auth"
-	"wework-go/internal/config"
-	"wework-go/internal/infra/sqldb"
+	"im-go/internal/app"
+	"im-go/internal/auth"
+	"im-go/internal/config"
+	"im-go/internal/infra/sqldb"
 )
 
 // TestBuildHandlerKeepsSessionCandidateDisabledByDefault protects route diff.
@@ -1039,7 +1039,7 @@ func TestBuildHandlerCanMountDeviceBridgeCandidateWithoutDatabase(t *testing.T) 
 	handler, cleanup, err := buildHandler(context.Background(), config.Config{
 		DeviceCallAudioBridgeCandidate: true,
 		SessionJWTSecret:               "session-secret",
-		SessionJWTIssuer:               "wework-cloud",
+		SessionJWTIssuer:               "im-cloud",
 		AgentAPIToken:                  "agent-token",
 		CallAudioBridgeStatusFile:      statusFile,
 		CallAudioBridgeStaleSec:        3600,
@@ -1119,14 +1119,14 @@ func TestBuildHandlerCanMountWeWorkUserInfoLastCandidateWithoutDatabase(t *testi
 	handler, cleanup, err := buildHandler(context.Background(), config.Config{
 		WeWorkUserInfoLastCandidate: true,
 		SessionJWTSecret:            "session-secret",
-		SessionJWTIssuer:            "wework-cloud",
+		SessionJWTIssuer:            "im-cloud",
 	})
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
 	defer cleanup()
 
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}
@@ -1154,7 +1154,7 @@ func TestBuildHandlerCanMountDevicesListCandidateWithoutDatabase(t *testing.T) {
 	handler, cleanup, err := buildHandler(context.Background(), config.Config{
 		DevicesListCandidate: true,
 		SessionJWTSecret:     "session-secret",
-		SessionJWTIssuer:     "wework-cloud",
+		SessionJWTIssuer:     "im-cloud",
 		P1ManagerCacheFile:   cacheFile,
 	})
 	if err != nil {
@@ -1162,7 +1162,7 @@ func TestBuildHandlerCanMountDevicesListCandidateWithoutDatabase(t *testing.T) {
 	}
 	defer cleanup()
 
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}
@@ -1190,7 +1190,7 @@ func TestBuildHandlerCanMountDeviceSDKWebRTCCandidateWithoutDatabase(t *testing.
 	handler, cleanup, err := buildHandler(context.Background(), config.Config{
 		DeviceSDKWebRTCCandidate: true,
 		SessionJWTSecret:         "session-secret",
-		SessionJWTIssuer:         "wework-cloud",
+		SessionJWTIssuer:         "im-cloud",
 		P1ManagerCacheFile:       cacheFile,
 	})
 	if err != nil {
@@ -1198,7 +1198,7 @@ func TestBuildHandlerCanMountDeviceSDKWebRTCCandidateWithoutDatabase(t *testing.
 	}
 	defer cleanup()
 
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}
@@ -1232,7 +1232,7 @@ func TestBuildHandlerCanMountDeviceSDKStatusCandidateWithoutDatabase(t *testing.
 	handler, cleanup, err := buildHandler(context.Background(), config.Config{
 		DeviceSDKStatusCandidate:       true,
 		SessionJWTSecret:               "session-secret",
-		SessionJWTIssuer:               "wework-cloud",
+		SessionJWTIssuer:               "im-cloud",
 		P1ManagerCacheFile:             cacheFile,
 		CallAudioBridgeStatusFile:      statusFile,
 		CallAudioBridgeStaleSec:        3600,
@@ -1244,7 +1244,7 @@ func TestBuildHandlerCanMountDeviceSDKStatusCandidateWithoutDatabase(t *testing.
 	}
 	defer cleanup()
 
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}
@@ -1273,7 +1273,7 @@ func TestBuildHandlerCanMountDeviceSDKControlCandidateWithoutDatabase(t *testing
 	handler, cleanup, err := buildHandler(context.Background(), config.Config{
 		DeviceSDKControlCandidate: true,
 		SessionJWTSecret:          "session-secret",
-		SessionJWTIssuer:          "wework-cloud",
+		SessionJWTIssuer:          "im-cloud",
 		P1ManagerCacheFile:        cacheFile,
 	})
 	if err != nil {
@@ -1281,7 +1281,7 @@ func TestBuildHandlerCanMountDeviceSDKControlCandidateWithoutDatabase(t *testing
 	}
 	defer cleanup()
 
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}
@@ -1305,14 +1305,14 @@ func TestBuildHandlerCanMountSendTextCandidateWithoutDatabase(t *testing.T) {
 	handler, cleanup, err := buildHandler(context.Background(), config.Config{
 		SendTextCandidate: true,
 		SessionJWTSecret:  "session-secret",
-		SessionJWTIssuer:  "wework-cloud",
+		SessionJWTIssuer:  "im-cloud",
 	})
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
 	defer cleanup()
 
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}
@@ -1336,14 +1336,14 @@ func TestBuildHandlerCanMountGroupInviteCandidateWithoutDatabase(t *testing.T) {
 	handler, cleanup, err := buildHandler(context.Background(), config.Config{
 		GroupInviteCandidate: true,
 		SessionJWTSecret:     "session-secret",
-		SessionJWTIssuer:     "wework-cloud",
+		SessionJWTIssuer:     "im-cloud",
 	})
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
 	defer cleanup()
 
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}
@@ -1389,7 +1389,7 @@ func TestBuildHandlerCanMountSendImageCandidateWithoutDatabase(t *testing.T) {
 	handler, cleanup, err := buildHandler(context.Background(), config.Config{
 		SendImageCandidate:          true,
 		SessionJWTSecret:            "session-secret",
-		SessionJWTIssuer:            "wework-cloud",
+		SessionJWTIssuer:            "im-cloud",
 		ArchiveMediaUploadURL:       uploadServer.URL,
 		ArchiveMediaSigningKey:      "signing-key",
 		ArchiveMediaTokenTTLSeconds: 3600,
@@ -1399,7 +1399,7 @@ func TestBuildHandlerCanMountSendImageCandidateWithoutDatabase(t *testing.T) {
 	}
 	defer cleanup()
 
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}
@@ -1434,7 +1434,7 @@ func TestBuildHandlerRequiresDatabaseForConversationCallCandidate(t *testing.T) 
 		ConversationCallCandidate:       true,
 		ConversationCallHangupCandidate: true,
 		SessionJWTSecret:                "session-secret",
-		SessionJWTIssuer:                "wework-cloud",
+		SessionJWTIssuer:                "im-cloud",
 	})
 
 	if !errors.Is(err, sqldb.ErrMissingDSN) {
@@ -1454,7 +1454,7 @@ func TestBuildHandlerCanMountDeviceSDKRTCSessionCandidateWithoutDatabase(t *test
 	handler, cleanup, err := buildHandler(context.Background(), config.Config{
 		DeviceSDKRTCSessionCandidate: true,
 		SessionJWTSecret:             "session-secret",
-		SessionJWTIssuer:             "wework-cloud",
+		SessionJWTIssuer:             "im-cloud",
 		P1ManagerCacheFile:           cacheFile,
 		LiveKitURL:                   "https://livekit.example",
 		LiveKitAPIKey:                "lk-key",
@@ -1468,7 +1468,7 @@ func TestBuildHandlerCanMountDeviceSDKRTCSessionCandidateWithoutDatabase(t *test
 	}
 	defer cleanup()
 
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}
@@ -1499,7 +1499,7 @@ func TestBuildHandlerCanMountDeviceRTCActiveCandidateWithoutDatabase(t *testing.
 	handler, cleanup, err := buildHandler(context.Background(), config.Config{
 		DeviceRTCActiveCandidate:  true,
 		SessionJWTSecret:          "session-secret",
-		SessionJWTIssuer:          "wework-cloud",
+		SessionJWTIssuer:          "im-cloud",
 		AgentAPIToken:             "agent-token",
 		P1ManagerCacheFile:        cacheFile,
 		LiveKitDeviceRoomPrefix:   "device",
@@ -1510,7 +1510,7 @@ func TestBuildHandlerCanMountDeviceRTCActiveCandidateWithoutDatabase(t *testing.
 	}
 	defer cleanup()
 
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}
@@ -1546,7 +1546,7 @@ func TestBuildHandlerCanMountDeviceRTCControlCandidateWithoutDatabase(t *testing
 	handler, cleanup, err := buildHandler(context.Background(), config.Config{
 		DeviceRTCControlCandidate: true,
 		SessionJWTSecret:          "session-secret",
-		SessionJWTIssuer:          "wework-cloud",
+		SessionJWTIssuer:          "im-cloud",
 		AgentAPIToken:             "agent-token",
 		P1ManagerCacheFile:        cacheFile,
 		RTCControlTTLSeconds:      120,
@@ -1556,7 +1556,7 @@ func TestBuildHandlerCanMountDeviceRTCControlCandidateWithoutDatabase(t *testing
 	}
 	defer cleanup()
 
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}
@@ -1627,7 +1627,7 @@ func TestBuildHandlerDeviceRTCControlInputUsesBridgeExecutor(t *testing.T) {
 	handler, cleanup, err := buildHandler(context.Background(), config.Config{
 		DeviceRTCControlCandidate:    true,
 		SessionJWTSecret:             "session-secret",
-		SessionJWTIssuer:             "wework-cloud",
+		SessionJWTIssuer:             "im-cloud",
 		P1ManagerCacheFile:           cacheFile,
 		RTCControlTTLSeconds:         120,
 		RTCControlExecutorBaseURL:    bridge.URL,
@@ -1639,7 +1639,7 @@ func TestBuildHandlerDeviceRTCControlInputUsesBridgeExecutor(t *testing.T) {
 	}
 	defer cleanup()
 
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}
@@ -1679,7 +1679,7 @@ func TestBuildHandlerCanMountDeviceRTCMediaPrepareCandidateWithoutDatabase(t *te
 		DeviceRTCControlCandidate:      true,
 		DeviceRTCMediaPrepareCandidate: true,
 		SessionJWTSecret:               "session-secret",
-		SessionJWTIssuer:               "wework-cloud",
+		SessionJWTIssuer:               "im-cloud",
 		P1ManagerCacheFile:             cacheFile,
 		RTCControlTTLSeconds:           120,
 		RTCMediaCameraAddrTemplate:     "https://relay.example/live/{stream_key}/whep",
@@ -1692,7 +1692,7 @@ func TestBuildHandlerCanMountDeviceRTCMediaPrepareCandidateWithoutDatabase(t *te
 	}
 	defer cleanup()
 
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}

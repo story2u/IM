@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/tasks"
+	"im-go/internal/tasks"
 )
 
 // TerminalUpdater writes terminal task status through the task service boundary.

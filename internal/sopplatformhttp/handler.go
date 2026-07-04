@@ -8,8 +8,8 @@ import (
 	"io"
 	"net/http"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/sopplatform"
+	"im-go/internal/auth"
+	"im-go/internal/sopplatform"
 )
 
 // Service validates SOP platform task URLs.

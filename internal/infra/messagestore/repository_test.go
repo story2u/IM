@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/messages"
-	"wework-go/internal/tasks"
+	"im-go/internal/messages"
+	"im-go/internal/tasks"
 )
 
 func TestListLatestBuildsHotPageQueryAndDropsExtraOldest(t *testing.T) {

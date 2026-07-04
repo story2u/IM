@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/incomingmodel"
+	"im-go/internal/incomingmodel"
 )
 
 const (

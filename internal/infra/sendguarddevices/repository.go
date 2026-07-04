@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/sendguard"
+	"im-go/internal/sendguard"
 )
 
 var beijingLocation = time.FixedZone("Asia/Shanghai", 8*60*60)

@@ -12,10 +12,10 @@ import (
 	"strconv"
 	"strings"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/sendguard"
-	"wework-go/internal/sendmedia"
-	"wework-go/internal/sendtarget"
+	"im-go/internal/auth"
+	"im-go/internal/sendguard"
+	"im-go/internal/sendmedia"
+	"im-go/internal/sendtarget"
 )
 
 // Service creates media send tasks.

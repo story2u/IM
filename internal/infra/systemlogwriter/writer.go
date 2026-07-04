@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"wework-go/internal/clienterrors"
+	"im-go/internal/clienterrors"
 )
 
 const maxExtraBytes = 4096

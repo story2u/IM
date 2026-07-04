@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/archivemedia"
+	"im-go/internal/archivemedia"
 )
 
 func TestRunOnceProcessesSuccessAndPublishesReady(t *testing.T) {

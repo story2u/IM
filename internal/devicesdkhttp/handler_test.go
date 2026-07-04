@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/devicesdk"
+	"im-go/internal/auth"
+	"im-go/internal/devicesdk"
 )
 
 func TestWebRTCHandlerRequiresSessionRole(t *testing.T) {
@@ -1047,7 +1047,7 @@ func (service *fakeWebRTCService) StopMedia(ctx context.Context, deviceID string
 
 func testVerifier(t *testing.T) auth.Verifier {
 	t.Helper()
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}

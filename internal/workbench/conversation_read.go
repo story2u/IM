@@ -5,8 +5,8 @@ import (
 	"errors"
 	"strings"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/readmodelcache"
+	"im-go/internal/auth"
+	"im-go/internal/readmodelcache"
 )
 
 var (

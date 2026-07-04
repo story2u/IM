@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/incomingmodel"
-	"wework-go/internal/incomingwrite"
-	"wework-go/internal/outbox"
-	"wework-go/internal/workbench"
+	"im-go/internal/incomingmodel"
+	"im-go/internal/incomingwrite"
+	"im-go/internal/outbox"
+	"im-go/internal/workbench"
 )
 
 const defaultFriendAddedContent = "\u65b0\u597d\u53cb\u7533\u8bf7"

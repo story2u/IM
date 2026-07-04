@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	coldstore "wework-go/internal/infra/archivecoldstorage"
+	coldstore "im-go/internal/infra/archivecoldstorage"
 )
 
 func TestBuildHelpersMirrorPythonColdStorageLoader(t *testing.T) {

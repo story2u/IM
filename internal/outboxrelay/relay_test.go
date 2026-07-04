@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"wework-go/internal/outbox"
+	"im-go/internal/outbox"
 )
 
 func TestResolveOptionsMirrorsPythonDefaults(t *testing.T) {

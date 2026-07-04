@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // TestListSOPFlowsReadsDefaultFirst keeps DB mapping and normalization stable.

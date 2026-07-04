@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"wework-go/internal/archivemedia"
+	"im-go/internal/archivemedia"
 )
 
 const maxInlineAvatarBytes = 256 * 1024

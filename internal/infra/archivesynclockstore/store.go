@@ -7,7 +7,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"wework-go/internal/archivesync"
+	"im-go/internal/archivesync"
 )
 
 // RedisClient is the small go-redis surface needed by archive sync locks.

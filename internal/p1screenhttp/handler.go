@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"wework-go/internal/p1screen"
+	"im-go/internal/p1screen"
 )
 
 // Handler owns the legacy /api/p1 screen endpoints.

@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 func TestServiceToggleConversationAIRequiresExplicitProfileAndClearsRuntime(t *testing.T) {

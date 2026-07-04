@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 const (

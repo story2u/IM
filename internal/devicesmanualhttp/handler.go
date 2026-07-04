@@ -7,8 +7,8 @@ import (
 	"errors"
 	"net/http"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/devicesmanual"
+	"im-go/internal/auth"
+	"im-go/internal/devicesmanual"
 )
 
 // Service stores manual devices and builds legacy response payloads.

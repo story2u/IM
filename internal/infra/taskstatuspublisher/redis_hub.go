@@ -11,7 +11,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"wework-go/internal/realtime"
+	"im-go/internal/realtime"
 )
 
 const defaultRedisTopic = "cloud_ws_events"

@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/config"
+	"im-go/internal/auth"
+	"im-go/internal/config"
 )
 
 // TestBuildHandlerMountsStreamChannelsWithoutDatabase keeps catalog reads light.
@@ -22,7 +22,7 @@ func TestBuildHandlerMountsStreamChannelsWithoutDatabase(t *testing.T) {
 	handler, cleanup, err := buildHandler(context.Background(), config.Config{
 		StreamChannelsCandidate: true,
 		SessionJWTSecret:        "session-secret",
-		SessionJWTIssuer:        "wework-cloud",
+		SessionJWTIssuer:        "im-cloud",
 	})
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
@@ -57,7 +57,7 @@ func TestBuildHandlerRequiresJWTSecretForStreamChannels(t *testing.T) {
 // issueStreamToken mints a deterministic JWT for stream candidate startup tests.
 func issueStreamToken(t *testing.T, role string) string {
 	t.Helper()
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"wework-go/internal/outbox"
+	"im-go/internal/outbox"
 )
 
 const (

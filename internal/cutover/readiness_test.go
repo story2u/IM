@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/httpserver"
+	"im-go/internal/httpserver"
 )
 
 func TestEvaluateSessionAccessProfile(t *testing.T) {

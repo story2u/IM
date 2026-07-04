@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/outbox"
+	"im-go/internal/outbox"
 )
 
 func TestOutboxNotifierEnqueuesMediaReadyEvent(t *testing.T) {

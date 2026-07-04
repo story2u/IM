@@ -8,7 +8,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"wework-go/internal/outbox"
+	"im-go/internal/outbox"
 )
 
 const DefaultChannel = "outbox:notify"

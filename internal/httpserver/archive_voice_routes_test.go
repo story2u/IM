@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"testing"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/config"
-	"wework-go/internal/voicetranscriptionhttp"
+	"im-go/internal/auth"
+	"im-go/internal/config"
+	"im-go/internal/voicetranscriptionhttp"
 )
 
 // TestNewWithModulesCanMountArchiveVoiceRetryCandidate keeps manual retry opt-in.

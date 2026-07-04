@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/conversationrevoke"
-	"wework-go/internal/sendguard"
-	"wework-go/internal/sendtarget"
+	"im-go/internal/auth"
+	"im-go/internal/conversationrevoke"
+	"im-go/internal/sendguard"
+	"im-go/internal/sendtarget"
 )
 
 func TestRevokeHandlerMapsDeviceOffline(t *testing.T) {
@@ -59,7 +59,7 @@ func (service fakeService) Revoke(_ context.Context, _ string, _ string, _ conve
 
 func guardWithToken(t *testing.T, role string) (auth.Guard, string) {
 	t.Helper()
-	verifier, err := auth.NewVerifier("secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier error: %v", err)
 	}

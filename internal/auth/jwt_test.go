@@ -18,7 +18,7 @@ import (
 func TestVerifierAcceptsLegacyHS256Token(t *testing.T) {
 	verifier := testVerifier(t)
 	token := signTestToken(t, verifier.Secret, map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"name": "客服一",
 		"role": "cs",
@@ -124,7 +124,7 @@ func TestVerifierDecodesRevocableTokenWithoutExpiryOrIssuerChecks(t *testing.T) 
 func TestVerifierRejectsInvalidSessionTokens(t *testing.T) {
 	verifier := testVerifier(t)
 	validClaims := map[string]any{
-		"iss": "wework-cloud",
+		"iss": "im-cloud",
 		"sub": "cs-001",
 		"exp": int64(2000),
 		"jti": "jwt-test",
@@ -154,7 +154,7 @@ func TestVerifierRejectsBlacklistedJTI(t *testing.T) {
 	verifier := testVerifier(t)
 	verifier.Blacklist = blacklistMap{"jwt-test": true}
 	token := signTestToken(t, verifier.Secret, map[string]any{
-		"iss": "wework-cloud",
+		"iss": "im-cloud",
 		"sub": "cs-001",
 		"exp": int64(2000),
 		"jti": "jwt-test",
@@ -171,7 +171,7 @@ func TestVerifierPropagatesBlacklistStoreErrors(t *testing.T) {
 	storeErr := errors.New("db unavailable")
 	verifier.Blacklist = failingBlacklist{err: storeErr}
 	token := signTestToken(t, verifier.Secret, map[string]any{
-		"iss": "wework-cloud",
+		"iss": "im-cloud",
 		"sub": "cs-001",
 		"exp": int64(2000),
 		"jti": "jwt-test",

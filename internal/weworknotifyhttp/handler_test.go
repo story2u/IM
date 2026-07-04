@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/weworknotify"
+	"im-go/internal/weworknotify"
 )
 
 func TestVerifyHandlerReturnsPlainEcho(t *testing.T) {

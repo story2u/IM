@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"wework-go/internal/contacts"
+	"im-go/internal/contacts"
 )
 
 func TestSyncArchiveContactsReadsCachedProfiles(t *testing.T) {

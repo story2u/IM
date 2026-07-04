@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/incomingmodel"
-	"wework-go/internal/outbox"
+	"im-go/internal/incomingmodel"
+	"im-go/internal/outbox"
 )
 
 func TestServiceIngestWritesChatThenEnqueuesOutbox(t *testing.T) {

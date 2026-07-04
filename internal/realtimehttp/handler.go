@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/realtime"
+	"im-go/internal/auth"
+	"im-go/internal/realtime"
 )
 
 type replayService interface {

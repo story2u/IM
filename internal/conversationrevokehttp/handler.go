@@ -8,10 +8,10 @@ import (
 	"io"
 	"net/http"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/conversationrevoke"
-	"wework-go/internal/sendguard"
-	"wework-go/internal/sendtarget"
+	"im-go/internal/auth"
+	"im-go/internal/conversationrevoke"
+	"im-go/internal/sendguard"
+	"im-go/internal/sendtarget"
 )
 
 type Service interface {

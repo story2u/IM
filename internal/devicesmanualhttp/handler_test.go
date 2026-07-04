@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/devicesmanual"
+	"im-go/internal/auth"
+	"im-go/internal/devicesmanual"
 )
 
 func TestUpsertHandlerRequiresAdminOrSupervisor(t *testing.T) {
@@ -147,7 +147,7 @@ func TestHandlersMapServiceAvailabilityAndUnexpectedErrors(t *testing.T) {
 
 func guardWithRole(t *testing.T, role string) (auth.Guard, string) {
 	t.Helper()
-	verifier, err := auth.NewVerifier("secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}

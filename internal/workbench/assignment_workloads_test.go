@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 func TestServiceAssignmentWorkloadsBuildsAdminPayload(t *testing.T) {

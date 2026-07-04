@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/devicesdk"
+	"im-go/internal/devicesdk"
 )
 
 func TestClientSendControlInputPostsLegacyPayload(t *testing.T) {

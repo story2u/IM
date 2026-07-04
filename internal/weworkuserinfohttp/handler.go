@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/weworkuserinfo"
+	"im-go/internal/auth"
+	"im-go/internal/weworkuserinfo"
 )
 
 // LastPayloadStore reads the in-process user-info debug payload for a device.

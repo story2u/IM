@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/tasks"
+	"im-go/internal/tasks"
 )
 
 // TestPolicyDisabledErrorMatchesPythonText freezes explicit _send_policy handling.

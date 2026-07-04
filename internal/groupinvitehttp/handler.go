@@ -8,9 +8,9 @@ import (
 	"io"
 	"net/http"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/groupinvite"
-	"wework-go/internal/sendguard"
+	"im-go/internal/auth"
+	"im-go/internal/groupinvite"
+	"im-go/internal/sendguard"
 )
 
 // Service creates group invite tasks.

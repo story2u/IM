@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"wework-go/internal/harness/replay"
+	"im-go/internal/harness/replay"
 )
 
 func main() {

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	coldstore "wework-go/internal/infra/archivecoldstorage"
+	coldstore "im-go/internal/infra/archivecoldstorage"
 )
 
 func TestLocalFileExporterWritesLocalArtifactWithoutFinalizer(t *testing.T) {

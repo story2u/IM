@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/weworklogin"
+	"im-go/internal/auth"
+	"im-go/internal/weworklogin"
 )
 
 // Service resolves WeWork login route payloads.

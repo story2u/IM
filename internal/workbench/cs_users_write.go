@@ -8,7 +8,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 var (

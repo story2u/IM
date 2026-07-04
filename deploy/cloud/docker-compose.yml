@@ -1,9 +1,9 @@
-name: wework-go-cloud
+name: im-go-cloud
 
 x-go-env: &go-env
   GO_BACKEND_VERSION: "${GO_BACKEND_VERSION:-0.1.0-phase1}"
   SESSION_JWT_SECRET: "${SESSION_JWT_SECRET:-change-me-in-production}"
-  SESSION_JWT_ISSUER: "${SESSION_JWT_ISSUER:-wework-cloud}"
+  SESSION_JWT_ISSUER: "${SESSION_JWT_ISSUER:-im-cloud}"
   ADMIN_USERNAME: "${ADMIN_USERNAME:-}"
   ADMIN_PASSWORD: "${ADMIN_PASSWORD:-}"
   ALLOW_PASSWORDLESS_LOGIN: "${ALLOW_PASSWORDLESS_LOGIN:-0}"
@@ -283,9 +283,9 @@ x-go-service: &go-service
     <<: *go-env
   volumes:
     - go-data:/app/data
-    - "${VOICE_TRANSCRIPTION_COZE_KEYS_HOST_DIR:-/data/secrets/wework}:/app/keys:ro"
+    - "${VOICE_TRANSCRIPTION_COZE_KEYS_HOST_DIR:-/data/secrets/im}:/app/keys:ro"
   networks:
-    - wework-go-net
+    - im-go-net
 
 services:
   go-redis:
@@ -298,7 +298,7 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      - wework-go-net
+      - im-go-net
 
   go-cache-redis:
     image: "${REDIS_IMAGE:-redis:7-alpine}"
@@ -310,7 +310,7 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      - wework-go-net
+      - im-go-net
 
   go-api:
     <<: *go-service
@@ -319,7 +319,7 @@ services:
       dockerfile: Dockerfile
       args:
         TARGET_CMD: api
-    image: "${GO_API_IMAGE:-wework-go-api:${GO_IMAGE_TAG:-latest}}"
+    image: "${GO_API_IMAGE:-im-go-api:${GO_IMAGE_TAG:-latest}}"
     ports:
       - "${GO_BACKEND_BIND_ADDR:-127.0.0.1}:${GO_BACKEND_HOST_PORT:-19000}:9000"
     environment:
@@ -335,7 +335,7 @@ services:
         GO_WEB_VERSION: "${GO_WEB_VERSION:-0.1.0-phase1}"
         GO_WEB_COMMIT: "${GO_WEB_COMMIT:-unknown}"
         GO_WEB_BUILD_TIME: "${GO_WEB_BUILD_TIME:-unknown}"
-    image: "${GO_WEB_IMAGE:-wework-go-web:${GO_IMAGE_TAG:-latest}}"
+    image: "${GO_WEB_IMAGE:-im-go-web:${GO_IMAGE_TAG:-latest}}"
     restart: unless-stopped
     ports:
       - "${GO_WEB_BIND_ADDR:-127.0.0.1}:${GO_WEB_HOST_PORT:-18080}:3000"
@@ -344,7 +344,7 @@ services:
       NEXT_PUBLIC_GO_WEB_COMMIT: "${GO_WEB_COMMIT:-unknown}"
       NEXT_PUBLIC_GO_WEB_BUILD_TIME: "${GO_WEB_BUILD_TIME:-unknown}"
     networks:
-      - wework-go-net
+      - im-go-net
 
   go-outbox-worker:
     <<: *go-service
@@ -353,7 +353,7 @@ services:
       dockerfile: Dockerfile
       args:
         TARGET_CMD: outbox-worker
-    image: "${GO_OUTBOX_WORKER_IMAGE:-wework-go-outbox-worker:${GO_IMAGE_TAG:-latest}}"
+    image: "${GO_OUTBOX_WORKER_IMAGE:-im-go-outbox-worker:${GO_IMAGE_TAG:-latest}}"
     environment:
       <<: *go-env
       CLOUD_RUNTIME_ROLE: outbox_worker
@@ -365,7 +365,7 @@ services:
       dockerfile: Dockerfile
       args:
         TARGET_CMD: incoming-worker
-    image: "${GO_INCOMING_WORKER_IMAGE:-wework-go-incoming-worker:${GO_IMAGE_TAG:-latest}}"
+    image: "${GO_INCOMING_WORKER_IMAGE:-im-go-incoming-worker:${GO_IMAGE_TAG:-latest}}"
     environment:
       <<: *go-env
       CLOUD_RUNTIME_ROLE: incoming_worker
@@ -377,7 +377,7 @@ services:
       dockerfile: Dockerfile
       args:
         TARGET_CMD: contact-sync-worker
-    image: "${GO_CONTACT_SYNC_WORKER_IMAGE:-wework-go-contact-sync-worker:${GO_IMAGE_TAG:-latest}}"
+    image: "${GO_CONTACT_SYNC_WORKER_IMAGE:-im-go-contact-sync-worker:${GO_IMAGE_TAG:-latest}}"
     environment:
       <<: *go-env
       CLOUD_RUNTIME_ROLE: contact_sync_worker
@@ -394,7 +394,7 @@ services:
       dockerfile: Dockerfile
       args:
         TARGET_CMD: send-dispatcher
-    image: "${GO_SEND_DISPATCHER_IMAGE:-wework-go-send-dispatcher:${GO_IMAGE_TAG:-latest}}"
+    image: "${GO_SEND_DISPATCHER_IMAGE:-im-go-send-dispatcher:${GO_IMAGE_TAG:-latest}}"
     environment:
       <<: *go-env
       CLOUD_RUNTIME_ROLE: send_dispatcher
@@ -409,7 +409,7 @@ services:
       dockerfile: Dockerfile
       args:
         TARGET_CMD: archive-sync-worker
-    image: "${GO_ARCHIVE_SYNC_WORKER_IMAGE:-wework-go-archive-sync-worker:${GO_IMAGE_TAG:-latest}}"
+    image: "${GO_ARCHIVE_SYNC_WORKER_IMAGE:-im-go-archive-sync-worker:${GO_IMAGE_TAG:-latest}}"
     environment:
       <<: *go-env
       CLOUD_RUNTIME_ROLE: archive_sync_worker
@@ -421,7 +421,7 @@ services:
       dockerfile: Dockerfile
       args:
         TARGET_CMD: archive-ingest-worker
-    image: "${GO_ARCHIVE_INGEST_WORKER_IMAGE:-wework-go-archive-ingest-worker:${GO_IMAGE_TAG:-latest}}"
+    image: "${GO_ARCHIVE_INGEST_WORKER_IMAGE:-im-go-archive-ingest-worker:${GO_IMAGE_TAG:-latest}}"
     environment:
       <<: *go-env
       CLOUD_RUNTIME_ROLE: archive_ingest_worker
@@ -433,7 +433,7 @@ services:
       dockerfile: Dockerfile
       args:
         TARGET_CMD: archive-media-worker
-    image: "${GO_ARCHIVE_MEDIA_WORKER_IMAGE:-wework-go-archive-media-worker:${GO_IMAGE_TAG:-latest}}"
+    image: "${GO_ARCHIVE_MEDIA_WORKER_IMAGE:-im-go-archive-media-worker:${GO_IMAGE_TAG:-latest}}"
     environment:
       <<: *go-env
       CLOUD_RUNTIME_ROLE: archive_media_worker
@@ -445,7 +445,7 @@ services:
       dockerfile: Dockerfile
       args:
         TARGET_CMD: voice-transcription-worker
-    image: "${GO_VOICE_TRANSCRIPTION_WORKER_IMAGE:-wework-go-voice-transcription-worker:${GO_IMAGE_TAG:-latest}}"
+    image: "${GO_VOICE_TRANSCRIPTION_WORKER_IMAGE:-im-go-voice-transcription-worker:${GO_IMAGE_TAG:-latest}}"
     environment:
       <<: *go-env
       CLOUD_RUNTIME_ROLE: voice_transcription_worker
@@ -454,4 +454,4 @@ volumes:
   go-data:
 
 networks:
-  wework-go-net:
+  im-go-net:

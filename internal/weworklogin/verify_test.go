@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 func TestVerifyCodeCreatesTaskAndMarksSessionVerifying(t *testing.T) {

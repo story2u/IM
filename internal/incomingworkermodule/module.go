@@ -6,9 +6,9 @@ import (
 	"errors"
 	"time"
 
-	"wework-go/internal/incominghandler"
-	"wework-go/internal/incomingqueue"
-	"wework-go/internal/infra/incomingqueuestore"
+	"im-go/internal/incominghandler"
+	"im-go/internal/incomingqueue"
+	"im-go/internal/infra/incomingqueuestore"
 )
 
 // ErrQueueRequired means a worker was requested without a queue.

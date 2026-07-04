@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 func TestServiceTestAIConfigUsesSavedConfigWithRequestOverrides(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/inventory"
+	"im-go/internal/inventory"
 )
 
 func TestBuildReportDetectsThresholdFailures(t *testing.T) {

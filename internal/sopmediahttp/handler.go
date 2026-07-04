@@ -8,8 +8,8 @@ import (
 	"io"
 	"net/http"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/sopmedia"
+	"im-go/internal/auth"
+	"im-go/internal/sopmedia"
 )
 
 // Service uploads SOP media and returns the legacy JSON response.

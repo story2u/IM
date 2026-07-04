@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 func TestListDevicesMapsLatestRowsByExplicitIDs(t *testing.T) {

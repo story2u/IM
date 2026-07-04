@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/senddispatcher"
+	"im-go/internal/senddispatcher"
 )
 
 // TestClientExecutePostsWrappedTaskAndDecodesResult protects the provider execute contract.

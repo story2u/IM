@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 func TestNewAIReplyLogsRequestValidatesFilters(t *testing.T) {

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/devicesmanual"
-	"wework-go/internal/infra/sqldb"
+	"im-go/internal/devicesmanual"
+	"im-go/internal/infra/sqldb"
 )
 
 func TestRepositoryUpsertManualDeviceUsesMySQLUpsertAndReadsBack(t *testing.T) {

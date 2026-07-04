@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/clienterrors"
-	"wework-go/internal/clienterrorshttp"
-	"wework-go/internal/config"
+	"im-go/internal/clienterrors"
+	"im-go/internal/clienterrorshttp"
+	"im-go/internal/config"
 )
 
 // TestNewWithModulesCanMountClientErrorsCandidate keeps report writes opt-in.

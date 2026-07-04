@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // TestScriptLibraryHandlerSerializesServicePayload keeps payloads intact.
@@ -18,7 +18,7 @@ func TestScriptLibraryHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -42,7 +42,7 @@ func TestScriptLibraryHandlerSerializesServicePayload(t *testing.T) {
 func TestScriptLibraryHandlerRejectsUnknownRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeScriptLibraryService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "guest-001",
 		"role": "guest",
 		"exp":  int64(2000),
@@ -60,7 +60,7 @@ func TestScriptLibraryHandlerRejectsUnknownRole(t *testing.T) {
 func TestScriptLibraryHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),

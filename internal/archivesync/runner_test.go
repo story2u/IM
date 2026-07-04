@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/archivepull"
-	"wework-go/internal/infra/archiveingesttask"
-	"wework-go/internal/infra/archivesynccursor"
-	"wework-go/internal/infra/enterprisestore"
-	"wework-go/internal/outboxarchivesync"
+	"im-go/internal/archivepull"
+	"im-go/internal/infra/archiveingesttask"
+	"im-go/internal/infra/archivesynccursor"
+	"im-go/internal/infra/enterprisestore"
+	"im-go/internal/outboxarchivesync"
 )
 
 func TestRunOncePullsAndAdvancesCursor(t *testing.T) {

@@ -13,22 +13,22 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/archiveadmin"
-	"wework-go/internal/archivecontacts"
-	"wework-go/internal/archiveeventnotify"
-	"wework-go/internal/archiveingest"
-	"wework-go/internal/archiveintegration"
-	"wework-go/internal/archivemedia"
-	"wework-go/internal/archivesdk"
-	"wework-go/internal/archivesync"
-	"wework-go/internal/auth"
+	"im-go/internal/archiveadmin"
+	"im-go/internal/archivecontacts"
+	"im-go/internal/archiveeventnotify"
+	"im-go/internal/archiveingest"
+	"im-go/internal/archiveintegration"
+	"im-go/internal/archivemedia"
+	"im-go/internal/archivesdk"
+	"im-go/internal/archivesync"
+	"im-go/internal/auth"
 )
 
 func TestStatusHandlerSerializesPayload(t *testing.T) {
 	service := &fakeArchiveService{statusPayload: archiveadmin.Payload{"enterprise_id": "ent-1", "cursor": "42"}}
 	handler := New(testGuard(t), service)
 	response := perform(handler.StatusHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "supervisor-001",
 		"role": "supervisor",
 		"exp":  int64(4102444800),
@@ -47,7 +47,7 @@ func TestCursorHandlerSerializesPayload(t *testing.T) {
 	service := &fakeArchiveService{cursorPayload: archiveadmin.Payload{"enterprise_id": "ent-1", "source": "self_decrypt", "cursor": nil}}
 	handler := New(testGuard(t), service)
 	response := perform(handler.CursorHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -89,7 +89,7 @@ func TestOfficialCheckHandlerSerializesPayload(t *testing.T) {
 	handler := New(testGuard(t), service)
 	handler.BackendBaseURL = "https://cloud.example/"
 	response := performPostBody(handler.OfficialCheckHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -108,7 +108,7 @@ func TestOfficialCheckHandlerFallsBackToRequestBaseURL(t *testing.T) {
 	service := &fakeArchiveService{officialPayload: archiveadmin.Payload{"accepted": true}}
 	handler := New(testGuard(t), service)
 	response := performPostBodyWithHeader(handler.OfficialCheckHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "supervisor-001",
 		"role": "supervisor",
 		"exp":  int64(4102444800),
@@ -130,7 +130,7 @@ func TestOfficialCheckHandlerMapsValidationErrors(t *testing.T) {
 	service := &fakeArchiveService{officialErr: archiveadmin.ErrOfficialEnterpriseIDRequired}
 	handler := New(testGuard(t), service)
 	response := performPostBody(handler.OfficialCheckHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -150,7 +150,7 @@ func TestIntegrationTestHandlerSerializesPayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	response := performPostBody(handler.IntegrationTestHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -174,7 +174,7 @@ func TestIntegrationTestHandlerMapsValidationErrors(t *testing.T) {
 	service := &fakeArchiveService{integrationErr: archiveintegration.ErrEnterpriseIDRequired}
 	handler := New(testGuard(t), service)
 	response := performPostBody(handler.IntegrationTestHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "supervisor-001",
 		"role": "supervisor",
 		"exp":  int64(4102444800),
@@ -215,7 +215,7 @@ func TestMessagesBatchHandlerAcceptsSessionJWT(t *testing.T) {
 	service := &fakeArchiveService{batchResult: archiveingest.Result{EnterpriseID: "ent-1", Source: "self_decrypt", Total: 1}}
 	handler := New(testGuard(t), service)
 	response := performPostBody(handler.MessagesBatchHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "agent-supervisor",
 		"role": "supervisor",
 		"exp":  int64(4102444800),
@@ -371,7 +371,7 @@ func TestMediaTaskPrepareHandlerSerializesPayloadForCS(t *testing.T) {
 	service := &fakeArchiveService{mediaTaskResult: archivemedia.RunResult{EnterpriseID: "ent-1", Source: "self_decrypt", Total: 1, Success: 1}}
 	handler := New(testGuard(t), service)
 	response := performPostPathValue(handler.MediaTaskPrepareHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(4102444800),
@@ -390,7 +390,7 @@ func TestMediaTaskPrepareHandlerMapsNotFound(t *testing.T) {
 	service := &fakeArchiveService{mediaTaskErr: archivemedia.ErrMediaTaskNotFound}
 	handler := New(testGuard(t), service)
 	response := performPostPathValue(handler.MediaTaskPrepareHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -445,7 +445,7 @@ func TestSOPLocalMediaHandlerServesLocalFileForAdmin(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	response := perform(handler.SOPLocalMediaHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -466,7 +466,7 @@ func TestSOPLocalMediaHandlerServesLocalFileForAdmin(t *testing.T) {
 func TestSOPLocalMediaHandlerRejectsNonLocalURL(t *testing.T) {
 	handler := New(testGuard(t), &fakeArchiveService{})
 	response := perform(handler.SOPLocalMediaHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -481,7 +481,7 @@ func TestSOPLocalMediaHandlerRejectsNonLocalURL(t *testing.T) {
 func TestSOPLocalMediaHandlerMapsMissingFile(t *testing.T) {
 	handler := New(testGuard(t), &fakeArchiveService{downloadErr: archivemedia.ErrMediaLocalFileNotFound})
 	response := perform(handler.SOPLocalMediaHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -623,7 +623,7 @@ func TestSDKPullHandlerMapsBridgeFailures(t *testing.T) {
 func TestHandlersRequireAdminOrSupervisor(t *testing.T) {
 	handler := New(testGuard(t), &fakeArchiveService{})
 	response := perform(handler.StatusHandler, "Bearer "+signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(4102444800),
@@ -638,7 +638,7 @@ func TestHandlersRequireAdminOrSupervisor(t *testing.T) {
 func TestHandlersReturnServiceUnavailableWhenUnconfigured(t *testing.T) {
 	handler := New(testGuard(t), nil)
 	token := "Bearer " + signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -710,7 +710,7 @@ func TestContactsSyncHandlerSerializesPayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := "Bearer " + signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),
@@ -738,7 +738,7 @@ func TestContactsSyncHandlerDefaultsBody(t *testing.T) {
 	service := &fakeArchiveService{contactsSyncPayload: archivecontacts.Payload{"profiles": []archivecontacts.Payload{}}}
 	handler := New(testGuard(t), service)
 	token := "Bearer " + signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "supervisor",
 		"exp":  int64(4102444800),
@@ -758,7 +758,7 @@ func TestContactsSyncHandlerDefaultsBody(t *testing.T) {
 func TestContactsSyncHandlerRejectsInvalidJSON(t *testing.T) {
 	handler := New(testGuard(t), &fakeArchiveService{})
 	token := "Bearer " + signToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(4102444800),

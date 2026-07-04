@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/p1screen"
+	"im-go/internal/p1screen"
 )
 
 func TestScreenURLHandlerSerializesLegacyPayload(t *testing.T) {

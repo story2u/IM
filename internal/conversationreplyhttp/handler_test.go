@@ -13,11 +13,11 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/conversationreply"
-	"wework-go/internal/sendguard"
-	"wework-go/internal/sendtarget"
-	"wework-go/internal/tasks"
+	"im-go/internal/auth"
+	"im-go/internal/conversationreply"
+	"im-go/internal/sendguard"
+	"im-go/internal/sendtarget"
+	"im-go/internal/tasks"
 )
 
 func TestReplyHandlerSerializesServiceResponse(t *testing.T) {
@@ -31,7 +31,7 @@ func TestReplyHandlerSerializesServiceResponse(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signReplyToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -57,7 +57,7 @@ func TestReplyHandlerMapsAuthAndValidationErrors(t *testing.T) {
 	}
 
 	token := signReplyToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "agent",
 		"exp":  int64(2000),
@@ -71,7 +71,7 @@ func TestReplyHandlerMapsAuthAndValidationErrors(t *testing.T) {
 
 func TestReplyHandlerMapsServiceErrors(t *testing.T) {
 	token := signReplyToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),

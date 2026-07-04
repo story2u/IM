@@ -7,14 +7,14 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 func TestConversationReadHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeConversationReadService{payload: workbench.Payload{"success": true, "already_read": false}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":         "wework-cloud",
+		"iss":         "im-cloud",
 		"sub":         "cs-001",
 		"role":        "cs",
 		"assignee_id": "cs-001",
@@ -36,7 +36,7 @@ func TestConversationReadHandlerMapsNotFound(t *testing.T) {
 	service := &fakeConversationReadService{err: workbench.ErrConversationNotFound}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

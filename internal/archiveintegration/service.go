@@ -8,13 +8,13 @@ import (
 	"sort"
 	"strings"
 
-	"wework-go/internal/archiveadmin"
-	"wework-go/internal/archivecontacts"
-	"wework-go/internal/archiveingest"
-	"wework-go/internal/archivemedia"
-	"wework-go/internal/archivesdk"
-	"wework-go/internal/archivesync"
-	"wework-go/internal/infra/enterprisestore"
+	"im-go/internal/archiveadmin"
+	"im-go/internal/archivecontacts"
+	"im-go/internal/archiveingest"
+	"im-go/internal/archivemedia"
+	"im-go/internal/archivesdk"
+	"im-go/internal/archivesync"
+	"im-go/internal/infra/enterprisestore"
 )
 
 const (

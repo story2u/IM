@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/outbox"
+	"im-go/internal/outbox"
 )
 
 func TestNotifyEnqueuesArchiveSyncRequestedEvent(t *testing.T) {

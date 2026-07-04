@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const shellHeaderText = "WeWork Console";
+const shellHeaderText = "IM Console";
 const routeMatrix = [
   { path: "/", expectText: "客服", selector: "nav" },
   { path: "/admin", expectText: "管理", selector: "nav" },

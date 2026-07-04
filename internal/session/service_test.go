@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 func TestAdminLoginIssuesLegacyAdminToken(t *testing.T) {
@@ -270,7 +270,7 @@ func TestGenerateCSTokenIssuesShortLivedWorkspaceToken(t *testing.T) {
 		Enabled:      true,
 	}}
 	adminToken := signSessionToken(t, service.Verifier.Secret, map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin",
 		"name": "管理员",
 		"role": "admin",
@@ -307,7 +307,7 @@ func TestGenerateCSTokenWritesLegacyImpersonationAudit(t *testing.T) {
 		Enabled:      true,
 	}}
 	adminToken := signSessionToken(t, service.Verifier.Secret, map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-1",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -327,14 +327,14 @@ func TestGenerateCSTokenWritesLegacyImpersonationAudit(t *testing.T) {
 func TestGenerateCSTokenMapsLegacyFailures(t *testing.T) {
 	service := testService(t)
 	adminToken := signSessionToken(t, service.Verifier.Secret, map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin",
 		"role": "admin",
 		"exp":  int64(2000),
 		"jti":  "jwt-admin",
 	})
 	csToken := signSessionToken(t, service.Verifier.Secret, map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -371,7 +371,7 @@ func TestCurrentUserReturnsLegacyMeResponse(t *testing.T) {
 	service.Profiles = profileMap{"cs-001": {AIEnabled: true}}
 	service.LastSeen = &lastSeenRecorder{}
 	token := signSessionToken(t, service.Verifier.Secret, map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"name": "客服一",
 		"role": "cs",
@@ -405,7 +405,7 @@ func TestCurrentUserPropagatesBlacklistStoreErrors(t *testing.T) {
 	service := testService(t)
 	service.Verifier.Blacklist = failingBlacklist{err: errors.New("db unavailable")}
 	token := signSessionToken(t, service.Verifier.Secret, map[string]any{
-		"iss": "wework-cloud",
+		"iss": "im-cloud",
 		"sub": "cs-001",
 		"exp": int64(2000),
 		"jti": "jwt-test",
@@ -422,13 +422,13 @@ func TestCurrentUserThrottlesLastSeenAndSkipsAdmin(t *testing.T) {
 	recorder := &lastSeenRecorder{}
 	service.LastSeen = recorder
 	userToken := signSessionToken(t, service.Verifier.Secret, map[string]any{
-		"iss": "wework-cloud",
+		"iss": "im-cloud",
 		"sub": "cs-001",
 		"exp": int64(2000),
 		"jti": "jwt-user",
 	})
 	adminToken := signSessionToken(t, service.Verifier.Secret, map[string]any{
-		"iss": "wework-cloud",
+		"iss": "im-cloud",
 		"sub": "admin",
 		"exp": int64(2000),
 		"jti": "jwt-admin",
@@ -449,7 +449,7 @@ func TestRefreshRevokesOldTokenAndReturnsLegacyResponse(t *testing.T) {
 	revoker := &revokerRecorder{}
 	service.Revoker = revoker
 	oldToken := signSessionToken(t, service.Verifier.Secret, map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"name": "客服一",
 		"role": "cs",
@@ -495,7 +495,7 @@ func TestRefreshMapsAuthFailuresToLegacyErrors(t *testing.T) {
 func TestRefreshRequiresRevokerAndPropagatesStoreErrors(t *testing.T) {
 	service := testService(t)
 	token := signSessionToken(t, service.Verifier.Secret, map[string]any{
-		"iss": "wework-cloud",
+		"iss": "im-cloud",
 		"sub": "cs-001",
 		"exp": int64(2000),
 		"jti": "jwt-old",
@@ -539,7 +539,7 @@ func TestLogoutWritesLegacyAudit(t *testing.T) {
 	service.Revoker = &revokerRecorder{}
 	service.AuditLogs = &auditRecorder{}
 	token := signSessionToken(t, service.Verifier.Secret, map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"name": "客服一",
 		"exp":  int64(2000),
@@ -576,7 +576,7 @@ func TestLogoutMapsMissingBearerAndRevokerErrors(t *testing.T) {
 		t.Fatalf("missing bearer error = %v", err)
 	}
 	token := signSessionToken(t, service.Verifier.Secret, map[string]any{
-		"iss": "wework-cloud",
+		"iss": "im-cloud",
 		"sub": "cs-001",
 		"exp": int64(2000),
 		"jti": "jwt-logout",

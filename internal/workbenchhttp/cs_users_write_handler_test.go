@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 func TestCSUserUpsertHandlerSerializesServicePayload(t *testing.T) {
@@ -17,7 +17,7 @@ func TestCSUserUpsertHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -42,7 +42,7 @@ func TestCSUserUpsertHandlerMapsValidationAndConflict(t *testing.T) {
 	service := &fakeCSUserWriteService{err: workbench.ErrCSUserPasswordTooShort}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -65,7 +65,7 @@ func TestCSUserDeleteHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeCSUserWriteService{deletePayload: workbench.Payload{"success": true}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -85,7 +85,7 @@ func TestCSUserDeleteHandlerSerializesServicePayload(t *testing.T) {
 func TestCSUserWriteHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

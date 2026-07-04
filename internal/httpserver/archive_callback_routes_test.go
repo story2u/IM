@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"testing"
 
-	"wework-go/internal/archivecallbackhttp"
-	"wework-go/internal/config"
+	"im-go/internal/archivecallbackhttp"
+	"im-go/internal/config"
 )
 
 // TestNewWithModulesCanMountArchiveCallbackCandidate keeps callback opt-in.

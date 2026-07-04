@@ -8,9 +8,9 @@ import (
 	"sort"
 	"strings"
 
-	"wework-go/internal/contracts"
-	"wework-go/internal/httpserver"
-	"wework-go/internal/inventory"
+	"im-go/internal/contracts"
+	"im-go/internal/httpserver"
+	"im-go/internal/inventory"
 )
 
 // RouteRef is the normalized route identity used in diff reports.

@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/customerrelation"
-	"wework-go/internal/friendadded"
-	"wework-go/internal/workbench"
+	"im-go/internal/customerrelation"
+	"im-go/internal/friendadded"
+	"im-go/internal/workbench"
 )
 
 func TestRelationFirstAddTriggerIngestsFriendAddedEvent(t *testing.T) {

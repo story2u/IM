@@ -1,15 +1,15 @@
 /*
- * Next.js root layout for the phase-one frontend rewrite.
+ * Next.js root layout for the standalone IM frontend.
  * The shell is intentionally static until API contracts and realtime events
- * are migrated behind compatibility tests.
+ * are covered by release readiness tests.
  */
 import "./globals.css";
 import { ClientTelemetry } from "../components/ClientTelemetry.jsx";
 import { getAppVersionInfo } from "../lib/appVersion.js";
 
 export const metadata = {
-  title: "WeWork Console",
-  description: "Go and Next.js migration shell",
+  title: "IM Console",
+  description: "Go and Next.js IM console",
 };
 
 export default function RootLayout({ children }) {

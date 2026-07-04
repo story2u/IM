@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/devicesdk"
+	"im-go/internal/devicesdk"
 )
 
 // Client forwards validated low-latency RTC input to a bridge that owns the

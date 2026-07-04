@@ -13,11 +13,11 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/archivemedia"
-	"wework-go/internal/sendguard"
-	"wework-go/internal/sendtarget"
-	"wework-go/internal/tasks"
-	"wework-go/internal/workbench"
+	"im-go/internal/archivemedia"
+	"im-go/internal/sendguard"
+	"im-go/internal/sendtarget"
+	"im-go/internal/tasks"
+	"im-go/internal/workbench"
 )
 
 const MaxUploadBytes = 50 * 1024 * 1024

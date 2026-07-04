@@ -9,16 +9,16 @@ import (
 	"errors"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/config"
-	"wework-go/internal/infra/aiterminalsync"
-	"wework-go/internal/infra/messagedelivery"
-	"wework-go/internal/infra/messagestore"
-	"wework-go/internal/infra/sendworkerstore"
-	"wework-go/internal/infra/taskstore"
-	"wework-go/internal/senddispatcher"
-	"wework-go/internal/tasks"
-	"wework-go/internal/taskshttp"
+	"im-go/internal/auth"
+	"im-go/internal/config"
+	"im-go/internal/infra/aiterminalsync"
+	"im-go/internal/infra/messagedelivery"
+	"im-go/internal/infra/messagestore"
+	"im-go/internal/infra/sendworkerstore"
+	"im-go/internal/infra/taskstore"
+	"im-go/internal/senddispatcher"
+	"im-go/internal/tasks"
+	"im-go/internal/taskshttp"
 )
 
 // ErrStoreRequired means route-ready task assembly was requested without a store.

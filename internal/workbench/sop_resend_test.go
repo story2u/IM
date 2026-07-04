@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/tasks"
+	"im-go/internal/auth"
+	"im-go/internal/tasks"
 )
 
 func TestNewSOPDispatchResendRequestValidatesLegacyBody(t *testing.T) {

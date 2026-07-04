@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/archivecallback"
-	"wework-go/internal/customerrelation"
-	"wework-go/internal/outbox"
-	"wework-go/internal/readmodelcache"
+	"im-go/internal/archivecallback"
+	"im-go/internal/customerrelation"
+	"im-go/internal/outbox"
+	"im-go/internal/readmodelcache"
 )
 
 func TestVerifyURLReturnsPlainEcho(t *testing.T) {

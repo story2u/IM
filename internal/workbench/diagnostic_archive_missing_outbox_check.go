@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/archiveingest"
-	"wework-go/internal/auth"
-	"wework-go/internal/outbox"
+	"im-go/internal/archiveingest"
+	"im-go/internal/auth"
+	"im-go/internal/outbox"
 )
 
 var (

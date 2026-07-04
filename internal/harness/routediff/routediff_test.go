@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/contracts"
-	"wework-go/internal/httpserver"
-	"wework-go/internal/inventory"
+	"im-go/internal/contracts"
+	"im-go/internal/httpserver"
+	"im-go/internal/inventory"
 )
 
 func TestCompareClassifiesRoutes(t *testing.T) {

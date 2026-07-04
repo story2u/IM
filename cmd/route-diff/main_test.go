@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"testing"
 
-	"wework-go/internal/harness/routediff"
-	"wework-go/internal/httpserver"
+	"im-go/internal/harness/routediff"
+	"im-go/internal/httpserver"
 )
 
 func TestSelectGoRoutesDefault(t *testing.T) {

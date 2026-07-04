@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/friendadded"
+	"im-go/internal/auth"
+	"im-go/internal/friendadded"
 )
 
 func TestEventHandlerAcceptsAgentToken(t *testing.T) {
@@ -44,7 +44,7 @@ func TestEventHandlerRequiresAgentOrSession(t *testing.T) {
 }
 
 func TestEventHandlerAcceptsBearerSession(t *testing.T) {
-	verifier, err := auth.NewVerifier("test-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("test-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}

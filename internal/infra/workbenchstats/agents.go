@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 const statsAgentsMessageChunkSize = 500

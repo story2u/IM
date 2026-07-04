@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 func TestServiceGenerateScriptBuildsLegacyPrompt(t *testing.T) {

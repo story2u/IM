@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/sendguard"
-	"wework-go/internal/tasks"
-	"wework-go/internal/workbench"
+	"im-go/internal/sendguard"
+	"im-go/internal/tasks"
+	"im-go/internal/workbench"
 )
 
 var (

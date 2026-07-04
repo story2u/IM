@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 func TestAIReplyLogsHandlerSerializesServicePayload(t *testing.T) {
@@ -21,7 +21,7 @@ func TestAIReplyLogsHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -41,7 +41,7 @@ func TestAIReplyLogsHandlerSerializesServicePayload(t *testing.T) {
 func TestAIReplyLogsHandlerRejectsInvalidQuery(t *testing.T) {
 	handler := New(testGuard(t), &fakeAIReplyLogsService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -58,7 +58,7 @@ func TestAIReplyLogsHandlerRejectsInvalidQuery(t *testing.T) {
 func TestAIReplyLogsHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

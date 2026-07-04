@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/infra/archivemediatask"
-	"wework-go/internal/infra/archivesynccursor"
-	"wework-go/internal/infra/enterprisestore"
+	"im-go/internal/infra/archivemediatask"
+	"im-go/internal/infra/archivesynccursor"
+	"im-go/internal/infra/enterprisestore"
 )
 
 func TestStatusBuildsPythonShape(t *testing.T) {

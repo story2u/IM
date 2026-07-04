@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/tasks"
-	"wework-go/internal/workbench"
+	"im-go/internal/tasks"
+	"im-go/internal/workbench"
 )
 
 var (

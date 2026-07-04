@@ -9,8 +9,8 @@ import (
 	"sort"
 	"strings"
 
-	readiness "wework-go/internal/cutover"
-	"wework-go/internal/httpserver"
+	readiness "im-go/internal/cutover"
+	"im-go/internal/httpserver"
 )
 
 type aggregateReport struct {

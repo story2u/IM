@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"strings"
 
-	"wework-go/internal/archiveadmin"
-	"wework-go/internal/archivepull"
-	"wework-go/internal/infra/enterprisestore"
+	"im-go/internal/archiveadmin"
+	"im-go/internal/archivepull"
+	"im-go/internal/infra/enterprisestore"
 )
 
 const (

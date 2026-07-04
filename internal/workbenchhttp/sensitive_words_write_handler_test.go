@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 // TestSensitiveWordUpsertHandlerSerializesServicePayload verifies body wiring.
@@ -21,7 +21,7 @@ func TestSensitiveWordUpsertHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -43,7 +43,7 @@ func TestSensitiveWordUpsertHandlerRejectsBlankWord(t *testing.T) {
 	service := &fakeSensitiveWordWriteService{err: workbench.ErrSensitiveWordRequired}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -62,7 +62,7 @@ func TestSensitiveWordDeleteHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeSensitiveWordWriteService{deletePayload: workbench.Payload{"success": true}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "sup-001",
 		"role": "supervisor",
 		"exp":  int64(2000),
@@ -83,7 +83,7 @@ func TestSensitiveWordDeleteHandlerSerializesServicePayload(t *testing.T) {
 func TestSensitiveWordWriteHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

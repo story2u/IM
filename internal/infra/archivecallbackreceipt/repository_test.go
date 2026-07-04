@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/archivecallback"
+	"im-go/internal/archivecallback"
 )
 
 func TestRecordCallbackInsertsNewReceipt(t *testing.T) {

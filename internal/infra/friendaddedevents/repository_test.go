@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/friendadded"
+	"im-go/internal/friendadded"
 )
 
 func TestAddFriendEventInsertsWhenTraceIsNew(t *testing.T) {

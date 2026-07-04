@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/projectionupdate"
+	"im-go/internal/projectionupdate"
 )
 
 const (

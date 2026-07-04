@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/workbench"
+	"im-go/internal/auth"
+	"im-go/internal/workbench"
 )
 
 func TestBootstrapHandlerSerializesServicePayload(t *testing.T) {
@@ -24,7 +24,7 @@ func TestBootstrapHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -61,7 +61,7 @@ func TestBootstrapHandlerMapsLegacyAuthErrors(t *testing.T) {
 func TestBootstrapHandlerRejectsNonCSRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeBootstrapService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -78,7 +78,7 @@ func TestBootstrapHandlerRejectsNonCSRole(t *testing.T) {
 func TestBootstrapHandlerRequiresConfiguredService(t *testing.T) {
 	handler := New(testGuard(t), nil)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -95,7 +95,7 @@ func TestBootstrapHandlerRequiresConfiguredService(t *testing.T) {
 func TestBootstrapHandlerMapsServiceErrorsToInternalServerError(t *testing.T) {
 	handler := New(testGuard(t), &fakeBootstrapService{err: errors.New("projection unavailable")})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -118,7 +118,7 @@ func TestConversationsHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -141,7 +141,7 @@ func TestConversationsHandlerSerializesServicePayload(t *testing.T) {
 func TestConversationsHandlerRejectsInvalidCursor(t *testing.T) {
 	handler := New(testGuard(t), &fakeWorkbenchService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -158,7 +158,7 @@ func TestConversationsHandlerRejectsInvalidCursor(t *testing.T) {
 func TestConversationsHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -178,7 +178,7 @@ func TestConversationListHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":       "wework-cloud",
+		"iss":       "im-cloud",
 		"sub":       "admin",
 		"role":      "admin",
 		"tenant_id": "tenant-1",
@@ -202,7 +202,7 @@ func TestConversationListHandlerSerializesServicePayload(t *testing.T) {
 func TestConversationListHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -222,7 +222,7 @@ func TestSummaryHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -245,7 +245,7 @@ func TestSummaryHandlerSerializesServicePayload(t *testing.T) {
 func TestSummaryHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -268,7 +268,7 @@ func TestSearchHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -291,7 +291,7 @@ func TestSearchHandlerSerializesServicePayload(t *testing.T) {
 func TestSearchHandlerRejectsInvalidCursor(t *testing.T) {
 	handler := New(testGuard(t), &fakeWorkbenchService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -308,7 +308,7 @@ func TestSearchHandlerRejectsInvalidCursor(t *testing.T) {
 func TestSearchHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -329,7 +329,7 @@ func TestAccountStatsHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -352,7 +352,7 @@ func TestAccountStatsHandlerSerializesServicePayload(t *testing.T) {
 func TestAccountStatsHandlerMapsCSScopeErrors(t *testing.T) {
 	handler := New(testGuard(t), &fakeWorkbenchService{err: workbench.ErrCSAssigneeScope})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -369,7 +369,7 @@ func TestAccountStatsHandlerMapsCSScopeErrors(t *testing.T) {
 func TestAccountStatsHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -390,7 +390,7 @@ func TestPanelBootstrapHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -414,7 +414,7 @@ func TestPanelBootstrapHandlerSerializesServicePayload(t *testing.T) {
 func TestPanelBootstrapHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -435,7 +435,7 @@ func TestPanelSnapshotHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -456,7 +456,7 @@ func TestPanelSnapshotHandlerSerializesServicePayload(t *testing.T) {
 func TestPanelSnapshotHandlerRejectsInvalidCursor(t *testing.T) {
 	handler := New(testGuard(t), &fakeWorkbenchService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -473,7 +473,7 @@ func TestPanelSnapshotHandlerRejectsInvalidCursor(t *testing.T) {
 func TestPanelSnapshotHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -493,7 +493,7 @@ func TestAccountsListHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -516,7 +516,7 @@ func TestAccountsListHandlerSerializesServicePayload(t *testing.T) {
 func TestAccountsListHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -536,7 +536,7 @@ func TestCSUsersListHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -559,7 +559,7 @@ func TestCSUsersListHandlerSerializesServicePayload(t *testing.T) {
 func TestCSUsersListHandlerRejectsNonAdminRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeWorkbenchService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -576,7 +576,7 @@ func TestCSUsersListHandlerRejectsNonAdminRole(t *testing.T) {
 func TestCSUsersListHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -596,7 +596,7 @@ func TestCSUsersStatusHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -619,7 +619,7 @@ func TestCSUsersStatusHandlerSerializesServicePayload(t *testing.T) {
 func TestCSUsersStatusHandlerRejectsNonAdminRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeWorkbenchService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -636,7 +636,7 @@ func TestCSUsersStatusHandlerRejectsNonAdminRole(t *testing.T) {
 func TestCSUsersStatusHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -657,7 +657,7 @@ func TestAssignmentConfigHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "sup-001",
 		"role": "supervisor",
 		"exp":  int64(2000),
@@ -680,7 +680,7 @@ func TestAssignmentConfigHandlerSerializesServicePayload(t *testing.T) {
 func TestAssignmentConfigHandlerRejectsCSRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeWorkbenchService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -697,7 +697,7 @@ func TestAssignmentConfigHandlerRejectsCSRole(t *testing.T) {
 func TestAssignmentConfigHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -719,7 +719,7 @@ func TestAssignmentConfigWriteHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -743,7 +743,7 @@ func TestAssignmentConfigWriteHandlerMapsValidationError(t *testing.T) {
 	service := &fakeWorkbenchService{err: workbench.AssignmentConfigValidationError{Detail: "rule.name is required"}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -760,7 +760,7 @@ func TestAssignmentConfigWriteHandlerMapsValidationError(t *testing.T) {
 func TestAssignmentConfigWriteHandlerRejectsCSRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeWorkbenchService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -777,7 +777,7 @@ func TestAssignmentConfigWriteHandlerRejectsCSRole(t *testing.T) {
 func TestAssignmentConfigWriteHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -798,7 +798,7 @@ func TestAuditLogsHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -822,7 +822,7 @@ func TestAuditLogsHandlerSerializesServicePayload(t *testing.T) {
 func TestAuditLogsHandlerRejectsCSRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeWorkbenchService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -839,7 +839,7 @@ func TestAuditLogsHandlerRejectsCSRole(t *testing.T) {
 func TestAuditLogsHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -860,7 +860,7 @@ func TestSensitiveWordsHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "sup-001",
 		"role": "supervisor",
 		"exp":  int64(2000),
@@ -884,7 +884,7 @@ func TestSensitiveWordsHandlerSerializesServicePayload(t *testing.T) {
 func TestSensitiveWordsHandlerRejectsCSRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeWorkbenchService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -902,7 +902,7 @@ func TestSensitiveWordsHandlerRejectsCSRole(t *testing.T) {
 func TestSensitiveWordsHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -923,7 +923,7 @@ func TestReplyScriptsHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -947,7 +947,7 @@ func TestReplyScriptsHandlerSerializesServicePayload(t *testing.T) {
 func TestReplyScriptsHandlerRejectsCSRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeWorkbenchService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -965,7 +965,7 @@ func TestReplyScriptsHandlerRejectsCSRole(t *testing.T) {
 func TestReplyScriptsHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -986,7 +986,7 @@ func TestAIConfigHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "sup-001",
 		"role": "supervisor",
 		"exp":  int64(2000),
@@ -1010,7 +1010,7 @@ func TestAIConfigHandlerSerializesServicePayload(t *testing.T) {
 func TestAIConfigHandlerRejectsCSRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeWorkbenchService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -1028,7 +1028,7 @@ func TestAIConfigHandlerRejectsCSRole(t *testing.T) {
 func TestAIConfigHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -1049,7 +1049,7 @@ func TestSOPFlowsHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -1073,7 +1073,7 @@ func TestSOPFlowsHandlerSerializesServicePayload(t *testing.T) {
 func TestSOPFlowsHandlerRejectsCSRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeWorkbenchService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -1091,7 +1091,7 @@ func TestSOPFlowsHandlerRejectsCSRole(t *testing.T) {
 func TestSOPFlowsHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -1113,7 +1113,7 @@ func TestSOPFlowUpsertHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "supervisor",
 		"exp":  int64(2000),
@@ -1135,7 +1135,7 @@ func TestSOPFlowWriteHandlersMapErrors(t *testing.T) {
 	service := &fakeWorkbenchService{err: workbench.SOPConfigValidationError{Detail: "flow_id is required"}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -1160,7 +1160,7 @@ func TestSOPPoliciesHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -1184,7 +1184,7 @@ func TestSOPPoliciesHandlerSerializesServicePayload(t *testing.T) {
 func TestSOPPoliciesHandlerRejectsCSRole(t *testing.T) {
 	handler := New(testGuard(t), &fakeWorkbenchService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -1202,7 +1202,7 @@ func TestSOPPoliciesHandlerRejectsCSRole(t *testing.T) {
 func TestSOPPoliciesHandlerRequiresConfiguredService(t *testing.T) {
 	handler := Handler{Guard: testGuard(t)}
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -1224,7 +1224,7 @@ func TestSOPPolicyUpsertHandlerSerializesServicePayload(t *testing.T) {
 	}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -1246,7 +1246,7 @@ func TestSOPPolicyDeleteHandlerPassesPath(t *testing.T) {
 	service := &fakeWorkbenchService{sopPolicyDeletePayload: workbench.Payload{"success": true}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

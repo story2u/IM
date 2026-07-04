@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/outbox"
+	"im-go/internal/outbox"
 )
 
 func TestEnqueueUsesMySQLUpsertAndLegacyTimeParams(t *testing.T) {

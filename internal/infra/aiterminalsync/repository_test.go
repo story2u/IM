@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/senddispatcher"
+	"im-go/internal/senddispatcher"
 )
 
 // TestRepositorySyncAITerminalStateUpdatesLatestAttempt mirrors Python update_attempt terminal writes.

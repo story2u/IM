@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/messages"
-	"wework-go/internal/workbench"
+	"im-go/internal/messages"
+	"im-go/internal/workbench"
 )
 
 func TestQueryConversationResolvesAccountConversationAndMessages(t *testing.T) {

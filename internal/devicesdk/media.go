@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 // MediaValidationError represents Python-compatible 422 media request failures.

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 func TestServiceTransferConversationReleasesClaimsPublishesAndAudits(t *testing.T) {

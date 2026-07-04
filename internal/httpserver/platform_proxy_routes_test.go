@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/config"
-	"wework-go/internal/platformproxy"
-	"wework-go/internal/platformproxyhttp"
-	"wework-go/internal/tasks"
+	"im-go/internal/config"
+	"im-go/internal/platformproxy"
+	"im-go/internal/platformproxyhttp"
+	"im-go/internal/tasks"
 )
 
 // TestNewWithModulesCanMountPlatformProxyReadCandidate keeps platform proxy routes opt-in.

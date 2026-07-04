@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"wework-go/internal/inventory"
+	"im-go/internal/inventory"
 )
 
 type summary struct {

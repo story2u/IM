@@ -8,9 +8,9 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"wework-go/internal/archivereconcile"
-	"wework-go/internal/incomingqueue"
-	"wework-go/internal/incomingwrite"
+	"im-go/internal/archivereconcile"
+	"im-go/internal/incomingqueue"
+	"im-go/internal/incomingwrite"
 )
 
 func TestNewRequiresQueueAndService(t *testing.T) {

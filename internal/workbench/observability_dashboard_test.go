@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 // TestNewObservabilityDashboardRequestValidatesBounds keeps FastAPI Query limits.

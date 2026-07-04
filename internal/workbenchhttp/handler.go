@@ -9,8 +9,8 @@ import (
 	"errors"
 	"net/http"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/workbench"
+	"im-go/internal/auth"
+	"im-go/internal/workbench"
 )
 
 // BootstrapService builds the legacy CS workbench bootstrap payload.

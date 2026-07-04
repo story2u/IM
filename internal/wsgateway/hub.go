@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"wework-go/internal/realtime"
-	"wework-go/internal/streamchannels"
+	"im-go/internal/realtime"
+	"im-go/internal/streamchannels"
 )
 
 // Sender is the small websocket connection shape used by Hub.

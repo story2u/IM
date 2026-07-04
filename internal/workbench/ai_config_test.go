@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 // TestServiceAIConfigBuildsDefaults keeps the legacy default response shape.

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"wework-go/internal/archivemaintenance"
-	coldstore "wework-go/internal/infra/archivecoldstorage"
+	"im-go/internal/archivemaintenance"
+	coldstore "im-go/internal/infra/archivecoldstorage"
 )
 
 // MessageStore owns encrypted_messages reads and post-export deletes.

@@ -7,14 +7,14 @@ import (
 	"strings"
 	"testing"
 
-	"wework-go/internal/workbench"
+	"im-go/internal/workbench"
 )
 
 func TestAIConfigTestHandlerSerializesServicePayload(t *testing.T) {
 	service := &fakeAIConfigTestService{payload: workbench.Payload{"success": true, "reply": "pong"}}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),
@@ -35,7 +35,7 @@ func TestAIConfigTestHandlerMapsValidationAndGenerationErrors(t *testing.T) {
 	service := &fakeAIConfigTestService{err: workbench.ErrScriptPromptRequired}
 	handler := New(testGuard(t), service)
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "sup-001",
 		"role": "supervisor",
 		"exp":  int64(2000),
@@ -63,7 +63,7 @@ func TestAIConfigTestHandlerMapsValidationAndGenerationErrors(t *testing.T) {
 func TestAIConfigTestHandlerRejectsCSRoleAndMissingService(t *testing.T) {
 	handler := New(testGuard(t), &fakeAIConfigTestService{})
 	token := signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "cs-001",
 		"role": "cs",
 		"exp":  int64(2000),
@@ -77,7 +77,7 @@ func TestAIConfigTestHandlerRejectsCSRoleAndMissingService(t *testing.T) {
 
 	handler = Handler{Guard: testGuard(t)}
 	token = signWorkbenchToken(t, "session-secret", map[string]any{
-		"iss":  "wework-cloud",
+		"iss":  "im-cloud",
 		"sub":  "admin-001",
 		"role": "admin",
 		"exp":  int64(2000),

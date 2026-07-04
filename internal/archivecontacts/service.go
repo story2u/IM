@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"wework-go/internal/contacts"
+	"im-go/internal/contacts"
 )
 
 const (

@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"wework-go/internal/weworknotify"
+	"im-go/internal/weworknotify"
 )
 
 const maxNotifyBodyBytes = 1 << 20

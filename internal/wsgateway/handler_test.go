@@ -11,7 +11,7 @@ import (
 
 	"github.com/coder/websocket"
 
-	"wework-go/internal/auth"
+	"im-go/internal/auth"
 )
 
 func TestWebSocketHandlerConnectsAndPongs(t *testing.T) {
@@ -160,7 +160,7 @@ func readJSONMessage(t *testing.T, conn *websocket.Conn) map[string]any {
 
 func testAuthenticator(t *testing.T) Authenticator {
 	t.Helper()
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}
@@ -169,7 +169,7 @@ func testAuthenticator(t *testing.T) Authenticator {
 
 func issueToken(t *testing.T) string {
 	t.Helper()
-	verifier, err := auth.NewVerifier("session-secret", "wework-cloud")
+	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {
 		t.Fatalf("NewVerifier returned error: %v", err)
 	}

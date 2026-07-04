@@ -8,10 +8,10 @@ import (
 	"io"
 	"net/http"
 
-	"wework-go/internal/auth"
-	"wework-go/internal/sendguard"
-	"wework-go/internal/sendtarget"
-	"wework-go/internal/sendtext"
+	"im-go/internal/auth"
+	"im-go/internal/sendguard"
+	"im-go/internal/sendtarget"
+	"im-go/internal/sendtext"
 )
 
 // Service creates send text tasks.
