@@ -420,7 +420,7 @@ func (service Service) proxyGet(ctx context.Context, path string, params map[str
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 
 	var payload struct {
 		Code    any    `json:"code"`
@@ -469,7 +469,7 @@ func (service Service) proxyPost(ctx context.Context, path string, body map[stri
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 
 	var payload struct {
 		Code    any    `json:"code"`

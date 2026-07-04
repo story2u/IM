@@ -126,7 +126,7 @@ func (repository *Repository) List(ctx context.Context, query tasks.Query) ([]ta
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records := make([]tasks.Record, 0)
 	for rows.Next() {
 		record, err := scanTask(rows)

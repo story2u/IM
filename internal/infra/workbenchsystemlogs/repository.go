@@ -102,7 +102,7 @@ func (repository *Repository) loadItems(logPath string, mtime int64) ([]workbenc
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	items := make([]workbench.ProjectionRow, 0)
 	scanner := bufio.NewScanner(file)

@@ -173,7 +173,7 @@ func (repository *Repository) selectSQL() string {
 }
 
 func scanKnowledgeDocs(rows RowsScanner) ([]workbench.KnowledgeDocRecord, error) {
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records := make([]workbench.KnowledgeDocRecord, 0)
 	for rows.Next() {
 		var docID any

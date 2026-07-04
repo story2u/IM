@@ -25,7 +25,7 @@ func (repository *Repository) ListPanelRows(ctx context.Context, query workbench
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	result, err := scanProjectionRows(rows)
 	if err != nil {
 		return nil, err

@@ -114,10 +114,6 @@ func BuildProfileUpsert(input ProfileUpsert, existing *Record) (Record, bool) {
 		now = time.Now().UTC()
 	}
 	nowISO := now.Format(time.RFC3339Nano)
-	source := strings.TrimSpace(input.Source)
-	if source == "" {
-		source = sourceContactNickname
-	}
 	remark := strings.TrimSpace(input.SenderRemark)
 	nickname := strings.TrimSpace(input.SenderName)
 	avatar := strings.TrimSpace(input.SenderAvatar)
@@ -130,25 +126,21 @@ func BuildProfileUpsert(input ProfileUpsert, existing *Record) (Record, bool) {
 	}
 
 	displayName := ""
-	resolvedSource := source
+	resolvedSource := sourceFallback
 	if remarkValid && scopeWeWorkUserID == "" {
 		displayName = remark
 		resolvedSource = sourceContactRemark
 	} else if nickname != "" && nicknameValid && !isWeWorkID(nickname) {
 		displayName = nickname
 		resolvedSource = sourceContactNickname
-	} else {
-		resolvedSource = sourceFallback
 	}
 
-	identityStatus := sourceFallback
+	identityStatus := "missing"
 	switch {
 	case displayName != "" || (scopeWeWorkUserID != "" && (remarkValid || (nickname != "" && nicknameValid))):
 		identityStatus = "ready"
 	case remark != "" || nickname != "":
 		identityStatus = "partial"
-	default:
-		identityStatus = "missing"
 	}
 
 	profileError := ""
@@ -365,17 +357,15 @@ func ScopedDisplayRows(record Record) []ScopedDisplayRow {
 	scopedProfileIDs := map[string]bool{}
 	rows := make([]ScopedDisplayRow, 0)
 	seen := map[string]bool{}
-	if scopedProfiles != nil {
-		for rawWeWorkUserID, rawProfile := range scopedProfiles {
-			weworkUserID := NormalizeScopeWeWorkUserID(rawWeWorkUserID)
-			profile := asMap(rawProfile)
-			if weworkUserID == "" || profile == nil {
-				continue
-			}
-			scopedProfileIDs[weworkUserID] = true
-			for _, key := range []string{"remark_name", "display_name"} {
-				appendScopedDisplayRows(&rows, seen, enterpriseID, weworkUserID, textValue(profile[key]), senderID)
-			}
+	for rawWeWorkUserID, rawProfile := range scopedProfiles {
+		weworkUserID := NormalizeScopeWeWorkUserID(rawWeWorkUserID)
+		profile := asMap(rawProfile)
+		if weworkUserID == "" || profile == nil {
+			continue
+		}
+		scopedProfileIDs[weworkUserID] = true
+		for _, key := range []string{"remark_name", "display_name"} {
+			appendScopedDisplayRows(&rows, seen, enterpriseID, weworkUserID, textValue(profile[key]), senderID)
 		}
 	}
 	if followUsers, ok := extra["customer_follow_users"].([]any); ok {

@@ -306,7 +306,7 @@ func (repository *Repository) ListByArchiveMsgIDs(ctx context.Context, archiveMs
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return scanTasks(rows)
 }
 
@@ -494,7 +494,7 @@ RETURNING `+recordColumnsSQL("target"),
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return scanTasks(rows)
 }
 
@@ -520,7 +520,7 @@ func (repository *Repository) loadTasksByTaskIDs(ctx context.Context, queryer Qu
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return scanTasks(rows)
 }
 
@@ -529,7 +529,7 @@ func selectTaskIDs(ctx context.Context, queryer Queryer, query string, args ...a
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	taskIDs := []string{}
 	for rows.Next() {
 		var taskID any

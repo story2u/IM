@@ -75,7 +75,7 @@ func (repository *Repository) SummarizeSDKDispatchBacklog(ctx context.Context, q
 	if err != nil {
 		return summary, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var deviceID sql.NullString
 		var accepted int

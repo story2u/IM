@@ -247,7 +247,7 @@ func (resolver *Resolver) firstMap(ctx context.Context, query string, args ...an
 	if err != nil {
 		return nil, false, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	columns, err := rows.Columns()
 	if err != nil {
 		return nil, false, err

@@ -56,7 +56,7 @@ func (handler Handler) TestHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func decodeJSON(r *http.Request, value any) error {
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 	limited := io.LimitReader(r.Body, 1<<20+1)
 	data, err := io.ReadAll(limited)
 	if err != nil {

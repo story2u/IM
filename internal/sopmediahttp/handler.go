@@ -56,13 +56,13 @@ func parseUploadRequest(r *http.Request) (sopmedia.Request, error) {
 		return sopmedia.Request{}, errors.New("invalid multipart body")
 	}
 	if r.MultipartForm != nil {
-		defer r.MultipartForm.RemoveAll()
+		defer func() { _ = r.MultipartForm.RemoveAll() }()
 	}
 	file, header, err := r.FormFile("file")
 	if err != nil {
 		return sopmedia.Request{}, errors.New("file is required")
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	content, err := io.ReadAll(io.LimitReader(file, sopmedia.MaxUploadBytes+1))
 	if err != nil {
 		return sopmedia.Request{}, errors.New("invalid multipart body")

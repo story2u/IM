@@ -68,7 +68,7 @@ func (repository *Repository) ListAuditLogs(ctx context.Context, query workbench
 	if err != nil {
 		return workbench.AuditLogPage{}, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	logs := make([]workbench.AuditLogRecord, 0, pageSize)
 	for rows.Next() {
 		var logID any
@@ -180,8 +180,8 @@ func (repository *Repository) beijingDayBounds(dateText string) (any, any, error
 }
 
 func scanTotal(rows RowsScanner) (int, error) {
-	defer rows.Close()
-	for rows.Next() {
+	defer func() { _ = rows.Close() }()
+	if rows.Next() {
 		var total any
 		if err := rows.Scan(&total); err != nil {
 			return 0, err

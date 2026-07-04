@@ -1124,14 +1124,14 @@ func MarkdownReport(report Report) string {
 	builder.WriteString("# Release Readiness Report\n\n")
 	builder.WriteString("| Field | Value |\n")
 	builder.WriteString("| --- | --- |\n")
-	builder.WriteString(fmt.Sprintf("| Profile | `%s` |\n", escape(report.Profile)))
-	builder.WriteString(fmt.Sprintf("| Ready | `%t` |\n", report.Ready))
-	builder.WriteString(fmt.Sprintf("| Description | %s |\n\n", escape(report.Description)))
+	fmt.Fprintf(&builder, "| Profile | `%s` |\n", escape(report.Profile))
+	fmt.Fprintf(&builder, "| Ready | `%t` |\n", report.Ready)
+	fmt.Fprintf(&builder, "| Description | %s |\n\n", escape(report.Description))
 	builder.WriteString("## Checks\n\n")
 	builder.WriteString("| Surface | Status | Detail |\n")
 	builder.WriteString("| --- | --- | --- |\n")
 	for _, check := range report.Checks {
-		builder.WriteString(fmt.Sprintf("| `%s` | `%s` | %s |\n", escape(check.Name), check.Status, escape(check.Detail)))
+		fmt.Fprintf(&builder, "| `%s` | `%s` | %s |\n", escape(check.Name), check.Status, escape(check.Detail))
 	}
 	builder.WriteString("\n")
 	return builder.String()

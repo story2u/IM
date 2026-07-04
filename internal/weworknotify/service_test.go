@@ -613,7 +613,6 @@ func (firstAdd *fakeFirstAdd) TriggerFirstAdd(ctx context.Context, payload custo
 type fakeProfileEdit struct {
 	payloads []customerrelation.Payload
 	payload  map[string]any
-	ok       bool
 	err      error
 }
 

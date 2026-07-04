@@ -90,7 +90,7 @@ func (handler Handler) AccountBatchUpsertHandler(w http.ResponseWriter, r *http.
 		writeServiceError(w, workbench.ErrAccountBatchFileRequired)
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	content, err := io.ReadAll(file)
 	if err != nil {
 		writeError(w, http.StatusUnprocessableEntity, "csv decode failed")
@@ -1488,7 +1488,7 @@ func readKnowledgeMultipartFile(r *http.Request) (string, []byte, error) {
 	if err != nil {
 		return "", nil, workbench.ErrKnowledgeDocFileRequired
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	content, err := io.ReadAll(file)
 	if err != nil {
 		return "", nil, err

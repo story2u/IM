@@ -112,7 +112,7 @@ func (checker HTTPTokenChecker) CheckToken(ctx context.Context, corpID string, c
 	if err != nil {
 		return TokenCheckResult{}, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		return TokenCheckResult{}, fmt.Errorf("gettoken failed: status=%d", response.StatusCode)
 	}

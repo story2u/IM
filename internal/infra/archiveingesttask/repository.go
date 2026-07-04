@@ -365,7 +365,7 @@ func (repository *Repository) ListPendingScopes(ctx context.Context, limit int) 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	scopes := []Scope{}
 	for rows.Next() {
 		var enterpriseRaw any
@@ -760,7 +760,7 @@ func (repository *Repository) recordColumnSQL(prefix string) string {
 }
 
 func scanRecordRows(rows RowsScanner) ([]Record, error) {
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records := []Record{}
 	for rows.Next() {
 		record, err := scanRecord(rows)
@@ -833,7 +833,7 @@ func scanRecord(row RowScanner) (Record, error) {
 }
 
 func scanTaskIDs(rows RowsScanner) ([]string, error) {
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	taskIDs := []string{}
 	for rows.Next() {
 		var taskID any

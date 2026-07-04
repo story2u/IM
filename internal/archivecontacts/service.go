@@ -255,7 +255,7 @@ LIMIT %s`, store.limitPlaceholder()), normalizeLimit(limit))
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var senderIDs []string
 	for rows.Next() {
 		var senderID sql.NullString

@@ -83,7 +83,7 @@ LIMIT 1`, strings.TrimSpace(enterpriseID), strings.TrimSpace(externalUserID))
 	if err != nil {
 		return nil, false, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	if !rows.Next() {
 		return nil, false, rows.Err()
 	}
@@ -193,7 +193,7 @@ LIMIT ?`, strings.TrimSpace(enterpriseID), strings.TrimSpace(enterpriseID), norm
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	threshold := repository.now().Add(-time.Duration(positiveMaxAgeHours(maxAgeHours)) * time.Hour)
 	results := make([]contacts.Payload, 0, normalizedLimit)
 	for rows.Next() {
@@ -299,7 +299,7 @@ LIMIT ?`, strings.TrimSpace(enterpriseID), strings.TrimSpace(enterpriseID), norm
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	threshold := repository.now().Add(-time.Duration(positiveMaxAgeHours(maxAgeHours)) * time.Hour)
 	results := make([]contacts.Payload, 0, normalizedLimit)
 	for rows.Next() {
@@ -354,7 +354,7 @@ LIMIT 1`, strings.TrimSpace(enterpriseID), strings.TrimSpace(userID))
 	if err != nil {
 		return nil, false, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	if !rows.Next() {
 		return nil, false, rows.Err()
 	}
@@ -442,7 +442,7 @@ LIMIT ?`
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	results := make([]weworkuserinfo.InternalUserCandidate, 0)
 	seenUserIDs := make(map[string]bool)
 	for rows.Next() {
@@ -511,7 +511,7 @@ LIMIT 1`, normalizedEnterpriseID, normalizedUserID)
 	if err != nil {
 		return weworkuserinfo.InternalUserCandidate{}, false, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	if !rows.Next() {
 		return weworkuserinfo.InternalUserCandidate{}, false, rows.Err()
 	}
@@ -822,7 +822,7 @@ func (repository *Repository) tableExists(ctx context.Context, table string) (bo
 	if err != nil {
 		return false, nil
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return true, rows.Err()
 }
 

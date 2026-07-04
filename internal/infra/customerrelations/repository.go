@@ -316,7 +316,7 @@ WHERE enterprise_id = ? AND external_userid = ? AND relation_status = ?`,
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	seen := map[string]bool{}
 	userIDs := make([]string, 0)
 	for rows.Next() {

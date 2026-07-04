@@ -130,7 +130,9 @@ func (repository *Repository) syncConversationRuntime(ctx context.Context, updat
 	}
 	currentTaskID := runtimeText(runtimeState, "ai_reply_task_id")
 	currentTraceID := runtimeText(runtimeState, "ai_reply_message_trace_id")
-	if !((currentTaskID != "" && currentTaskID == taskID) || (currentTraceID != "" && currentTraceID == traceID)) {
+	taskMatches := currentTaskID != "" && currentTaskID == taskID
+	traceMatches := currentTraceID != "" && currentTraceID == traceID
+	if !taskMatches && !traceMatches {
 		return nil
 	}
 	runtimeState["ai_reply_status"] = strings.TrimSpace(update.RuntimeStatus)

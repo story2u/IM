@@ -203,7 +203,7 @@ LIMIT ? OFFSET ?`
 
 // scanReplyLogRows converts SQL rows into raw workbench projection rows.
 func scanReplyLogRows(rows RowsScanner, capacity int) ([]workbench.ProjectionRow, error) {
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	logs := make([]workbench.ProjectionRow, 0, capacity)
 	for rows.Next() {
 		var attemptID any
@@ -323,8 +323,8 @@ func scanReplyLogRows(rows RowsScanner, capacity int) ([]workbench.ProjectionRow
 
 // scanTotal reads the COUNT(1) result row.
 func scanTotal(rows RowsScanner) (int, error) {
-	defer rows.Close()
-	for rows.Next() {
+	defer func() { _ = rows.Close() }()
+	if rows.Next() {
 		var total any
 		if err := rows.Scan(&total); err != nil {
 			return 0, err

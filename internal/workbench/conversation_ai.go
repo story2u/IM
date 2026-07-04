@@ -2,7 +2,6 @@ package workbench
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -388,10 +387,6 @@ func aiOverrideMode(enabled bool) string {
 	return "manual"
 }
 
-func computeEffectiveConversationAI(accountAIEnabled bool, overrideMode string) bool {
-	return ComputeEffectiveConversationAI(accountAIEnabled, overrideMode)
-}
-
 // ComputeEffectiveConversationAI applies the legacy override precedence.
 func ComputeEffectiveConversationAI(accountAIEnabled bool, overrideMode string) bool {
 	switch strings.ToLower(strings.TrimSpace(overrideMode)) {
@@ -446,27 +441,4 @@ func conversationAIEventPayload(conversation ConversationAIRecord, accountAIEnab
 		"ai_mode_override":   defaultText(strings.TrimSpace(conversation.AIModeOverride), "inherit"),
 		"account_ai_enabled": accountAIEnabled,
 	}
-}
-
-func runtimeStateFromJSON(raw string) map[string]any {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return map[string]any{}
-	}
-	var value map[string]any
-	if err := json.Unmarshal([]byte(raw), &value); err != nil || value == nil {
-		return map[string]any{}
-	}
-	return value
-}
-
-func runtimeStateToJSON(value map[string]any) string {
-	if value == nil {
-		value = map[string]any{}
-	}
-	data, err := json.Marshal(value)
-	if err != nil {
-		return "{}"
-	}
-	return string(data)
 }

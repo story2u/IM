@@ -79,7 +79,7 @@ LIMIT ?`
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	records := make([]workbench.ObservabilityMetricRecord, 0)
 	for rows.Next() {
@@ -153,7 +153,7 @@ LIMIT ?`
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	records := make([]workbench.ObservabilityEventRecord, 0)
 	for rows.Next() {
@@ -231,7 +231,7 @@ LIMIT ?`
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	records := make([]workbench.ObservabilitySpanRecord, 0)
 	for rows.Next() {
@@ -293,7 +293,7 @@ LIMIT ?`
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	records := make([]workbench.ObservabilityStageLatencyRecord, 0)
 	for rows.Next() {

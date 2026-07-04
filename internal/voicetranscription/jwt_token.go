@@ -130,7 +130,7 @@ func (provider *JWTAccessTokenProvider) requestAccessToken(ctx context.Context) 
 	if err != nil {
 		return "", 0, RetryableError{Message: "coze jwt token request failed: " + err.Error()}
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", 0, RetryableError{Message: "coze jwt token response read failed: " + err.Error()}

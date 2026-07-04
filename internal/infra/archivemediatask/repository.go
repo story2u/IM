@@ -422,7 +422,7 @@ func (repository *Repository) GetTask(ctx context.Context, taskID string) (*Reco
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records, err := scanRecords(rows)
 	if err != nil {
 		return nil, err
@@ -458,7 +458,7 @@ func (repository *Repository) ListTasks(ctx context.Context, options ListOptions
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return scanRecords(rows)
 }
 
@@ -485,7 +485,7 @@ func (repository *Repository) ListByArchiveMsgIDs(ctx context.Context, archiveMs
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return scanRecords(rows)
 }
 
@@ -499,7 +499,7 @@ func (repository *Repository) ListFinishedBefore(ctx context.Context, cutoff tim
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return scanRecords(rows)
 }
 
@@ -647,7 +647,7 @@ func (repository *Repository) existingByIdentity(ctx context.Context, identities
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	output := map[string]Record{}
 	for rows.Next() {
 		var taskID any
@@ -738,7 +738,7 @@ RETURNING `+recordColumnsSQL("target"),
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return scanRecords(rows)
 }
 
@@ -747,7 +747,7 @@ func (repository *Repository) selectClaimableTaskIDs(ctx context.Context, querye
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	taskIDs := []string{}
 	for rows.Next() {
 		var taskID any
@@ -794,7 +794,7 @@ func (repository *Repository) loadRecordsByTaskIDs(ctx context.Context, queryer 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return scanRecords(rows)
 }
 

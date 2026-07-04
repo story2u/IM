@@ -100,7 +100,7 @@ func (enricher PlatformStoreEnricher) fetchStoreInfo(ctx context.Context, storeI
 	if err != nil {
 		return platformStoreInfo{}, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
 		return platformStoreInfo{}, fmt.Errorf("platform store info status %d", response.StatusCode)
 	}

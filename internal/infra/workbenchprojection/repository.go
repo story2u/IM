@@ -61,7 +61,7 @@ func (repository *Repository) ListRows(ctx context.Context, query workbench.Proj
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	result, err := scanProjectionRows(rows)
 	if err != nil {
 		return nil, err
@@ -104,7 +104,7 @@ func (repository *Repository) ListConversationRows(ctx context.Context, query wo
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	result, err := scanProjectionRows(rows)
 	if err != nil {
 		return nil, err

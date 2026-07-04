@@ -274,7 +274,7 @@ func (service Service) ClaimAndPreflightBatch(ctx context.Context, workerID stri
 	}
 	batch = OrderClaimedBatch(batch)
 	for _, record := range batch {
-		preflight := PreflightResult{}
+		var preflight PreflightResult
 		if strings.TrimSpace(record.TaskID) == strings.TrimSpace(first.Task.TaskID) {
 			preflight = first.Preflight
 		} else {

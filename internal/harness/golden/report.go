@@ -13,10 +13,10 @@ func MarkdownReport(report SuiteReport) string {
 	builder.WriteString("## Summary\n\n")
 	builder.WriteString("| Field | Value |\n")
 	builder.WriteString("| --- | --- |\n")
-	builder.WriteString(fmt.Sprintf("| Suite | `%s` |\n", escapeTable(report.Suite)))
-	builder.WriteString(fmt.Sprintf("| Mode | `%s` |\n", escapeTable(report.Mode)))
-	builder.WriteString(fmt.Sprintf("| Match | `%t` |\n", report.Match))
-	builder.WriteString(fmt.Sprintf("| Cases | %d |\n\n", report.CaseCount))
+	fmt.Fprintf(&builder, "| Suite | `%s` |\n", escapeTable(report.Suite))
+	fmt.Fprintf(&builder, "| Mode | `%s` |\n", escapeTable(report.Mode))
+	fmt.Fprintf(&builder, "| Match | `%t` |\n", report.Match)
+	fmt.Fprintf(&builder, "| Cases | %d |\n\n", report.CaseCount)
 	writeCaseTable(&builder, report.Cases)
 	writeResultTable(&builder, report.Results)
 	return builder.String()
@@ -27,12 +27,12 @@ func writeCaseTable(builder *strings.Builder, cases []CaseSummary) {
 	builder.WriteString("| Name | Method | Path |\n")
 	builder.WriteString("| --- | --- | --- |\n")
 	for _, testCase := range cases {
-		builder.WriteString(fmt.Sprintf(
+		fmt.Fprintf(builder,
 			"| `%s` | `%s` | `%s` |\n",
 			escapeTable(testCase.Name),
 			escapeTable(testCase.Method),
 			escapeTable(testCase.Path),
-		))
+		)
 	}
 	builder.WriteString("\n")
 }
@@ -45,14 +45,14 @@ func writeResultTable(builder *strings.Builder, results []Result) {
 	builder.WriteString("| Case | Match | Baseline Status | Go Status | Diffs |\n")
 	builder.WriteString("| --- | --- | ---: | ---: | --- |\n")
 	for _, result := range results {
-		builder.WriteString(fmt.Sprintf(
+		fmt.Fprintf(builder,
 			"| `%s` | `%t` | %d | %d | `%s` |\n",
 			escapeTable(result.Case),
 			result.Match,
 			result.Baseline.StatusCode,
 			result.Go.StatusCode,
 			escapeTable(strings.Join(result.Diffs, "; ")),
-		))
+		)
 	}
 	builder.WriteString("\n")
 }

@@ -180,7 +180,7 @@ type reportPayload struct {
 }
 
 func decodeClientLogsPayload(r *http.Request) ([]map[string]any, int, error) {
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 	var payload map[string]json.RawMessage
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		return nil, 0, errors.New("invalid client logs payload")

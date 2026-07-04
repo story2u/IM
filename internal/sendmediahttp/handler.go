@@ -122,7 +122,7 @@ func decodeMultipart(w http.ResponseWriter, r *http.Request, kind sendmedia.Kind
 	if err != nil {
 		return sendmedia.Request{}, fmt.Errorf("file is required")
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	content, err := readLimited(file, sendmedia.MaxUploadBytes)
 	if err != nil {
 		return sendmedia.Request{}, err

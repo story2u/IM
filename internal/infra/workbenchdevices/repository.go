@@ -68,7 +68,7 @@ func (repository *DeviceRepository) ListDevices(ctx context.Context, deviceIDs [
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records, err := scanDeviceRows(rows)
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func (repository *LoginSessionRepository) ListLoginSessions(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records, err := scanLoginRows(rows)
 	if err != nil {
 		return nil, err

@@ -106,7 +106,7 @@ func (client *Client) doJSON(ctx context.Context, method string, path string, bo
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	data, err := io.ReadAll(io.LimitReader(response.Body, 1<<20))
 	if err != nil {
 		return err

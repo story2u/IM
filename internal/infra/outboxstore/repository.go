@@ -620,7 +620,7 @@ func recordColumnSQL(prefix string) string {
 }
 
 func scanRecordRows(rows RowsScanner) ([]outbox.Record, error) {
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records := []outbox.Record{}
 	for rows.Next() {
 		record, err := scanRecord(rows)

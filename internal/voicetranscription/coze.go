@@ -75,7 +75,7 @@ func (executor HTTPExecutor) TranscribeVoice(ctx context.Context, input ExecuteI
 	if err != nil {
 		return ExecuteResult{}, RetryableError{Message: "coze request failed: " + err.Error()}
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return ExecuteResult{}, RetryableError{Message: "coze response read failed: " + err.Error()}

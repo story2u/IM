@@ -106,7 +106,7 @@ func (repository *Repository) GetMessageByTrace(ctx context.Context, traceID str
 	if err != nil {
 		return messages.Record{}, false, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records, err := scanRecords(rows)
 	if err != nil {
 		return messages.Record{}, false, err
@@ -165,7 +165,7 @@ func (repository *Repository) listLatest(ctx context.Context, scope lookupScope,
 	if err != nil {
 		return messages.Page{}, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records, err := scanRecords(rows)
 	if err != nil {
 		return messages.Page{}, err
@@ -198,7 +198,7 @@ func (repository *Repository) listPaged(ctx context.Context, scope lookupScope, 
 	if err != nil {
 		return messages.Page{}, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records, err := scanRecords(rows)
 	if err != nil {
 		return messages.Page{}, err
@@ -225,7 +225,7 @@ func (repository *Repository) listAfter(ctx context.Context, scope lookupScope, 
 	if err != nil {
 		return messages.Page{}, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records, err := scanRecords(rows)
 	if err != nil {
 		return messages.Page{}, err
@@ -256,7 +256,7 @@ func (repository *Repository) listBefore(ctx context.Context, scope lookupScope,
 	if err != nil {
 		return messages.Page{}, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records, err := scanRecords(rows)
 	if err != nil {
 		return messages.Page{}, err
@@ -389,7 +389,7 @@ func (repository *Repository) rebind(query string) string {
 	index := 1
 	for _, char := range query {
 		if char == '?' {
-			builder.WriteString(fmt.Sprintf("$%d", index))
+			fmt.Fprintf(&builder, "$%d", index)
 			index++
 			continue
 		}

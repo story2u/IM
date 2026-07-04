@@ -116,7 +116,7 @@ func (repository *Repository) ListAssignedConversationIDs(ctx context.Context, a
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	conversationIDs := make([]string, 0)
 	seen := make(map[string]bool)
 	for rows.Next() {
@@ -154,7 +154,7 @@ func (repository *Repository) CountByAssigneeIDs(ctx context.Context, assigneeID
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	counts := make(map[string]int)
 	for rows.Next() {
 		var assigneeID any
@@ -318,7 +318,7 @@ func (repository *Repository) clearProjectionAssignments(ctx context.Context, te
 
 // scanAssignmentRecords converts SQL rows into assignment records.
 func scanAssignmentRecords(rows RowsScanner, capacity int) ([]workbench.AssignmentRecord, error) {
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records := make([]workbench.AssignmentRecord, 0, capacity)
 	for rows.Next() {
 		var tenantID any

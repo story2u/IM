@@ -51,7 +51,7 @@ func (logger Logger) logf(level string, format string, args ...any) {
 	}
 	message := fmt.Sprintf(format, args...)
 	timestamp := logger.now().Format("2006-01-02 15:04:05")
-	fmt.Fprintf(logger.output, "%s - %s - %s - %s\n", timestamp, cleanLoggerName(logger.name), level, message)
+	_, _ = fmt.Fprintf(logger.output, "%s - %s - %s - %s\n", timestamp, cleanLoggerName(logger.name), level, message)
 }
 
 // cleanLoggerName keeps empty names from leaking into operational logs.

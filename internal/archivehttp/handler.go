@@ -636,7 +636,7 @@ func writeDownload(w http.ResponseWriter, download archivemedia.DownloadResponse
 		writeError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
-	defer download.Body.Close()
+	defer func() { _ = download.Body.Close() }()
 	contentType := strings.TrimSpace(download.ContentType)
 	if contentType == "" {
 		contentType = "application/octet-stream"

@@ -137,7 +137,7 @@ ON DUPLICATE KEY UPDATE
 }
 
 func scanScripts(rows RowsScanner) ([]workbench.ReplyScriptRecord, error) {
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records := make([]workbench.ReplyScriptRecord, 0)
 	for rows.Next() {
 		var scriptID any

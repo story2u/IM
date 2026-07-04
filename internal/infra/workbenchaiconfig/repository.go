@@ -50,8 +50,8 @@ func (repository *Repository) GetAIConfigValue(ctx context.Context, key string) 
 	if err != nil {
 		return "", err
 	}
-	defer rows.Close()
-	for rows.Next() {
+	defer func() { _ = rows.Close() }()
+	if rows.Next() {
 		var value any
 		if err := rows.Scan(&value); err != nil {
 			return "", err

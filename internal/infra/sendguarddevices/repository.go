@@ -50,8 +50,8 @@ func (repository *Repository) LatestDeviceSnapshot(ctx context.Context, deviceID
 	if err != nil {
 		return sendguard.DeviceSnapshot{}, false, err
 	}
-	defer rows.Close()
-	for rows.Next() {
+	defer func() { _ = rows.Close() }()
+	if rows.Next() {
 		var rowDeviceID any
 		var online any
 		var timestamp any

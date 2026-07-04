@@ -433,7 +433,7 @@ func (client *Client) doJSON(request *http.Request) (map[string]any, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	data, err := io.ReadAll(io.LimitReader(response.Body, 4<<20))
 	if err != nil {
 		return nil, err

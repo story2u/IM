@@ -95,7 +95,7 @@ func (puller HTTPBridgePuller) pullChunk(ctx context.Context, pullURL string, in
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
@@ -119,7 +119,7 @@ func (puller HTTPBridgePuller) downloadURL(ctx context.Context, rawURL string) (
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, err

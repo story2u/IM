@@ -301,8 +301,6 @@ func (provider fakeSDKStatus) OfficialSDKStatus(ctx context.Context) SDKStatus {
 type fakeTokenChecker struct {
 	result TokenCheckResult
 	err    error
-	corpID string
-	secret string
 }
 
 func (checker fakeTokenChecker) CheckToken(ctx context.Context, corpID string, corpSecret string) (TokenCheckResult, error) {

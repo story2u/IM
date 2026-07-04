@@ -85,7 +85,7 @@ func (writer *Writer) WriteSystemLog(ctx context.Context, entry clienterrors.Sys
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	if _, err := file.Write(buffer.Bytes()); err != nil {
 		return err
 	}

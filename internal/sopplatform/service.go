@@ -61,7 +61,7 @@ func (service Service) TestConnection(ctx context.Context, request Request) (Res
 	if err != nil {
 		return Result{Success: false, Message: "连接错误: " + trimError(err)}, nil
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode < http.StatusBadRequest {
 		return Result{Success: true, Message: fmt.Sprintf("连接成功 (HTTP %d)", response.StatusCode)}, nil
 	}

@@ -205,7 +205,7 @@ func (repository *Repository) ListByArchiveMsgIDs(ctx context.Context, archiveMs
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return scanRecords(rows)
 }
 

@@ -70,7 +70,7 @@ LIMIT ?`, repository.cursorColumn(), repository.cursorColumn(), repository.curso
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records := make([]realtime.EventRecord, 0)
 	for rows.Next() {
 		var scope any
@@ -148,7 +148,7 @@ WHERE scope_key = ?`, repository.cursorColumn()), strings.TrimSpace(scopeKey))
 	if err != nil {
 		return 0, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	if !rows.Next() {
 		return 0, rows.Err()
 	}
@@ -164,7 +164,7 @@ func (repository *Repository) tableExists(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, nil
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return true, rows.Err()
 }
 

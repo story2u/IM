@@ -516,7 +516,7 @@ func (handler Handler) proxyBody(w http.ResponseWriter, r *http.Request, call fu
 }
 
 func decodeObjectBody(r *http.Request) (map[string]any, error) {
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 	var payload map[string]any
 	decoder := json.NewDecoder(r.Body)
 	decoder.UseNumber()

@@ -101,7 +101,7 @@ func (handler Handler) handle(w http.ResponseWriter, r *http.Request, action str
 }
 
 func decodeJSON(r *http.Request, value any) error {
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		return err

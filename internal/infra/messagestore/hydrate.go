@@ -104,7 +104,7 @@ func (repository *Repository) loadContactProfileRows(ctx context.Context, record
 		}
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	maps, err := scanRowMaps(rows)
 	if err != nil {
 		return nil, err
@@ -137,7 +137,7 @@ func (repository *Repository) loadLatestRowsByArchiveID(ctx context.Context, tab
 		}
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	maps, err := scanRowMaps(rows)
 	if err != nil {
 		return nil, err

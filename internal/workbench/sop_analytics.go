@@ -235,9 +235,7 @@ func sopFactGroupToDispatchBatch(group SOPTaskBatchGroup) ProjectionRow {
 		}
 		statusCounts[status]++
 		if len(actionPreview) < 3 {
-			for _, item := range sopFactActionPreview(row, 3-len(actionPreview)) {
-				actionPreview = append(actionPreview, item)
-			}
+			actionPreview = append(actionPreview, sopFactActionPreview(row, 3-len(actionPreview))...)
 		}
 	}
 	first := rows[0]

@@ -75,7 +75,7 @@ func (uploader HTTPUploader) UploadArchiveMedia(ctx context.Context, input Uploa
 	if err != nil {
 		return "", err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", err
@@ -121,7 +121,7 @@ func (uploader HTTPUploader) DeleteArchiveMedia(ctx context.Context, objectURL s
 		}
 		return false, nil
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {

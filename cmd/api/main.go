@@ -2142,18 +2142,6 @@ func buildIncomingMessagesHandler(cfg config.Config) (*incominghttp.Handler, fun
 	return &handler, manager.Close, nil
 }
 
-// buildTasksHandler assembles task APIs without persistent SDK dispatch.
-func buildTasksHandler(cfg config.Config) (*taskshttp.Handler, error) {
-	if !cfg.TasksCandidate {
-		return nil, nil
-	}
-	taskModule, err := tasksmodule.New(tasksmodule.Options{Config: cfg})
-	if err != nil {
-		return nil, err
-	}
-	return &taskModule.Handler, nil
-}
-
 func noopCleanup() error {
 	return nil
 }

@@ -182,7 +182,6 @@ func (syncer fakeContactsSyncer) SyncArchiveContacts(ctx context.Context, reques
 type fakeMediaRunner struct {
 	result archivemedia.RunResult
 	err    error
-	limit  int
 }
 
 func (runner fakeMediaRunner) RunOnce(ctx context.Context, enterpriseID string, source string) (archivemedia.RunResult, error) {

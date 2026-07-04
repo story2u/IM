@@ -127,7 +127,7 @@ func (repository *Repository) DeleteSOPPolicy(ctx context.Context, policyID stri
 }
 
 func scanPolicyRows(rows RowsScanner) ([]workbench.SOPPolicyRecord, error) {
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records := make([]workbench.SOPPolicyRecord, 0)
 	for rows.Next() {
 		var policyID any

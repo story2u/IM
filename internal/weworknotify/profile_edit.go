@@ -135,7 +135,7 @@ func (service CachedProfileEditService) BuildProfileUpdatedPayload(ctx context.C
 	}
 	senderAvatar := strings.TrimSpace(textValue(contact["avatar"]))
 	senderRemark, preferredSeen, matchedUserID := chooseFollowUserRemark(contact["follow_users_json"], weworkUserID, senderName)
-	identitySenderRemark := senderRemark
+	var identitySenderRemark string
 	senderRemark, identitySenderRemark = service.restoreRPASafeRemarkAfterExternalEdit(ctx, rpaSafeProfileEditInput{
 		EnterpriseID:          enterpriseID,
 		WeWorkUserID:          weworkUserID,

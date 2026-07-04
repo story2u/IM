@@ -134,7 +134,7 @@ func parseLimit(value string) (int, error) {
 }
 
 func decodeSendRequest(r *http.Request) (aioutreach.SendRequest, error) {
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 	var payload struct {
 		CorpID         string           `json:"corp_id"`
 		CustomerID     string           `json:"customer_id"`

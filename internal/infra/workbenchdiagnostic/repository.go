@@ -70,7 +70,7 @@ ORDER BY last_message_at DESC, conversation_id ASC`
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	records := make([]workbench.DiagnosticOrphanConversationRecord, 0)
 	for rows.Next() {
@@ -129,7 +129,7 @@ ORDER BY conversation_count DESC, wework_user_id ASC, external_userid ASC`
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	records := make([]workbench.DiagnosticForkedConversationGroupRecord, 0)
 	for rows.Next() {
@@ -169,7 +169,7 @@ ORDER BY COALESCE(first_message_at, last_message_at, updated_at) ASC, conversati
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	records := make([]workbench.DiagnosticForkedConversationMemberRecord, 0)
 	for rows.Next() {
@@ -229,7 +229,7 @@ LIMIT ?`
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	records := make([]workbench.ProjectionRow, 0)
 	for rows.Next() {
@@ -292,7 +292,7 @@ func (repository *Repository) ListDiagnosticArchiveSyncStatuses(ctx context.Cont
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	records := make([]workbench.DiagnosticArchiveSyncStatusRecord, 0)
 	for rows.Next() {
@@ -329,7 +329,7 @@ func (repository *Repository) ListArchiveMissingMessageOutbox(ctx context.Contex
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	records := make([]workbench.ArchiveMissingOutboxRecord, 0)
 	for rows.Next() {
@@ -703,7 +703,7 @@ func (repository *Repository) queryOnePayload(ctx context.Context, columns []str
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	if !rows.Next() {
 		return workbench.Payload{}, rows.Err()
 	}
@@ -719,7 +719,7 @@ func (repository *Repository) queryPayloadRows(ctx context.Context, columns []st
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	result := make([]workbench.Payload, 0)
 	for rows.Next() {
 		row, err := scanPayloadRow(rows, columns)
@@ -776,7 +776,7 @@ func (repository *Repository) tableExists(ctx context.Context, table string) (bo
 	if err != nil {
 		return false, nil
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return true, rows.Err()
 }
 

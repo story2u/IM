@@ -177,7 +177,7 @@ ON DUPLICATE KEY UPDATE
 }
 
 func scanCSUsers(rows RowsScanner) ([]workbench.CSUserRecord, error) {
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records := make([]workbench.CSUserRecord, 0)
 	for rows.Next() {
 		var assigneeID any

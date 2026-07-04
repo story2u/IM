@@ -67,7 +67,7 @@ func (finalizer HTTPObjectFinalizer) FinalizeObject(ctx context.Context, input O
 	if err != nil {
 		return ObjectFinalizeResult{}, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return ObjectFinalizeResult{}, err

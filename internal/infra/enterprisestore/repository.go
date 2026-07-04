@@ -135,7 +135,7 @@ func (repository *Repository) ListEnterprises(ctx context.Context) ([]Enterprise
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records := []EnterpriseRecord{}
 	for rows.Next() {
 		record, err := scanEnterpriseRecord(rows)
@@ -314,7 +314,7 @@ func (repository *Repository) ListEnabledArchivePullEnterprises(ctx context.Cont
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records := []ArchivePullEnterprise{}
 	for rows.Next() {
 		record, err := scanArchivePullEnterprise(rows)
@@ -502,7 +502,7 @@ func (repository *Repository) ListArchiveCallbackEnterprises(ctx context.Context
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records := []archivecallback.Enterprise{}
 	for rows.Next() {
 		record, err := scanArchiveCallbackEnterprise(rows)

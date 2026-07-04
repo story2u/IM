@@ -118,7 +118,7 @@ func (repository *Repository) DeleteSOPFlow(ctx context.Context, flowID string) 
 }
 
 func scanFlowRows(rows RowsScanner) ([]workbench.SOPFlowRecord, error) {
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records := make([]workbench.SOPFlowRecord, 0)
 	for rows.Next() {
 		var flowID any

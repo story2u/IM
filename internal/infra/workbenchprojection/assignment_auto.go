@@ -36,7 +36,7 @@ func (repository *Repository) ListAutoAssignCandidates(ctx context.Context, tena
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	result, err := scanProjectionRows(rows)
 	if err != nil {
 		return nil, err

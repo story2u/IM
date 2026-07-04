@@ -99,8 +99,8 @@ func (repository *Repository) getDevice(ctx context.Context, deviceID string) (d
 	if err != nil {
 		return devicesmanual.Record{}, false, err
 	}
-	defer rows.Close()
-	for rows.Next() {
+	defer func() { _ = rows.Close() }()
+	if rows.Next() {
 		record, scanErr := scanRecord(rows)
 		if scanErr != nil {
 			return devicesmanual.Record{}, false, scanErr

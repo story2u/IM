@@ -262,7 +262,7 @@ func cleanBatchableTaskTypes(values []string) []string {
 }
 
 func scanTaskRows(rows RowsScanner) ([]tasks.Record, error) {
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records := make([]tasks.Record, 0)
 	for rows.Next() {
 		record, err := scanTask(rows)

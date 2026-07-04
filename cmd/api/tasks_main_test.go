@@ -25,7 +25,7 @@ func TestBuildHandlerMountsTasksWithoutDatabase(t *testing.T) {
 	if cleanup == nil {
 		t.Fatal("cleanup = nil, want no-op cleanup")
 	}
-	defer cleanup()
+	defer func() { _ = cleanup() }()
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/tasks", strings.NewReader(taskCreateBody()))
@@ -43,7 +43,7 @@ func TestBuildHandlerTasksCandidateKeepsOptionalAgentAuthError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer func() { _ = cleanup() }()
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/tasks", strings.NewReader(taskCreateBody()))
@@ -63,7 +63,7 @@ func TestBuildHandlerMountsConversationReplyWithoutDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("buildHandler returned error: %v", err)
 	}
-	defer cleanup()
+	defer func() { _ = cleanup() }()
 
 	verifier, err := auth.NewVerifier("session-secret", "im-cloud")
 	if err != nil {

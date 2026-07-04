@@ -30,7 +30,7 @@ func TestBuildHandlerMountsStreamChannelsWithoutDatabase(t *testing.T) {
 	if cleanup == nil {
 		t.Fatal("cleanup = nil, want no-op cleanup")
 	}
-	defer cleanup()
+	defer func() { _ = cleanup() }()
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/stream/channels", nil)

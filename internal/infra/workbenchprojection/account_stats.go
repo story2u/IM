@@ -28,7 +28,7 @@ func (repository *Repository) ListAccountStats(ctx context.Context, query workbe
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	result, err := scanProjectionRows(rows)
 	if err != nil {
 		return nil, err

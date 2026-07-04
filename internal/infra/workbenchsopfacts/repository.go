@@ -124,7 +124,7 @@ func (repository *Repository) selectCustomerReplyFact(ctx context.Context, query
 	if err != nil {
 		return "", "", false, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	if !rows.Next() {
 		return "", "", false, rows.Err()
 	}
@@ -170,7 +170,7 @@ ORDER BY MIN(stage_index), stage_unique_id`
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	items := make([]workbench.ProjectionRow, 0)
 	for rows.Next() {
 		var flowID any
@@ -467,8 +467,8 @@ func (repository *Repository) count(ctx context.Context, query string, args ...a
 	if err != nil {
 		return 0, err
 	}
-	defer rows.Close()
-	for rows.Next() {
+	defer func() { _ = rows.Close() }()
+	if rows.Next() {
 		var count any
 		if err := rows.Scan(&count); err != nil {
 			return 0, err
@@ -479,7 +479,7 @@ func (repository *Repository) count(ctx context.Context, query string, args ...a
 }
 
 func scanBatchKeys(rows RowsScanner) ([]string, error) {
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	keys := make([]string, 0)
 	for rows.Next() {
 		var key any
@@ -495,7 +495,7 @@ func scanBatchKeys(rows RowsScanner) ([]string, error) {
 }
 
 func scanFactRows(rows RowsScanner) ([]workbench.ProjectionRow, error) {
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	items := make([]workbench.ProjectionRow, 0)
 	for rows.Next() {
 		values := make([]any, len(sopFactColumns))

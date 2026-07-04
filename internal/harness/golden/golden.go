@@ -108,7 +108,7 @@ func doRequest(ctx context.Context, client *http.Client, endpoint Endpoint, test
 	if err != nil {
 		return Response{}, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 
 	maxBytes := options.MaxBodyBytes
 	if maxBytes <= 0 {

@@ -28,7 +28,7 @@ func (repository *Repository) GetStatsAgents(ctx context.Context, limit int) ([]
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	agentsByID := map[string]*statsAgentAccumulator{}
 	conversationSeen := map[string]struct{}{}

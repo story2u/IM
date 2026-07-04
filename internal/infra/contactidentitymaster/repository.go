@@ -157,7 +157,7 @@ LIMIT ?`,
 	if err != nil {
 		return false, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var matchedSenderID any
 		if err := rows.Scan(&matchedSenderID); err != nil {
@@ -222,7 +222,7 @@ LIMIT 1`, strings.TrimSpace(enterpriseID), strings.TrimSpace(senderID))
 	if err != nil {
 		return contactidentity.Record{}, false, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	if !rows.Next() {
 		return contactidentity.Record{}, false, rows.Err()
 	}
@@ -392,7 +392,7 @@ func (repository *Repository) tableExists(ctx context.Context, table string) (bo
 	if err != nil {
 		return false, nil
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return true, rows.Err()
 }
 

@@ -34,10 +34,7 @@ func TestPresenceReporterStartReportsZeroOnCleanup(t *testing.T) {
 	}).Start(context.Background())
 
 	deadline := time.After(time.Second)
-	for {
-		if len(store.snapshot()) > 0 {
-			break
-		}
+	for len(store.snapshot()) == 0 {
 		select {
 		case <-deadline:
 			t.Fatalf("initial presence report not observed: %#v", store.records)

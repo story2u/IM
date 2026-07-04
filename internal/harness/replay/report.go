@@ -14,13 +14,13 @@ func MarkdownReport(report ComparisonReport) string {
 	builder.WriteString("## Summary\n\n")
 	builder.WriteString("| Field | Value |\n")
 	builder.WriteString("| --- | --- |\n")
-	builder.WriteString(fmt.Sprintf("| Name | `%s` |\n", escapeTable(report.Name)))
-	builder.WriteString(fmt.Sprintf("| Mode | `%s` |\n", escapeTable(report.Mode)))
-	builder.WriteString(fmt.Sprintf("| Match | `%t` |\n", report.Match))
-	builder.WriteString(fmt.Sprintf("| Reference Events | %d |\n", report.ReferenceCount))
-	builder.WriteString(fmt.Sprintf("| Go Events | %d |\n", report.GoCount))
-	builder.WriteString(fmt.Sprintf("| Missing in Go | %d |\n", report.MissingInGo))
-	builder.WriteString(fmt.Sprintf("| Missing in Reference | %d |\n\n", report.MissingInReference))
+	fmt.Fprintf(&builder, "| Name | `%s` |\n", escapeTable(report.Name))
+	fmt.Fprintf(&builder, "| Mode | `%s` |\n", escapeTable(report.Mode))
+	fmt.Fprintf(&builder, "| Match | `%t` |\n", report.Match)
+	fmt.Fprintf(&builder, "| Reference Events | %d |\n", report.ReferenceCount)
+	fmt.Fprintf(&builder, "| Go Events | %d |\n", report.GoCount)
+	fmt.Fprintf(&builder, "| Missing in Go | %d |\n", report.MissingInGo)
+	fmt.Fprintf(&builder, "| Missing in Reference | %d |\n\n", report.MissingInReference)
 	writeReplayResultTable(&builder, report.Results)
 	return builder.String()
 }
@@ -34,14 +34,14 @@ func writeReplayResultTable(builder *strings.Builder, results []ComparisonResult
 		return
 	}
 	for _, result := range results {
-		builder.WriteString(fmt.Sprintf(
+		fmt.Fprintf(builder,
 			"| %d | `%t` | `%s` | `%s` | `%s` |\n",
 			result.Index,
 			result.Match,
 			escapeTable(formatEventSummary(result.Reference)),
 			escapeTable(formatEventSummary(result.Go)),
 			escapeTable(joinDiffs(result.Diffs)),
-		))
+		)
 	}
 	builder.WriteString("\n")
 }

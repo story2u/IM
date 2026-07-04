@@ -55,7 +55,7 @@ func (repository *Repository) ListSensitiveWords(ctx context.Context) ([]workben
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records := make([]workbench.SensitiveWordRecord, 0)
 	for rows.Next() {
 		var wordID any
@@ -180,8 +180,8 @@ ON DUPLICATE KEY UPDATE
 }
 
 func scanExistingWord(rows RowsScanner) (string, any, error) {
-	defer rows.Close()
-	for rows.Next() {
+	defer func() { _ = rows.Close() }()
+	if rows.Next() {
 		var wordID any
 		var createdAt any
 		if err := rows.Scan(&wordID, &createdAt); err != nil {
@@ -193,7 +193,7 @@ func scanExistingWord(rows RowsScanner) (string, any, error) {
 }
 
 func scanWords(rows RowsScanner) ([]workbench.SensitiveWordRecord, error) {
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records := make([]workbench.SensitiveWordRecord, 0)
 	for rows.Next() {
 		var wordID any

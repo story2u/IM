@@ -64,7 +64,7 @@ func (client Client) SendControlInput(ctx context.Context, command devicesdk.Con
 	if err != nil {
 		return devicesdk.ControlInputResult{}, devicesdk.ControlInputError{Cause: devicesdk.ErrSDKControlInputUnavailable, Detail: err.Error()}
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	payload, readErr := readPayload(response.Body)
 	if readErr != nil {
 		return devicesdk.ControlInputResult{}, readErr

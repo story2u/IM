@@ -24,7 +24,7 @@ func TestWebSocketHandlerConnectsAndPongs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Dial returned error: %v", err)
 	}
-	defer conn.Close(websocket.StatusNormalClosure, "")
+	defer func() { _ = conn.Close(websocket.StatusNormalClosure, "") }()
 
 	_, data, err := conn.Read(context.Background())
 	if err != nil {
@@ -60,7 +60,7 @@ func TestWebSocketHandlerDeliversPublishedEventsToLegacyTopicSubscriber(t *testi
 	if err != nil {
 		t.Fatalf("Dial returned error: %v", err)
 	}
-	defer conn.Close(websocket.StatusNormalClosure, "")
+	defer func() { _ = conn.Close(websocket.StatusNormalClosure, "") }()
 
 	welcome := readJSONMessage(t, conn)
 	if welcome["type"] != "system.connected" || welcome["channel"] != "conversations" {
@@ -130,7 +130,7 @@ func TestWebSocketHandlerAcceptsAgentToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Dial returned error: %v", err)
 	}
-	defer conn.Close(websocket.StatusNormalClosure, "")
+	defer func() { _ = conn.Close(websocket.StatusNormalClosure, "") }()
 }
 
 func httpHandler(handler Handler) http.Handler {

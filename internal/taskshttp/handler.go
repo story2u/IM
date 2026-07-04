@@ -224,7 +224,7 @@ func writeAuthError(w http.ResponseWriter, err error) {
 }
 
 func readBody(r *http.Request) []byte {
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 	payload, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil

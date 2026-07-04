@@ -112,8 +112,8 @@ WHERE started_at >= ? AND started_at < ?`
 	if err != nil {
 		return workbench.StatsAIReplyOverviewRecord{}, err
 	}
-	defer rows.Close()
-	for rows.Next() {
+	defer func() { _ = rows.Close() }()
+	if rows.Next() {
 		var attempts any
 		var successCount any
 		var sentCount any
@@ -162,7 +162,7 @@ GROUP BY day`
 	if err != nil {
 		return workbench.StatsAIReplyTrendRecord{}, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	byDay := map[string]workbench.StatsAIReplyOverviewRecord{}
 	for rows.Next() {
 		var day any
@@ -215,7 +215,7 @@ ORDER BY count DESC, failure_type ASC`
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	items := make([]workbench.StatsAIReplyBreakdownItem, 0)
 	for rows.Next() {
 		var failureType any
@@ -236,8 +236,8 @@ func (repository *Repository) count(ctx context.Context, query string, args ...a
 	if err != nil {
 		return 0, err
 	}
-	defer rows.Close()
-	for rows.Next() {
+	defer func() { _ = rows.Close() }()
+	if rows.Next() {
 		var count any
 		if err := rows.Scan(&count); err != nil {
 			return 0, err
@@ -252,7 +252,7 @@ func (repository *Repository) dailyCounts(ctx context.Context, query string, arg
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	counts := map[string]int{}
 	for rows.Next() {
 		var day any

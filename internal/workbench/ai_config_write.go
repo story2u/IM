@@ -788,9 +788,10 @@ type accountSelection struct {
 
 func appendAIConfigConflictEntry(name string, profile ProjectionRow, accounts []AccountRecord, entries *[]namedAudienceSelection, accountEntries *[]namedAccountSelection) {
 	scope := normalizeTargetScope(profile)
-	if scope == aiTargetScopeAssignee {
+	switch scope {
+	case aiTargetScopeAssignee:
 		*entries = append(*entries, namedAudienceSelection{name: name, selection: parseTargetAudienceSelection(stringFromAny(profile["target_audience"]))})
-	} else if scope == aiTargetScopeAccount || scope == aiTargetScopeAll {
+	case aiTargetScopeAccount, aiTargetScopeAll:
 		*accountEntries = append(*accountEntries, namedAccountSelection{name: name, selection: parseAccountTargetSelection(profile, accounts)})
 	}
 }

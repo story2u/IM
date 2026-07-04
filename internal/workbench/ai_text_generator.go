@@ -41,7 +41,7 @@ func (generator HTTPAITextGenerator) GenerateText(ctx context.Context, input Scr
 	if err != nil {
 		return "", err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", err

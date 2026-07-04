@@ -289,11 +289,12 @@ func (repository *Repository) mark(ctx context.Context, query string, callbackEv
 	}
 	now := repository.dbNowParam()
 	var err error
-	if query == markTriggerRequestedSQL {
+	switch query {
+	case markTriggerRequestedSQL:
 		_, err = repository.DB.ExecContext(ctx, query, status, now, nullableText(lastError), now, key)
-	} else if query == markProcessedSQL {
+	case markProcessedSQL:
 		_, err = repository.DB.ExecContext(ctx, query, status, now, nullableText(lastError), now, key)
-	} else {
+	default:
 		_, err = repository.DB.ExecContext(ctx, query, status, nullableText(lastError), now, key)
 	}
 	if err != nil {

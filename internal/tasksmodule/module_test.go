@@ -57,14 +57,14 @@ func TestNewRequiresStoreWhenRequested(t *testing.T) {
 
 // TestNewBuildsSQLStoreWithDatabase composes task persistence for runtime.
 func TestNewBuildsSQLStoreWithDatabase(t *testing.T) {
-	database, err := sqldb.Open(nil, sqldb.Options{
+	database, err := sqldb.Open(context.TODO(), sqldb.Options{
 		DSN:      "mysql://user:pass@db.example:3306/wework",
 		SkipPing: true,
 	})
 	if err != nil {
 		t.Fatalf("Open returned error: %v", err)
 	}
-	defer database.DB.Close()
+	defer func() { _ = database.DB.Close() }()
 
 	module, err := New(Options{
 		Config:    config.Config{SessionJWTSecret: "session-secret", SessionJWTIssuer: "im-cloud"},

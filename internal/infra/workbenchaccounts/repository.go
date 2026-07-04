@@ -533,7 +533,7 @@ func (repository *Repository) queryAccounts(ctx context.Context, sqlText string,
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	accounts := make([]workbench.AccountRecord, 0)
 	for rows.Next() {
 		var accountID any
@@ -588,7 +588,7 @@ func (repository *Repository) listAccountAIConversations(ctx context.Context, ac
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	conversations := make([]workbench.AccountConversationAIRecord, 0)
 	for rows.Next() {
 		var conversationID any
@@ -653,7 +653,7 @@ func (repository *Repository) queryConversationAI(ctx context.Context, where str
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records := make([]workbench.ConversationAIRecord, 0)
 	for rows.Next() {
 		var conversationID any
@@ -686,7 +686,7 @@ func (repository *Repository) queryConversationRead(ctx context.Context, where s
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	records := make([]workbench.ConversationReadRecord, 0)
 	for rows.Next() {
 		var conversationID any
@@ -725,7 +725,7 @@ func (repository *Repository) queryConversationIDs(ctx context.Context, sqlText 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	seen := map[string]bool{}
 	ids := make([]string, 0)
 	for rows.Next() {
@@ -826,7 +826,7 @@ func (repository *Repository) listProjectionAliasConversationIDs(ctx context.Con
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	seen := map[string]bool{}
 	ids := make([]string, 0)
 	for rows.Next() {
