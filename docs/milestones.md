@@ -17,6 +17,7 @@
 - README 和 docs 不再把其他代码库作为目标参照。
 - 新增产品路线、架构、里程碑和发布就绪文档。
 - `docs/standalone-cleanup.md` 成为后续删功能和拆 connector/provider 的依据。
+- `docs/capability-inventory.md` 明确当前能力的 Core、Connector、Provider、Integration、Transition 和 Review 状态。
 - 后续 PR 以独立 IM 产品目标评审。
 
 ## 阶段 1：独立启动骨架

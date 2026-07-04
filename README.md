@@ -20,6 +20,7 @@ Phase 1 skeleton 已具备 Go API、worker、Next.js、Docker compose、inventor
 - [docs/architecture.md](docs/architecture.md)
 - [docs/milestones.md](docs/milestones.md)
 - [docs/standalone-cleanup.md](docs/standalone-cleanup.md)
+- [docs/capability-inventory.md](docs/capability-inventory.md)
 - [docs/harness-architecture.md](docs/harness-architecture.md)
 - [docs/release-readiness.md](docs/release-readiness.md)
 - [docs/nextjs-harness-architecture.md](docs/nextjs-harness-architecture.md)
@@ -81,7 +82,7 @@ docker build -t im-next-web .
 
 ## 需要逐步清理的过渡资产
 
-清理原则和执行顺序见 [docs/standalone-cleanup.md](docs/standalone-cleanup.md)。
+清理原则和执行顺序见 [docs/standalone-cleanup.md](docs/standalone-cleanup.md)，现有能力归属见 [docs/capability-inventory.md](docs/capability-inventory.md)。
 
 - 仍以 `phase1`、`candidate` 命名的脚本、artifact 和开关。
 - 与单一供应商绑定的路由、env、compose 服务和 worker 装配。

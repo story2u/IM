@@ -2,6 +2,8 @@
 
 本文档把战略重置转成可执行的清理清单。目标不是一次性删除所有现有能力，而是让每个能力都明确归属：进入 IM core、移到 connector/provider/integration，或从默认产品面移除。
 
+当前仓库能力的具体归属和下一步动作见 [capability-inventory.md](capability-inventory.md)。
+
 ## 判断状态
 
 每个功能域只能落入以下状态之一：
