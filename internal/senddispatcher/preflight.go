@@ -133,9 +133,9 @@ func RecentSDKTransportFailureDecision(task tasks.Record, failure *SDKDeviceTran
 	return TerminalDecision{
 		Status: tasks.StatusFailed,
 		Error:  detail,
-		Source: "sdk_executor",
+		Source: "outbound_executor",
 		ResultPayload: map[string]any{
-			"source":  "sdk_executor",
+			"source":  "outbound_executor",
 			"success": false,
 			"error":   detail,
 		},

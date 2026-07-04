@@ -193,7 +193,7 @@ func TestServiceApplyPreflightFailsDuringRecentTransportFailure(t *testing.T) {
 		MaxAgeSeconds: func() float64 { return 600 },
 	}
 	task := tasks.Record{
-		TaskID:    "task-sdk-recent-failure",
+		TaskID:    "task-outbound-recent-failure",
 		Target:    tasks.Target{DeviceID: "p1-slot-18"},
 		TaskType:  "send_text",
 		Status:    tasks.StatusRunning,
@@ -216,7 +216,7 @@ func TestServiceApplyPreflightFailsDuringRecentTransportFailure(t *testing.T) {
 		t.Fatalf("publisher events = %#v", publisher.events)
 	}
 	payload, ok := publisher.events[0].Payload["result_payload"].(map[string]any)
-	if !ok || payload["source"] != "sdk_executor" || payload["success"] != false || payload["error"] != want {
+	if !ok || payload["source"] != "outbound_executor" || payload["success"] != false || payload["error"] != want {
 		t.Fatalf("published payload = %#v", publisher.events[0].Payload)
 	}
 }

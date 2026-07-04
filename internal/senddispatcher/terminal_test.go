@@ -37,7 +37,7 @@ func TestBuildTaskStatusPayloadMirrorsPythonEnvelope(t *testing.T) {
 		},
 	}
 
-	event := BuildTaskStatusEvent(record, map[string]any{"source": "sdk_executor", "success": false})
+	event := BuildTaskStatusEvent(record, map[string]any{"source": "outbound_executor", "success": false})
 	payload := event.Payload
 
 	if event.Channel != "tasks" || event.Event != "task.status" || event.Topic != "task.status" {
@@ -59,7 +59,7 @@ func TestBuildTaskStatusPayloadMirrorsPythonEnvelope(t *testing.T) {
 		t.Fatalf("execution time payload = %#v", payload)
 	}
 	resultPayload, ok := payload["result_payload"].(map[string]any)
-	if !ok || resultPayload["source"] != "sdk_executor" || resultPayload["success"] != false {
+	if !ok || resultPayload["source"] != "outbound_executor" || resultPayload["success"] != false {
 		t.Fatalf("result payload = %#v", payload["result_payload"])
 	}
 }
@@ -77,7 +77,7 @@ func TestSyncSDKTerminalStateBestEffortOrder(t *testing.T) {
 		Delivery:      delivery,
 		Status:        publisher,
 		AI:            ai,
-		ResultPayload: map[string]any{"source": "sdk_executor"},
+		ResultPayload: map[string]any{"source": "outbound_executor"},
 	})
 
 	if !result.DeliverySynced || !result.StatusPublished || !result.AISynced || result.DeliveryError != nil || result.StatusError != nil || result.AIError != nil {

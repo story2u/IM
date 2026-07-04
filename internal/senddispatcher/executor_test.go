@@ -9,13 +9,13 @@ import (
 	"im-go/internal/tasks"
 )
 
-// TestBuildSDKTaskPayloadMirrorsPythonTaskDict protects the executor input contract.
-func TestBuildSDKTaskPayloadMirrorsPythonTaskDict(t *testing.T) {
-	traceID := "trace-sdk-1"
+// TestBuildOutboundExecutionPayloadProtectsContract protects the executor input contract.
+func TestBuildOutboundExecutionPayloadProtectsContract(t *testing.T) {
+	traceID := "trace-outbound-1"
 	record := tasks.Record{
-		TaskID:    "task-sdk-1",
+		TaskID:    "task-outbound-1",
 		Source:    "cloud-web",
-		Target:    tasks.Target{AgentID: "sdk:p1-slot-18", DeviceID: "p1-slot-18"},
+		Target:    tasks.Target{AgentID: "connector:p1-slot-18", DeviceID: "p1-slot-18"},
 		TaskType:  "send_text",
 		CreatedAt: time.Date(2026, 6, 30, 9, 2, 3, 123400000, time.UTC),
 		TraceID:   &traceID,
@@ -29,19 +29,19 @@ func TestBuildSDKTaskPayloadMirrorsPythonTaskDict(t *testing.T) {
 		},
 	}
 
-	payload := BuildSDKTaskPayload(record, " p1-slot-18 ")
+	payload := BuildOutboundExecutionPayload(record, " p1-slot-18 ")
 
-	if payload["task_id"] != "task-sdk-1" || payload["source"] != "cloud-web" || payload["task_type"] != "send_text" {
+	if payload["task_id"] != "task-outbound-1" || payload["source"] != "cloud-web" || payload["task_type"] != "send_text" {
 		t.Fatalf("core payload fields = %#v", payload)
 	}
-	if payload["created_at"] != "2026-06-30T09:02:03.123400+00:00" || payload["trace_id"] != "trace-sdk-1" {
+	if payload["created_at"] != "2026-06-30T09:02:03.123400+00:00" || payload["trace_id"] != "trace-outbound-1" {
 		t.Fatalf("time/trace payload fields = %#v", payload)
 	}
 	if payload["device_id"] != "p1-slot-18" || payload["receiver"] != "Qiu" || payload["text"] != "hi" {
 		t.Fatalf("flat payload fields = %#v", payload)
 	}
 	target, ok := payload["target"].(map[string]any)
-	if !ok || target["agent_id"] != "sdk:p1-slot-18" || target["device_id"] != "p1-slot-18" {
+	if !ok || target["agent_id"] != "connector:p1-slot-18" || target["device_id"] != "p1-slot-18" {
 		t.Fatalf("target payload = %#v", payload["target"])
 	}
 	nested, ok := payload["payload"].(map[string]any)
@@ -54,13 +54,13 @@ func TestBuildSDKTaskPayloadMirrorsPythonTaskDict(t *testing.T) {
 	}
 }
 
-// TestSDKExecutorBatchFuncUsesSingleExecuteAndFinalizesSuccess mirrors Python len==1 path.
-func TestSDKExecutorBatchFuncUsesSingleExecuteAndFinalizesSuccess(t *testing.T) {
+// TestOutboundExecutorBatchFuncUsesSingleExecuteAndFinalizesSuccess protects the len==1 path.
+func TestOutboundExecutorBatchFuncUsesSingleExecuteAndFinalizesSuccess(t *testing.T) {
 	now := time.Date(2026, 6, 30, 9, 10, 0, 0, time.UTC)
-	executor := &recordingSDKExecutor{executeResult: SDKExecutorResult{"success": true, "result": map[string]any{"action": "send_text"}}}
+	executor := &recordingOutboundExecutor{executeResult: OutboundExecutionResult{"success": true, "result": map[string]any{"action": "send_text"}}}
 	delivery := &recordingTerminalDelivery{}
 	publisher := &recordingTaskStatusPublisher{}
-	executeBatch := NewSDKExecutorBatchFunc(executor, SDKExecutorAdapterOptions{
+	executeBatch := NewOutboundExecutorBatchFunc(executor, OutboundExecutorAdapterOptions{
 		Now: func() time.Time { return now },
 		Terminal: TerminalStateSyncOptions{
 			Delivery: delivery,
@@ -91,17 +91,17 @@ func TestSDKExecutorBatchFuncUsesSingleExecuteAndFinalizesSuccess(t *testing.T) 
 		t.Fatalf("published events = %#v", publisher.events)
 	}
 	resultPayload := publisher.events[0].Payload["result_payload"].(map[string]any)
-	if resultPayload["source"] != "sdk_executor" || resultPayload["success"] != true || resultPayload["sdk_failure_stage"] != nil {
+	if resultPayload["source"] != "outbound_executor" || resultPayload["success"] != true || resultPayload["sdk_failure_stage"] != nil {
 		t.Fatalf("result payload = %#v", resultPayload)
 	}
 }
 
-// TestSDKExecutorBatchFuncUsesBatchAndMarksMissingResultsFailed mirrors Python batch fallback.
-func TestSDKExecutorBatchFuncUsesBatchAndMarksMissingResultsFailed(t *testing.T) {
+// TestOutboundExecutorBatchFuncUsesBatchAndMarksMissingResultsFailed protects the batch fallback.
+func TestOutboundExecutorBatchFuncUsesBatchAndMarksMissingResultsFailed(t *testing.T) {
 	now := time.Date(2026, 6, 30, 9, 10, 0, 0, time.UTC)
-	executor := &recordingSDKExecutor{batchResult: []SDKExecutorResult{{"success": true}}}
+	executor := &recordingOutboundExecutor{batchResult: []OutboundExecutionResult{{"success": true}}}
 	publisher := &recordingTaskStatusPublisher{}
-	executeBatch := NewSDKExecutorBatchFunc(executor, SDKExecutorAdapterOptions{
+	executeBatch := NewOutboundExecutorBatchFunc(executor, OutboundExecutorAdapterOptions{
 		Now:      func() time.Time { return now },
 		Terminal: TerminalStateSyncOptions{Status: publisher},
 	})
@@ -119,7 +119,7 @@ func TestSDKExecutorBatchFuncUsesBatchAndMarksMissingResultsFailed(t *testing.T)
 	if len(finalized) != 2 || finalized[0].Status != tasks.StatusSuccess || finalized[1].Status != tasks.StatusFailed {
 		t.Fatalf("finalized = %#v", finalized)
 	}
-	if finalized[1].Error == nil || *finalized[1].Error != "sdk batch result missing" {
+	if finalized[1].Error == nil || *finalized[1].Error != "outbound batch result missing" {
 		t.Fatalf("missing result error = %#v", finalized[1].Error)
 	}
 	if len(publisher.events) != 2 {
@@ -127,24 +127,24 @@ func TestSDKExecutorBatchFuncUsesBatchAndMarksMissingResultsFailed(t *testing.T)
 	}
 	firstPayload := publisher.events[0].Payload["result_payload"].(map[string]any)
 	secondPayload := publisher.events[1].Payload["result_payload"].(map[string]any)
-	if firstPayload["source"] != "sdk_executor_batch" || firstPayload["success"] != true {
+	if firstPayload["source"] != "outbound_executor_batch" || firstPayload["success"] != true {
 		t.Fatalf("first result payload = %#v", firstPayload)
 	}
-	if secondPayload["source"] != "sdk_executor_batch" || secondPayload["error"] != "sdk batch result missing" {
+	if secondPayload["source"] != "outbound_executor_batch" || secondPayload["error"] != "outbound batch result missing" {
 		t.Fatalf("second result payload = %#v", secondPayload)
 	}
 }
 
-// TestSDKExecutorBatchFuncWritesTerminalStatusBeforePublish mirrors DB finalization order.
-func TestSDKExecutorBatchFuncWritesTerminalStatusBeforePublish(t *testing.T) {
+// TestOutboundExecutorBatchFuncWritesTerminalStatusBeforePublish mirrors DB finalization order.
+func TestOutboundExecutorBatchFuncWritesTerminalStatusBeforePublish(t *testing.T) {
 	now := time.Date(2026, 6, 30, 9, 10, 0, 0, time.UTC)
 	events := []string{}
 	writer := &recordingSDKStatusWriter{events: &events}
 	health := &recordingSDKDeviceHealthRecorder{events: &events}
 	publisher := &recordingTaskStatusPublisher{order: &events}
 	delivery := &recordingTerminalDelivery{events: &events}
-	executor := &recordingSDKExecutor{executeResult: SDKExecutorResult{"success": false, "error": "phone offline"}}
-	executeBatch := NewSDKExecutorBatchFunc(executor, SDKExecutorAdapterOptions{
+	executor := &recordingOutboundExecutor{executeResult: OutboundExecutionResult{"success": false, "error": "phone offline"}}
+	executeBatch := NewOutboundExecutorBatchFunc(executor, OutboundExecutorAdapterOptions{
 		Now:          func() time.Time { return now },
 		StatusWriter: writer,
 		DeviceHealth: health,
@@ -182,15 +182,15 @@ func TestSDKExecutorBatchFuncWritesTerminalStatusBeforePublish(t *testing.T) {
 	}
 }
 
-// TestSDKExecutorBatchFuncSyncsCommitUnknownAIArchiveConfirmation mirrors archive wait semantics.
-func TestSDKExecutorBatchFuncSyncsCommitUnknownAIArchiveConfirmation(t *testing.T) {
+// TestOutboundExecutorBatchFuncSyncsCommitUnknownAIArchiveConfirmation mirrors archive wait semantics.
+func TestOutboundExecutorBatchFuncSyncsCommitUnknownAIArchiveConfirmation(t *testing.T) {
 	now := time.Date(2026, 6, 30, 9, 10, 0, 0, time.UTC)
 	ai := &recordingAITerminalSyncer{}
-	executor := &recordingSDKExecutor{executeResult: SDKExecutorResult{
+	executor := &recordingOutboundExecutor{executeResult: OutboundExecutionResult{
 		"success": false,
 		"error":   "wait_chat_compose_ready timeout context=album_send",
 	}}
-	executeBatch := NewSDKExecutorBatchFunc(executor, SDKExecutorAdapterOptions{
+	executeBatch := NewOutboundExecutorBatchFunc(executor, OutboundExecutorAdapterOptions{
 		Now:      func() time.Time { return now },
 		Terminal: TerminalStateSyncOptions{AI: ai},
 	})
@@ -214,16 +214,16 @@ func TestSDKExecutorBatchFuncSyncsCommitUnknownAIArchiveConfirmation(t *testing.
 	}
 }
 
-// TestSDKExecutorBatchFuncRetriesTransportAcquireOnce mirrors Python safe pre-commit retry.
-func TestSDKExecutorBatchFuncRetriesTransportAcquireOnce(t *testing.T) {
+// TestOutboundExecutorBatchFuncRetriesTransportAcquireOnce protects safe pre-commit retry.
+func TestOutboundExecutorBatchFuncRetriesTransportAcquireOnce(t *testing.T) {
 	now := time.Date(2026, 6, 30, 9, 10, 0, 0, time.UTC)
 	writer := &recordingSDKStatusWriter{}
 	publisher := &recordingTaskStatusPublisher{}
-	executor := &sequenceSDKExecutor{results: []SDKExecutorResult{
+	executor := &sequenceOutboundExecutor{results: []OutboundExecutionResult{
 		{"success": false, "error": "P1 device p1-slot-18 connection failed"},
 		{"success": true, "result": map[string]any{"action": "send_text"}},
 	}}
-	executeBatch := NewSDKExecutorBatchFunc(executor, SDKExecutorAdapterOptions{
+	executeBatch := NewOutboundExecutorBatchFunc(executor, OutboundExecutorAdapterOptions{
 		Now:          func() time.Time { return now },
 		StatusWriter: writer,
 		Terminal:     TerminalStateSyncOptions{Status: publisher},
@@ -239,25 +239,25 @@ func TestSDKExecutorBatchFuncRetriesTransportAcquireOnce(t *testing.T) {
 	if len(writer.updates) != 2 || writer.updates[0].Status != tasks.StatusRunning || writer.updates[1].Status != tasks.StatusSuccess {
 		t.Fatalf("writer updates = %#v", writer.updates)
 	}
-	if writer.updates[0].Error == nil || *writer.updates[0].Error != "sdk transport_acquire retrying after: P1 device p1-slot-18 connection failed" {
+	if writer.updates[0].Error == nil || *writer.updates[0].Error != "outbound transport_acquire retrying after: P1 device p1-slot-18 connection failed" {
 		t.Fatalf("retry status error = %#v", writer.updates[0].Error)
 	}
 	if len(finalized) != 1 || finalized[0].Status != tasks.StatusSuccess {
 		t.Fatalf("finalized = %#v", finalized)
 	}
 	resultPayload := publisher.events[0].Payload["result_payload"].(map[string]any)
-	if resultPayload["source"] != "sdk_executor" || resultPayload["pre_commit_retry"] != true || resultPayload["pre_commit_retry_kind"] != "transport_acquire" {
+	if resultPayload["source"] != "outbound_executor" || resultPayload["pre_commit_retry"] != true || resultPayload["pre_commit_retry_kind"] != "transport_acquire" {
 		t.Fatalf("result payload = %#v", resultPayload)
 	}
 }
 
-// TestSDKExecutorBatchFuncRetriesComposeSurfaceOnce marks compose retry payloads.
-func TestSDKExecutorBatchFuncRetriesComposeSurfaceOnce(t *testing.T) {
-	executor := &sequenceSDKExecutor{results: []SDKExecutorResult{
+// TestOutboundExecutorBatchFuncRetriesComposeSurfaceOnce marks compose retry payloads.
+func TestOutboundExecutorBatchFuncRetriesComposeSurfaceOnce(t *testing.T) {
+	executor := &sequenceOutboundExecutor{results: []OutboundExecutionResult{
 		{"success": false, "error": "type_message input box not found"},
 		{"success": true, "result": map[string]any{"action": "send_text"}},
 	}}
-	executeBatch := NewSDKExecutorBatchFunc(executor, SDKExecutorAdapterOptions{})
+	executeBatch := NewOutboundExecutorBatchFunc(executor, OutboundExecutorAdapterOptions{})
 
 	finalized, err := executeBatch(context.Background(), "p1-slot-18", []tasks.Record{executorRecord("task-compose-retry", 0)})
 	if err != nil {
@@ -271,14 +271,14 @@ func TestSDKExecutorBatchFuncRetriesComposeSurfaceOnce(t *testing.T) {
 	}
 }
 
-// TestSDKExecutorBatchFuncRetriesTransientNavigationOnce mirrors retry_same_payload_once.
-func TestSDKExecutorBatchFuncRetriesTransientNavigationOnce(t *testing.T) {
+// TestOutboundExecutorBatchFuncRetriesTransientNavigationOnce mirrors retry_same_payload_once.
+func TestOutboundExecutorBatchFuncRetriesTransientNavigationOnce(t *testing.T) {
 	writer := &recordingSDKStatusWriter{}
-	executor := &sequenceSDKExecutor{results: []SDKExecutorResult{
+	executor := &sequenceOutboundExecutor{results: []OutboundExecutionResult{
 		{"success": false, "error": "navigate_to_chat input_search failed receiver=Qiu"},
 		{"success": true, "result": map[string]any{"action": "send_text"}},
 	}}
-	executeBatch := NewSDKExecutorBatchFunc(executor, SDKExecutorAdapterOptions{StatusWriter: writer})
+	executeBatch := NewOutboundExecutorBatchFunc(executor, OutboundExecutorAdapterOptions{StatusWriter: writer})
 
 	finalized, err := executeBatch(context.Background(), "p1-slot-18", []tasks.Record{executorRecord("task-navigation-retry", 0)})
 	if err != nil {
@@ -290,7 +290,7 @@ func TestSDKExecutorBatchFuncRetriesTransientNavigationOnce(t *testing.T) {
 	if len(writer.updates) != 2 || writer.updates[0].Status != tasks.StatusRunning || writer.updates[1].Status != tasks.StatusSuccess {
 		t.Fatalf("writer updates = %#v", writer.updates)
 	}
-	if writer.updates[0].Error == nil || *writer.updates[0].Error != "sdk transient navigation retrying after: navigate_to_chat input_search failed receiver=Qiu" {
+	if writer.updates[0].Error == nil || *writer.updates[0].Error != "outbound transient navigation retrying after: navigate_to_chat input_search failed receiver=Qiu" {
 		t.Fatalf("retry status error = %#v", writer.updates[0].Error)
 	}
 	if len(finalized) != 1 || finalized[0].Status != tasks.StatusSuccess {
@@ -298,19 +298,19 @@ func TestSDKExecutorBatchFuncRetriesTransientNavigationOnce(t *testing.T) {
 	}
 }
 
-// TestSDKExecutorBatchFuncRetriesAfterContactRefresh mirrors refreshed receiver retry.
-func TestSDKExecutorBatchFuncRetriesAfterContactRefresh(t *testing.T) {
+// TestOutboundExecutorBatchFuncRetriesAfterContactRefresh mirrors refreshed receiver retry.
+func TestOutboundExecutorBatchFuncRetriesAfterContactRefresh(t *testing.T) {
 	writer := &recordingSDKStatusWriter{}
 	publisher := &recordingTaskStatusPublisher{}
 	resolver := &recordingSDKContactRetryResolver{target: SDKContactRetryTarget{Receiver: "fresh", Aliases: "fresh-alias"}}
-	executor := &sequenceSDKExecutor{results: []SDKExecutorResult{
+	executor := &sequenceOutboundExecutor{results: []OutboundExecutionResult{
 		{"success": false, "error": "navigate_to_chat search_result not found receiver=old tried=old"},
 		{"success": true, "result": map[string]any{"action": "send_text"}},
 	}}
 	record := executorRecord("task-contact-retry", 0)
 	record.Payload["receiver"] = "old"
 	record.Payload["username"] = "old"
-	executeBatch := NewSDKExecutorBatchFunc(executor, SDKExecutorAdapterOptions{
+	executeBatch := NewOutboundExecutorBatchFunc(executor, OutboundExecutorAdapterOptions{
 		StatusWriter: writer,
 		ContactRetry: resolver,
 		Terminal:     TerminalStateSyncOptions{Status: publisher},
@@ -329,7 +329,7 @@ func TestSDKExecutorBatchFuncRetriesAfterContactRefresh(t *testing.T) {
 	if len(writer.updates) != 2 || writer.updates[0].Status != tasks.StatusRunning || writer.updates[1].Status != tasks.StatusSuccess {
 		t.Fatalf("writer updates = %#v", writer.updates)
 	}
-	if writer.updates[0].Error == nil || *writer.updates[0].Error != "sdk contact refresh retrying after: navigate_to_chat search_result not found receiver=old tried=old" {
+	if writer.updates[0].Error == nil || *writer.updates[0].Error != "outbound contact refresh retrying after: navigate_to_chat search_result not found receiver=old tried=old" {
 		t.Fatalf("retry status error = %#v", writer.updates[0].Error)
 	}
 	if len(finalized) != 1 || finalized[0].Status != tasks.StatusSuccess {
@@ -341,9 +341,9 @@ func TestSDKExecutorBatchFuncRetriesAfterContactRefresh(t *testing.T) {
 	}
 }
 
-// TestSDKExecutorBatchFuncRequiresBatchExecutor keeps multi-task bursts fail-closed.
-func TestSDKExecutorBatchFuncRequiresBatchExecutor(t *testing.T) {
-	executeBatch := NewSDKExecutorBatchFunc(singleOnlySDKExecutor{}, SDKExecutorAdapterOptions{})
+// TestOutboundExecutorBatchFuncRequiresBatchExecutor keeps multi-task bursts fail-closed.
+func TestOutboundExecutorBatchFuncRequiresBatchExecutor(t *testing.T) {
+	executeBatch := NewOutboundExecutorBatchFunc(singleOnlyOutboundExecutor{}, OutboundExecutorAdapterOptions{})
 
 	_, err := executeBatch(context.Background(), "zimo", []tasks.Record{executorRecord("task-1", 0), executorRecord("task-2", 1)})
 	if err == nil || !strings.Contains(err.Error(), "execute_batch") {
@@ -355,7 +355,7 @@ func executorRecord(taskID string, index int) tasks.Record {
 	return tasks.Record{
 		TaskID:    taskID,
 		Source:    "cloud-web",
-		Target:    tasks.Target{AgentID: "sdk:zimo", DeviceID: "zimo"},
+		Target:    tasks.Target{AgentID: "connector:zimo", DeviceID: "zimo"},
 		TaskType:  "send_text",
 		Status:    tasks.StatusRunning,
 		CreatedAt: time.Date(2026, 6, 30, 9, 0, index, 0, time.UTC),
@@ -370,35 +370,35 @@ func executorRecord(taskID string, index int) tasks.Record {
 	}
 }
 
-type recordingSDKExecutor struct {
-	executeResult SDKExecutorResult
-	batchResult   []SDKExecutorResult
-	executeCalls  []SDKTaskPayload
-	batchCalls    [][]SDKTaskPayload
+type recordingOutboundExecutor struct {
+	executeResult OutboundExecutionResult
+	batchResult   []OutboundExecutionResult
+	executeCalls  []OutboundExecutionPayload
+	batchCalls    [][]OutboundExecutionPayload
 }
 
-func (executor *recordingSDKExecutor) Execute(_ context.Context, task SDKTaskPayload) (SDKExecutorResult, error) {
+func (executor *recordingOutboundExecutor) Execute(_ context.Context, task OutboundExecutionPayload) (OutboundExecutionResult, error) {
 	executor.executeCalls = append(executor.executeCalls, task)
 	return executor.executeResult, nil
 }
 
-func (executor *recordingSDKExecutor) ExecuteBatch(_ context.Context, tasks []SDKTaskPayload) ([]SDKExecutorResult, error) {
+func (executor *recordingOutboundExecutor) ExecuteBatch(_ context.Context, tasks []OutboundExecutionPayload) ([]OutboundExecutionResult, error) {
 	executor.batchCalls = append(executor.batchCalls, tasks)
 	return executor.batchResult, nil
 }
 
-type sequenceSDKExecutor struct {
-	results []SDKExecutorResult
-	calls   []SDKTaskPayload
+type sequenceOutboundExecutor struct {
+	results []OutboundExecutionResult
+	calls   []OutboundExecutionPayload
 }
 
-func (executor *sequenceSDKExecutor) Execute(_ context.Context, task SDKTaskPayload) (SDKExecutorResult, error) {
+func (executor *sequenceOutboundExecutor) Execute(_ context.Context, task OutboundExecutionPayload) (OutboundExecutionResult, error) {
 	executor.calls = append(executor.calls, task)
 	index := len(executor.calls) - 1
 	if index >= 0 && index < len(executor.results) {
 		return executor.results[index], nil
 	}
-	return SDKExecutorResult{"success": false, "error": "sdk sequence result missing"}, nil
+	return OutboundExecutionResult{"success": false, "error": "outbound sequence result missing"}, nil
 }
 
 type recordingSDKContactRetryResolver struct {
@@ -412,10 +412,10 @@ func (resolver *recordingSDKContactRetryResolver) ResolveSDKContactRetry(_ conte
 	return resolver.target, resolver.err
 }
 
-type singleOnlySDKExecutor struct{}
+type singleOnlyOutboundExecutor struct{}
 
-func (singleOnlySDKExecutor) Execute(context.Context, SDKTaskPayload) (SDKExecutorResult, error) {
-	return SDKExecutorResult{"success": true}, nil
+func (singleOnlyOutboundExecutor) Execute(context.Context, OutboundExecutionPayload) (OutboundExecutionResult, error) {
+	return OutboundExecutionResult{"success": true}, nil
 }
 
 type recordingSDKStatusWriter struct {

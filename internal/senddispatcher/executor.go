@@ -56,7 +56,7 @@ type OutboundExecutorAdapterOptions struct {
 // SDKExecutorAdapterOptions is a compatibility alias for the historical executor adapter.
 type SDKExecutorAdapterOptions = OutboundExecutorAdapterOptions
 
-var sdkTaskPayloadReservedKeys = map[string]struct{}{
+var outboundExecutionPayloadReservedKeys = map[string]struct{}{
 	"task_id":    {},
 	"source":     {},
 	"target":     {},
@@ -67,9 +67,9 @@ var sdkTaskPayloadReservedKeys = map[string]struct{}{
 	"device_id":  {},
 }
 
-// RecordToTaskPayload mirrors Python record_to_task_payload.
-func RecordToTaskPayload(record tasks.Record) SDKTaskPayload {
-	return SDKTaskPayload{
+// RecordToOutboundExecutionPayload builds the stable executor payload from a task record.
+func RecordToOutboundExecutionPayload(record tasks.Record) OutboundExecutionPayload {
+	return OutboundExecutionPayload{
 		"task_id": record.TaskID,
 		"source":  record.Source,
 		"target": map[string]any{
@@ -83,17 +83,27 @@ func RecordToTaskPayload(record tasks.Record) SDKTaskPayload {
 	}
 }
 
-// BuildSDKTaskPayload mirrors Python _build_sdk_task_dict.
-func BuildSDKTaskPayload(record tasks.Record, deviceID string) SDKTaskPayload {
-	payload := RecordToTaskPayload(record)
+// RecordToTaskPayload is a compatibility wrapper for historical call sites.
+func RecordToTaskPayload(record tasks.Record) SDKTaskPayload {
+	return RecordToOutboundExecutionPayload(record)
+}
+
+// BuildOutboundExecutionPayload builds one outbound execution payload for a device lane.
+func BuildOutboundExecutionPayload(record tasks.Record, deviceID string) OutboundExecutionPayload {
+	payload := RecordToOutboundExecutionPayload(record)
 	payload["device_id"] = strings.TrimSpace(deviceID)
 	for key, value := range record.Payload {
-		if _, reserved := sdkTaskPayloadReservedKeys[key]; reserved {
+		if _, reserved := outboundExecutionPayloadReservedKeys[key]; reserved {
 			continue
 		}
 		payload[key] = value
 	}
 	return payload
+}
+
+// BuildSDKTaskPayload is a compatibility wrapper for historical call sites.
+func BuildSDKTaskPayload(record tasks.Record, deviceID string) SDKTaskPayload {
+	return BuildOutboundExecutionPayload(record, deviceID)
 }
 
 // NewOutboundExecutorBatchFunc adapts an outbound executor to the dispatcher ExecuteBatchFunc boundary.
@@ -103,13 +113,13 @@ func NewOutboundExecutorBatchFunc(executor OutboundExecutor, options OutboundExe
 			return nil, nil
 		}
 		if executor == nil {
-			return nil, fmt.Errorf("sdk executor is not configured")
+			return nil, fmt.Errorf("outbound executor is not configured")
 		}
 
 		startedAt := adapterNow(options)
-		payloads := make([]SDKTaskPayload, 0, len(records))
+		payloads := make([]OutboundExecutionPayload, 0, len(records))
 		for _, record := range records {
-			payloads = append(payloads, BuildSDKTaskPayload(record, deviceID))
+			payloads = append(payloads, BuildOutboundExecutionPayload(record, deviceID))
 		}
 
 		if len(records) == 1 {
@@ -130,18 +140,18 @@ func NewOutboundExecutorBatchFunc(executor OutboundExecutor, options OutboundExe
 				return nil, err
 			}
 			result = annotateSDKFailureResult(records[0].TaskType, result)
-			finalized, err := finalizeSDKExecutorRecord(ctx, records[0], result, startedAt, adapterNow(options), options)
+			finalized, err := finalizeOutboundExecutionRecord(ctx, records[0], result, startedAt, adapterNow(options), options)
 			if err != nil {
 				return nil, err
 			}
-			recordSDKExecutorDeviceHealth(ctx, deviceID, finalized, result, options)
-			syncSDKExecutorTerminal(ctx, finalized, result, "sdk_executor", options)
+			recordOutboundExecutorDeviceHealth(ctx, deviceID, finalized, result, options)
+			syncOutboundExecutorTerminal(ctx, finalized, result, "outbound_executor", options)
 			return []tasks.Record{finalized}, nil
 		}
 
-		batchExecutor, ok := executor.(SDKBatchExecutor)
+		batchExecutor, ok := executor.(OutboundBatchExecutor)
 		if !ok {
-			return nil, fmt.Errorf("sdk executor does not support execute_batch")
+			return nil, fmt.Errorf("outbound executor does not support execute_batch")
 		}
 		results, err := batchExecutor.ExecuteBatch(ctx, payloads)
 		if err != nil {
@@ -149,17 +159,17 @@ func NewOutboundExecutorBatchFunc(executor OutboundExecutor, options OutboundExe
 		}
 		finalized := make([]tasks.Record, 0, len(records))
 		for index, record := range records {
-			result := SDKExecutorResult{"success": false, "error": "sdk batch result missing"}
+			result := OutboundExecutionResult{"success": false, "error": "outbound batch result missing"}
 			if index < len(results) && results[index] != nil {
 				result = results[index]
 			}
 			result = annotateSDKFailureResult(record.TaskType, result)
-			task, err := finalizeSDKExecutorRecord(ctx, record, result, startedAt, adapterNow(options), options)
+			task, err := finalizeOutboundExecutionRecord(ctx, record, result, startedAt, adapterNow(options), options)
 			if err != nil {
 				return nil, err
 			}
-			recordSDKExecutorDeviceHealth(ctx, deviceID, task, result, options)
-			syncSDKExecutorTerminal(ctx, task, result, "sdk_executor_batch", options)
+			recordOutboundExecutorDeviceHealth(ctx, deviceID, task, result, options)
+			syncOutboundExecutorTerminal(ctx, task, result, "outbound_executor_batch", options)
 			finalized = append(finalized, task)
 		}
 		return finalized, nil
@@ -171,8 +181,8 @@ func NewSDKExecutorBatchFunc(executor SDKExecutor, options SDKExecutorAdapterOpt
 	return NewOutboundExecutorBatchFunc(executor, options)
 }
 
-// FinalizeSDKExecutorResult mirrors the core success/error mapping in _finalize_sdk_task_result.
-func FinalizeSDKExecutorResult(record tasks.Record, result SDKExecutorResult, startedAt time.Time, finishedAt time.Time) tasks.Record {
+// FinalizeOutboundExecutionResult maps an outbound execution result to task terminal state.
+func FinalizeOutboundExecutionResult(record tasks.Record, result OutboundExecutionResult, startedAt time.Time, finishedAt time.Time) tasks.Record {
 	finalized := record
 	if executorResultSuccess(result) {
 		finalized.Status = tasks.StatusSuccess
@@ -195,6 +205,11 @@ func FinalizeSDKExecutorResult(record tasks.Record, result SDKExecutorResult, st
 	return finalized
 }
 
+// FinalizeSDKExecutorResult is a compatibility wrapper for historical call sites.
+func FinalizeSDKExecutorResult(record tasks.Record, result SDKExecutorResult, startedAt time.Time, finishedAt time.Time) tasks.Record {
+	return FinalizeOutboundExecutionResult(record, result, startedAt, finishedAt)
+}
+
 func cloneSDKPayloadMap(input map[string]any) map[string]any {
 	if input == nil {
 		return map[string]any{}
@@ -213,7 +228,7 @@ func optionalStringValue(value *string) any {
 	return *value
 }
 
-func executorResultSuccess(result SDKExecutorResult) bool {
+func executorResultSuccess(result OutboundExecutionResult) bool {
 	if result == nil {
 		return false
 	}
@@ -221,7 +236,7 @@ func executorResultSuccess(result SDKExecutorResult) bool {
 	return ok && success
 }
 
-func executorResultError(result SDKExecutorResult) string {
+func executorResultError(result OutboundExecutionResult) string {
 	if result != nil {
 		if value, ok := result["error"]; ok && value != nil {
 			text := strings.TrimSpace(fmt.Sprint(value))
@@ -230,18 +245,18 @@ func executorResultError(result SDKExecutorResult) string {
 			}
 		}
 	}
-	return "sdk execution failed"
+	return "outbound execution failed"
 }
 
-func adapterNow(options SDKExecutorAdapterOptions) time.Time {
+func adapterNow(options OutboundExecutorAdapterOptions) time.Time {
 	if options.Now != nil {
 		return options.Now().UTC()
 	}
 	return time.Now().UTC()
 }
 
-func finalizeSDKExecutorRecord(ctx context.Context, record tasks.Record, result SDKExecutorResult, startedAt time.Time, finishedAt time.Time, options SDKExecutorAdapterOptions) (tasks.Record, error) {
-	finalized := FinalizeSDKExecutorResult(record, result, startedAt, finishedAt)
+func finalizeOutboundExecutionRecord(ctx context.Context, record tasks.Record, result OutboundExecutionResult, startedAt time.Time, finishedAt time.Time, options OutboundExecutorAdapterOptions) (tasks.Record, error) {
+	finalized := FinalizeOutboundExecutionResult(record, result, startedAt, finishedAt)
 	if options.StatusWriter == nil {
 		return finalized, nil
 	}
@@ -255,12 +270,16 @@ func finalizeSDKExecutorRecord(ctx context.Context, record tasks.Record, result 
 	return options.StatusWriter.UpdateTerminalStatus(ctx, finalized.TaskID, update)
 }
 
-func retrySDKPreCommitIfNeeded(ctx context.Context, executor SDKExecutor, deviceID string, record tasks.Record, result SDKExecutorResult, options SDKExecutorAdapterOptions) (SDKExecutorResult, error) {
+func finalizeSDKExecutorRecord(ctx context.Context, record tasks.Record, result SDKExecutorResult, startedAt time.Time, finishedAt time.Time, options SDKExecutorAdapterOptions) (tasks.Record, error) {
+	return finalizeOutboundExecutionRecord(ctx, record, result, startedAt, finishedAt, options)
+}
+
+func retrySDKPreCommitIfNeeded(ctx context.Context, executor OutboundExecutor, deviceID string, record tasks.Record, result OutboundExecutionResult, options OutboundExecutorAdapterOptions) (OutboundExecutionResult, error) {
 	decision := BuildSDKPreCommitRetryDecision(record, result, options.Env)
 	if !decision.Retry {
 		return result, nil
 	}
-	rememberSDKRetryError(ctx, record, "sdk "+decision.Kind, decision.OriginalError, options)
+	rememberSDKRetryError(ctx, record, "outbound "+decision.Kind, decision.OriginalError, options)
 	if decision.Delay > 0 {
 		sleep := options.RetrySleep
 		if sleep == nil {
@@ -273,7 +292,7 @@ func retrySDKPreCommitIfNeeded(ctx context.Context, executor SDKExecutor, device
 	retryRecord := record
 	retryRecord.Payload = cloneSDKPayloadMap(record.Payload)
 	retryRecord.Payload[decision.Marker] = true
-	retryPayload := BuildSDKTaskPayload(retryRecord, deviceID)
+	retryPayload := BuildOutboundExecutionPayload(retryRecord, deviceID)
 	retryResult, err := executor.Execute(ctx, retryPayload)
 	if err != nil {
 		return nil, err
@@ -281,7 +300,7 @@ func retrySDKPreCommitIfNeeded(ctx context.Context, executor SDKExecutor, device
 	return MergeSDKPreCommitRetryResult(retryResult, decision), nil
 }
 
-func retrySDKContactRefreshIfNeeded(ctx context.Context, executor SDKExecutor, deviceID string, record tasks.Record, result SDKExecutorResult, options SDKExecutorAdapterOptions) (SDKExecutorResult, error) {
+func retrySDKContactRefreshIfNeeded(ctx context.Context, executor OutboundExecutor, deviceID string, record tasks.Record, result OutboundExecutionResult, options OutboundExecutorAdapterOptions) (OutboundExecutionResult, error) {
 	if options.ContactRetry == nil || executorResultSuccess(result) {
 		return result, nil
 	}
@@ -306,7 +325,7 @@ func retrySDKContactRefreshIfNeeded(ctx context.Context, executor SDKExecutor, d
 	if !decision.Retry {
 		return result, nil
 	}
-	rememberSDKRetryError(ctx, record, "sdk contact refresh", decision.OriginalError, options)
+	rememberSDKRetryError(ctx, record, "outbound contact refresh", decision.OriginalError, options)
 	retryRecord := record
 	retryRecord.Payload = cloneSDKPayloadMap(record.Payload)
 	retryRecord.Payload["receiver"] = decision.Receiver
@@ -317,7 +336,7 @@ func retrySDKContactRefreshIfNeeded(ctx context.Context, executor SDKExecutor, d
 		delete(retryRecord.Payload, "aliases")
 	}
 	retryRecord.Payload[decision.Marker] = true
-	retryPayload := BuildSDKTaskPayload(retryRecord, deviceID)
+	retryPayload := BuildOutboundExecutionPayload(retryRecord, deviceID)
 	retryResult, err := executor.Execute(ctx, retryPayload)
 	if err != nil {
 		return nil, err
@@ -325,16 +344,16 @@ func retrySDKContactRefreshIfNeeded(ctx context.Context, executor SDKExecutor, d
 	return MergeSDKContactRefreshRetryResult(retryResult, decision), nil
 }
 
-func retrySDKTransientNavigationIfNeeded(ctx context.Context, executor SDKExecutor, deviceID string, record tasks.Record, result SDKExecutorResult, options SDKExecutorAdapterOptions) (SDKExecutorResult, error) {
+func retrySDKTransientNavigationIfNeeded(ctx context.Context, executor OutboundExecutor, deviceID string, record tasks.Record, result OutboundExecutionResult, options OutboundExecutorAdapterOptions) (OutboundExecutionResult, error) {
 	decision := BuildSDKTransientNavigationRetryDecision(record, result)
 	if !decision.Retry {
 		return result, nil
 	}
-	rememberSDKRetryError(ctx, record, "sdk transient navigation", decision.OriginalError, options)
+	rememberSDKRetryError(ctx, record, "outbound transient navigation", decision.OriginalError, options)
 	retryRecord := record
 	retryRecord.Payload = cloneSDKPayloadMap(record.Payload)
 	retryRecord.Payload[decision.Marker] = true
-	retryPayload := BuildSDKTaskPayload(retryRecord, deviceID)
+	retryPayload := BuildOutboundExecutionPayload(retryRecord, deviceID)
 	retryResult, err := executor.Execute(ctx, retryPayload)
 	if err != nil {
 		return nil, err
@@ -342,7 +361,7 @@ func retrySDKTransientNavigationIfNeeded(ctx context.Context, executor SDKExecut
 	return MergeSDKTransientNavigationRetryResult(retryResult, decision), nil
 }
 
-func rememberSDKRetryError(ctx context.Context, record tasks.Record, source string, originalError string, options SDKExecutorAdapterOptions) {
+func rememberSDKRetryError(ctx context.Context, record tasks.Record, source string, originalError string, options OutboundExecutorAdapterOptions) {
 	if options.StatusWriter == nil {
 		return
 	}
@@ -353,7 +372,7 @@ func rememberSDKRetryError(ctx context.Context, record tasks.Record, source stri
 	})
 }
 
-func syncSDKExecutorTerminal(ctx context.Context, record tasks.Record, result SDKExecutorResult, source string, options SDKExecutorAdapterOptions) {
+func syncOutboundExecutorTerminal(ctx context.Context, record tasks.Record, result OutboundExecutionResult, source string, options OutboundExecutorAdapterOptions) {
 	if options.Terminal.Delivery == nil && options.Terminal.Revoke == nil && options.Terminal.Status == nil && options.Terminal.AI == nil {
 		return
 	}
@@ -362,11 +381,15 @@ func syncSDKExecutorTerminal(ctx context.Context, record tasks.Record, result SD
 		terminalOptions.Delivery = nil
 		terminalOptions.Revoke = nil
 	}
-	terminalOptions.ResultPayload = sdkExecutorResultPayload(source, result)
+	terminalOptions.ResultPayload = outboundExecutionResultPayload(source, result)
 	_ = SyncSDKTerminalState(ctx, record, terminalOptions)
 }
 
-func recordSDKExecutorDeviceHealth(ctx context.Context, deviceID string, record tasks.Record, result SDKExecutorResult, options SDKExecutorAdapterOptions) {
+func syncSDKExecutorTerminal(ctx context.Context, record tasks.Record, result SDKExecutorResult, source string, options SDKExecutorAdapterOptions) {
+	syncOutboundExecutorTerminal(ctx, record, result, source, options)
+}
+
+func recordOutboundExecutorDeviceHealth(ctx context.Context, deviceID string, record tasks.Record, result OutboundExecutionResult, options OutboundExecutorAdapterOptions) {
 	if options.DeviceHealth == nil {
 		return
 	}
@@ -382,12 +405,20 @@ func recordSDKExecutorDeviceHealth(ctx context.Context, deviceID string, record 
 	_ = options.DeviceHealth.RecordSDKDeviceTaskResult(ctx, health)
 }
 
-func sdkExecutorResultPayload(source string, result SDKExecutorResult) map[string]any {
+func recordSDKExecutorDeviceHealth(ctx context.Context, deviceID string, record tasks.Record, result SDKExecutorResult, options SDKExecutorAdapterOptions) {
+	recordOutboundExecutorDeviceHealth(ctx, deviceID, record, result, options)
+}
+
+func outboundExecutionResultPayload(source string, result OutboundExecutionResult) map[string]any {
 	payload := map[string]any{"source": source}
 	for key, value := range result {
 		payload[key] = value
 	}
 	return payload
+}
+
+func sdkExecutorResultPayload(source string, result SDKExecutorResult) map[string]any {
+	return outboundExecutionResultPayload(source, result)
 }
 
 func formatPythonISO(value time.Time) string {

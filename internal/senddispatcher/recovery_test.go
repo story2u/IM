@@ -71,7 +71,7 @@ func TestLastKnownSDKErrorNormalizesAndFilters(t *testing.T) {
 	if got := LastKnownSDKError(task); got != "sdk failed because page missing" {
 		t.Fatalf("last error = %q", got)
 	}
-	dispatched := "dispatched via sdk executor"
+	dispatched := "dispatched via outbound executor"
 	if got := LastKnownSDKError(tasks.Record{Error: &dispatched}); got != "" {
 		t.Fatalf("dispatched marker kept: %q", got)
 	}

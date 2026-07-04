@@ -160,13 +160,13 @@ func TestRecentSDKTransportFailureDecisionMatchesPythonResult(t *testing.T) {
 		t.Fatal("expected transport terminal decision")
 	}
 	want := "recent SDK transport failure for p1-slot-18: P1 device p1-slot-18 connection failed"
-	if decision.Status != tasks.StatusFailed || decision.Source != "sdk_executor" || decision.Error != want {
+	if decision.Status != tasks.StatusFailed || decision.Source != "outbound_executor" || decision.Error != want {
 		t.Fatalf("decision = %#v", decision)
 	}
 	if strings.Count(decision.Error, "recent SDK transport failure") != 1 {
 		t.Fatalf("error was not normalized: %q", decision.Error)
 	}
-	if decision.ResultPayload["source"] != "sdk_executor" || decision.ResultPayload["success"] != false || decision.ResultPayload["error"] != want {
+	if decision.ResultPayload["source"] != "outbound_executor" || decision.ResultPayload["success"] != false || decision.ResultPayload["error"] != want {
 		t.Fatalf("payload = %#v", decision.ResultPayload)
 	}
 }
