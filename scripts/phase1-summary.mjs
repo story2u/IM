@@ -61,13 +61,13 @@ lines.push(`| inventory_diff_branch | ${display(manifest?.inventory_diff_branch)
 lines.push(`| inventory_baseline_source | ${display(manifest?.inventory_baseline_source)} |`);
 lines.push(`| schema_drift_threshold | ${display(manifest?.schema_drift_mismatch_threshold)} |`);
 lines.push(`| openapi_drift_threshold | ${display(manifest?.openapi_drift_mismatch_threshold)} |`);
-lines.push(`| route_diff_max_python_only | ${display(manifest?.route_diff_max_python_only)} |`);
+lines.push(`| route_diff_max_reference_only | ${display(manifest?.route_diff_max_python_only)} |`);
 lines.push(`| route_diff_max_go_only | ${display(manifest?.route_diff_max_go_only)} |`);
 lines.push("");
 
 lines.push("## Route Coverage");
 lines.push("");
-lines.push("| Report | Python routes | Go routes | Matching | Python-only | Go-only |");
+lines.push("| Report | Reference routes | Go routes | Matching | Reference-only | Go-only |");
 lines.push("| --- | ---: | ---: | ---: | ---: | ---: |");
 for (const [label, report] of [
   ["default", routeDefault],
@@ -81,7 +81,7 @@ lines.push("");
 
 lines.push("## Drift Gates");
 lines.push("");
-lines.push("| Report | Comparable | Matches | Mismatches | Python spec | Go spec | Top reasons |");
+lines.push("| Report | Comparable | Matches | Mismatches | Reference spec | Go spec | Top reasons |");
 lines.push("| --- | ---: | ---: | ---: | --- | --- | --- |");
 lines.push(
   `| schema | ${display(schemaDrift?.schema_comparable_count)} | ${display(schemaDrift?.schema_match_count)} | ${display(schemaDrift?.schema_mismatch_count)} | n/a | n/a | ${display(formatReasons(schemaDrift?.top_drift_reasons))} |`
@@ -94,7 +94,7 @@ lines.push(
 );
 lines.push("");
 
-lines.push("## Cutover Readiness");
+lines.push("## Release Readiness");
 lines.push("");
 if (cutover?.profiles?.length > 0) {
   lines.push(`Ready profiles: ${display(cutover.ready_count)}/${display(cutover.total_count)}`);
@@ -105,7 +105,7 @@ if (cutover?.profiles?.length > 0) {
     lines.push(`| ${display(row.surface)} | ${row.failures} | ${row.profiles} | ${display(actionForSurface(row.surface))} |`);
   }
   lines.push("");
-  lines.push("| Profile | Ready | Pass | Fail | Route fail | Flag fail | Env fail | Service fail | Golden fail | Runbook | Suggested action | First failures |");
+  lines.push("| Profile | Ready | Pass | Fail | Route fail | Flag fail | Env fail | Service fail | Golden fail | Guide | Suggested action | First failures |");
   lines.push("| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |");
   for (const profile of cutover.profiles) {
     lines.push(
@@ -113,7 +113,7 @@ if (cutover?.profiles?.length > 0) {
     );
   }
 } else {
-  lines.push("Cutover readiness artifacts were not generated.");
+  lines.push("Release readiness artifacts were not generated.");
 }
 lines.push("");
 
@@ -259,7 +259,7 @@ function cutoverBlockerRows(profiles) {
 
 function suggestedCutoverAction(profile) {
   if (checkCount(profile, "fail") === 0) {
-    return "进入 strict cutover gate 或 shadow/canary 验证";
+    return "进入 strict readiness gate 或 shadow/canary 验证";
   }
   if (checkCount(profile, "fail", "route") > 0) {
     return actionForSurface("route");
@@ -281,7 +281,7 @@ function suggestedCutoverAction(profile) {
   if (flagFailures > 0) {
     return actionForSurface("flag");
   }
-  return "查看 cutover artifact 明细并补齐失败项";
+  return "查看 readiness artifact 明细并补齐失败项";
 }
 
 function actionForSurface(surface) {
@@ -297,9 +297,9 @@ function actionForSurface(surface) {
     case "flag":
       return "在 golden/live gate 通过后开启 GO_ENABLE_* 候选开关";
     case "none":
-      return "无 cutover blocker";
+      return "无 readiness blocker";
     default:
-      return "查看 cutover artifact 明细";
+      return "查看 readiness artifact 明细";
   }
 }
 
@@ -307,11 +307,11 @@ function runbookLink(profileName) {
   if (!profileName) {
     return "n/a";
   }
-  return `[runbook](${runbookBaseURL}#${anchorForProfile(profileName)})`;
+  return `[guide](${runbookBaseURL}#${anchorForProfile(profileName)})`;
 }
 
 function resolveRunbookBaseURL() {
-  const docPath = "go/docs/cutover-runbooks.md";
+  const docPath = "go/docs/release-readiness.md";
   const serverURL = process.env.GITHUB_SERVER_URL;
   const repository = process.env.GITHUB_REPOSITORY;
   const sha = process.env.GITHUB_SHA;

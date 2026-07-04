@@ -1,88 +1,60 @@
-# Go/Next 第一阶段骨架
+# Standalone Go + Next.js IM
 
-本目录承载独立的 Go + Next.js + Tailwind CSS 实现。第一阶段建立可验证骨架和兼容护栏，默认不接管生产业务流量。
+本目录是一个独立运行的 Go + Next.js + Tailwind CSS IM 项目。后续开发以本仓库的产品目标、架构契约和发布证据为准，不再把其他运行时或历史实现作为功能边界。
 
-## 当前边界
+## 战略方向
 
-- Go API 只提供 `/`、`/healthz`、`/readyz`、`/metrics` 最小探针。
-- `cmd/inventory` 只读扫描兼容基线路由、契约、功能文档、Docker 服务、WS 事件、Redis key、DB 表和任务类型，用于后续实现对账。
-- `cmd/inventory-diff` 对比两份 inventory JSON 的数量变化，并可按阈值失败，用于把“清单变化必须解释”变成 CI gate。
-- `cmd/route-diff` 对比 baseline route inventory 和 Go route metadata，输出阶段覆盖度报告；默认比较当前暴露路由，`-go-routes candidate` 比较全部 Go 候选路由，`-mode openapi-drift` 可在提供 OpenAPI 文件时比对文档级请求/响应 schema、path 参数和 operationId。
-- `cmd/golden-http` 读取 `testdata/golden/*.json`，在有 baseline/Go base URL 时执行同请求响应对账；CI 先做 fixture 校验。
-- `web/` 只提供 Next.js `/` 与 `/admin` 占位入口，不实现业务筛选或完整页面逻辑。
+- 后端以 Go 为核心运行时，承担会话、消息、任务、实时网关、投影、审计、管理和后台 worker。
+- 前端以 Next.js 为主入口，提供客服工作台、管理台、诊断和运维界面。
+- 消息收发使用通道连接器模型，企微只作为可选连接器之一，不进入 IM core 的强约束。
+- RPA 使用 provider 模型，魔云腾/MytRpc 只作为可选 provider 之一，不作为自动化能力的默认前提。
+- 所有新增能力必须能在本仓库内构建、测试和部署；任何临时桥接都要有明确下线条件。
+
+## 当前状态
+
+Phase 1 skeleton 已具备 Go API、worker、Next.js、Docker compose、inventory、route metadata、golden fixture 和 readiness profile 等基础资产。仓库中仍保留部分过渡期命令、候选开关和命名，它们只服务于阶段性验证，不定义长期架构。
+
+新的开发方向见：
+
+- [docs/product-roadmap.md](/Users/bruce/git/tools/refactor-go/go/docs/product-roadmap.md)
+- [docs/architecture.md](/Users/bruce/git/tools/refactor-go/go/docs/architecture.md)
+- [docs/milestones.md](/Users/bruce/git/tools/refactor-go/go/docs/milestones.md)
+- [docs/harness-architecture.md](/Users/bruce/git/tools/refactor-go/go/docs/harness-architecture.md)
+- [docs/release-readiness.md](/Users/bruce/git/tools/refactor-go/go/docs/release-readiness.md)
+- [docs/nextjs-harness-architecture.md](/Users/bruce/git/tools/refactor-go/go/docs/nextjs-harness-architecture.md)
 
 ## 本地验证
 
-推荐使用阶段一 gate 统一执行 Go、inventory 和前端构建验证：
+基础验证：
+
+```bash
+cd go
+go test ./...
+go vet ./...
+```
+
+阶段 gate 仍可用于生成现有证据产物：
 
 ```bash
 cd go
 SKIP_NPM_CI=1 bash scripts/phase1_gate.sh
 ```
 
-`phase1_gate.sh` 还会额外产出：
-- `web-routes.json` / `web-routes.md`：Next.js 路由清单与必须路由检查（`/`、`/admin`、`/login`、`/admin-login`、`/cs-login`、`/version.txt`）
-- `web-unit-test.out` / `web-unit-test.json` / `web-unit-test.md`：Next.js 单元测试执行与摘要
-- `web-build.out` / `web-build.json` / `web-build.md`：前端构建结果与摘要
-- GitHub Actions 会用 `scripts/phase1-summary.mjs` 把 inventory、route、schema、OpenAPI、cutover profile、建议动作和 web 摘要写入 job summary；本地也可执行 `node scripts/phase1-summary.mjs tmp/phase1` 查看同一摘要。
-- Cutover profile 的人工执行清单见 `docs/cutover-runbooks.md`；完整机器生成版本可执行 `go run ./cmd/cutover-readiness -all -format runbook`。
-- 可通过 `NEXT_REQUIRED_ROUTES` 自定义必需路由，或用 `SKIP_WEB_ROUTE_CHECK=1` 跳过入口检查（仍会产出 route 清单）。
+`phase1_gate.sh` 会产出：
 
-CI 环境不要设置 `SKIP_NPM_CI`，会先执行 `npm ci` 再构建。
-
-GitHub Actions 的 `Go Phase 1 CI` 会上传完整 `go/tmp/phase1/` 为 `phase1-gate-artifacts`，并可通过 repository variables 透传门禁阈值：
-
-- `ROUTE_DIFF_MAX_PYTHON_ONLY`、`ROUTE_DIFF_MAX_GO_ONLY`
-- `SCHEMA_DRIFT_MISMATCH_THRESHOLD`
-- `PYTHON_OPENAPI_SPEC`、`GO_OPENAPI_SPEC`、`OPENAPI_DRIFT_MISMATCH_THRESHOLD`
-- `INVENTORY_BASELINE_JSON`、`INVENTORY_DIFF_PROFILE` 与 `INVENTORY_DIFF_MAX_*`
-
-如果未显式设置 `INVENTORY_BASELINE_JSON`，`phase1_gate.sh` 会在存在 `testdata/inventory/baseline.json` 时自动启用它作为 inventory diff baseline；首次接入或仓库未提交 baseline 时仅产出当前 inventory，不阻塞 gate。更新 baseline 时使用：
-
-```bash
-cd go
-bash scripts/refresh_inventory_baseline.sh
-```
-
-`INVENTORY_DIFF_PROFILE` 默认为 `auto`：GitHub target/ref 为 `main`、`master` 或 `release/*` 时使用 `strict`，所有 inventory 数量阈值默认 0；其它分支使用 `observe`，只产出 diff artifact。任意 `INVENTORY_DIFF_MAX_*` 显式值都会覆盖 profile 默认值。
-
-也可以单独运行：
-
-```bash
-cd go
-go test ./...
-go vet ./...
-go run ./cmd/inventory -python-root <compatibility-baseline-root> -pretty
-go run ./cmd/inventory -python-root <compatibility-baseline-root> -format markdown
-go run ./cmd/inventory-diff -baseline tmp/baseline-inventory.json -current tmp/phase1/inventory-report.json -max-routes 0 -format markdown
-go run ./cmd/route-diff -python-root <compatibility-baseline-root> -format markdown
-go run ./cmd/route-diff -python-root <compatibility-baseline-root> -go-routes candidate -format markdown
-go run ./cmd/route-diff -python-root <compatibility-baseline-root> -mode schema-drift -pretty
-go run ./cmd/route-diff -python-root <compatibility-baseline-root> -mode schema-drift -format markdown
-go run ./cmd/route-diff -python-root <compatibility-baseline-root> -mode schema-drift -max-schema-mismatch 0 -format json
-go run ./cmd/route-diff -python-root <compatibility-baseline-root> -mode openapi-drift -format markdown
-go run ./cmd/route-diff -python-root <compatibility-baseline-root> -go-routes candidate -mode openapi-drift -format markdown
-go run ./cmd/route-diff -python-root <compatibility-baseline-root> -mode openapi-drift -python-openapi <baseline-openapi.json> -go-openapi tmp/go-openapi.json -max-openapi-mismatch 0 -format json
-SCHEMA_DRIFT_MISMATCH_THRESHOLD=1 SKIP_NPM_CI=1 bash scripts/phase1_gate.sh
-PYTHON_OPENAPI_SPEC=<baseline-openapi.json> GO_OPENAPI_SPEC=tmp/go-openapi.json OPENAPI_DRIFT_MISMATCH_THRESHOLD=0 SKIP_NPM_CI=1 bash scripts/phase1_gate.sh
-INVENTORY_DIFF_PROFILE=strict SKIP_NPM_CI=1 bash scripts/phase1_gate.sh
-go run ./cmd/cutover-readiness -all -format runbook
-go run ./cmd/golden-http -cases testdata/golden/phase1-probes.json -validate-only
-go run ./cmd/api
-```
-
-已有兼容基线服务与 Go 服务同时运行时，可执行首批探针 golden 对账：
-
-```bash
-cd go
-go run ./cmd/golden-http -cases testdata/golden/phase1-probes.json -python-url http://127.0.0.1:8000 -go-url http://127.0.0.1:9000 -format markdown
-```
+- `inventory-report.json` / `inventory-report.md`：当前 Go 项目的接口、契约、运行角色、事件和数据面清单。
+- `route-diff.json` / `route-diff.md`：当前路由元数据覆盖报告，作为过渡期审计信息。
+- `web-routes.json` / `web-routes.md`：Next.js 路由清单与入口检查。
+- `web-unit-test.out` / `web-unit-test.json` / `web-unit-test.md`：前端单元测试摘要。
+- `web-build.out` / `web-build.json` / `web-build.md`：前端构建摘要。
+- `cutover-*.json` / `cutover-*.md`：现有 readiness profile 的机器产物。命名会在后续里程碑中调整为 release readiness。
 
 前端验证：
 
 ```bash
 cd go/web
 npm install
+npm run test
 npm run build
 ```
 
@@ -90,20 +62,27 @@ npm run build
 
 ```bash
 cd go
-docker build -t wework-go-api --build-arg TARGET_CMD=api .
-docker build -t wework-go-outbox-worker --build-arg TARGET_CMD=outbox-worker .
-docker build -t wework-go-send-dispatcher --build-arg TARGET_CMD=send-dispatcher .
-docker build -t wework-go-archive-media-worker --build-arg TARGET_CMD=archive-media-worker .
-docker build -t wework-go-voice-transcription-worker --build-arg TARGET_CMD=voice-transcription-worker .
+docker build -t im-go-api --build-arg TARGET_CMD=api .
+docker build -t im-go-outbox-worker --build-arg TARGET_CMD=outbox-worker .
+docker build -t im-go-send-dispatcher --build-arg TARGET_CMD=send-dispatcher .
+docker build -t im-go-archive-media-worker --build-arg TARGET_CMD=archive-media-worker .
+docker build -t im-go-voice-transcription-worker --build-arg TARGET_CMD=voice-transcription-worker .
 
 cd web
-docker build -t wework-next-web .
+docker build -t im-next-web .
 ```
 
-## 不可破坏的兼容面
+## 长期工程边界
 
-- 当前 API 路径、请求参数和返回结构。
-- `/ws/{channel}` 及 Redis Pub/Sub 事件语义。
-- task payload 与状态事件 JSON schema contract catalog。
-- 数据库 schema、Redis key、投影表和 Docker 运行角色。
-- `incoming-worker` 与 `send-dispatcher` 热路径独立运行边界。
+- IM core 不直接依赖具体消息平台、RPA 供应商或设备控制协议。
+- API、事件、任务和投影需要有本仓库维护的契约定义、测试和可观测证据。
+- 写路径默认队列化、幂等化、可重试，关键 worker 与 API 进程独立部署。
+- WebSocket、Redis Stream、outbox、DB transaction、缓存和对象存储都必须有可复现的本地或 CI 验证方式。
+- 高风险能力先通过内部连接器、fake provider、shadow 运行和发布就绪 profile 证明，再进入生产流量。
+
+## 需要逐步清理的过渡资产
+
+- 仍以 `phase1`、`candidate`、`cutover` 命名的脚本、artifact 和开关。
+- 与单一供应商绑定的路由、env、compose 服务和 worker 装配。
+- 以通道专名或 RPA 供应商专名定义核心领域模型的代码。
+- 无法在本仓库独立验证的外部桥接路径。
