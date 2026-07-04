@@ -1,6 +1,6 @@
-// Package httpserver exposes the minimal HTTP surface for phase one.
-// Business routes remain owned by the Python service until their contracts,
-// dataflow, and verification gates are migrated in later phases.
+// Package httpserver exposes the IM API surface behind explicit release flags.
+// Product routes are mounted once their contracts, dataflow, and verification
+// gates are implemented in the Go services.
 package httpserver
 
 import (
@@ -13,7 +13,7 @@ import (
 	"im-go/internal/observability"
 )
 
-// New builds an HTTP handler with compatibility health probes only.
+// New builds an HTTP handler with the core health and metadata probes.
 func New(cfg config.Config) http.Handler {
 	return NewWithModules(cfg, Modules{})
 }
@@ -604,15 +604,15 @@ func metricsHandler(cfg config.Config) http.HandlerFunc {
 		if err != nil {
 			contractOK = 0
 		}
-		body := fmt.Sprintf(`# HELP wework_go_phase1_info Static phase-one API skeleton metadata.
-# TYPE wework_go_phase1_info gauge
-wework_go_phase1_info{runtime_role=%q,version=%q} 1
-# HELP wework_go_contract_catalog_ok Whether the legacy JSON contract catalog is readable.
-# TYPE wework_go_contract_catalog_ok gauge
-wework_go_contract_catalog_ok %d
-# HELP wework_go_contract_schema_count Number of readable legacy contract schemas.
-# TYPE wework_go_contract_schema_count gauge
-wework_go_contract_schema_count %d
+		body := fmt.Sprintf(`# HELP im_go_api_info Static API metadata.
+# TYPE im_go_api_info gauge
+im_go_api_info{runtime_role=%q,version=%q} 1
+# HELP im_go_contract_catalog_ok Whether the JSON contract catalog is readable.
+# TYPE im_go_contract_catalog_ok gauge
+im_go_contract_catalog_ok %d
+# HELP im_go_contract_schema_count Number of readable contract schemas.
+# TYPE im_go_contract_schema_count gauge
+im_go_contract_schema_count %d
 `, cfg.RuntimeRole, cfg.Version, contractOK, len(catalog))
 		writeText(w, http.StatusOK, "text/plain; version=0.0.4; charset=utf-8", body)
 	}

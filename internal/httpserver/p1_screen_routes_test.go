@@ -11,7 +11,7 @@ import (
 
 func TestNewWithModulesCanMountP1ScreenCandidate(t *testing.T) {
 	p1Handler := p1screenhttp.New(p1screen.Service{Config: p1screen.Config{InternalIP: "10.0.0.30"}})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{P1Screen: &p1Handler, P1ScreenCandidate: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{P1Screen: &p1Handler, P1ScreenCandidate: true})
 
 	assertStatus(t, handler, "/api/p1/screen/3/url?quality=0", http.StatusOK, `"slot_name":"P1-3"`)
 	assertStatus(t, handler, "/api/p1/screen/3/api-url", http.StatusOK, `"tcp_port":30207`)

@@ -17,7 +17,7 @@ import (
 // TestNewWithModulesCanMountPlatformProxyReadCandidate keeps platform proxy routes opt-in.
 func TestNewWithModulesCanMountPlatformProxyReadCandidate(t *testing.T) {
 	proxyHandler := platformproxyhttp.New(fakePlatformProxyReadService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{
 		PlatformProxy:              &proxyHandler,
 		PlatformProxyReadCandidate: true,
 	})
@@ -69,7 +69,7 @@ func TestNewWithModulesCanMountPlatformProxyReadCandidate(t *testing.T) {
 }
 
 func TestPlatformProxyReadCandidateDefaultOff(t *testing.T) {
-	handler := New(config.Config{ContractRoot: legacyContractRoot(t)})
+	handler := New(config.Config{ContractRoot: projectContractRoot(t)})
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/platform/options?option=store", nil)
 	handler.ServeHTTP(response, request)
@@ -82,7 +82,7 @@ func TestPlatformProxyReadCandidateDefaultOff(t *testing.T) {
 // TestNewWithModulesCanMountPlatformProxyWriteCandidate keeps platform mutations opt-in.
 func TestNewWithModulesCanMountPlatformProxyWriteCandidate(t *testing.T) {
 	proxyHandler := platformproxyhttp.New(fakePlatformProxyReadService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{
 		PlatformProxy:               &proxyHandler,
 		PlatformProxyWriteCandidate: true,
 	})
@@ -116,7 +116,7 @@ func TestNewWithModulesCanMountPlatformProxyWriteCandidate(t *testing.T) {
 // TestNewWithModulesCanMountPlatformProxySidebarCandidate keeps SDK sidebar tasks opt-in.
 func TestNewWithModulesCanMountPlatformProxySidebarCandidate(t *testing.T) {
 	proxyHandler := platformproxyhttp.New(fakePlatformProxyReadService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{
 		PlatformProxy:                 &proxyHandler,
 		PlatformProxySidebarCandidate: true,
 	})

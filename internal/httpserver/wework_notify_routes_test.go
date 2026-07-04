@@ -11,7 +11,7 @@ import (
 // TestNewWithModulesCanMountWeWorkNotifyCandidate keeps notify callback opt-in.
 func TestNewWithModulesCanMountWeWorkNotifyCandidate(t *testing.T) {
 	notifyHandler := weworknotifyhttp.New(nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{
 		WeWorkNotify:                  &notifyHandler,
 		WeWorkNotifyCallbackCandidate: true,
 	})

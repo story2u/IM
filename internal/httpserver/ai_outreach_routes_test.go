@@ -15,7 +15,7 @@ import (
 // TestNewWithModulesCanMountAIOutreachCandidate keeps platform-agent outreach opt-in.
 func TestNewWithModulesCanMountAIOutreachCandidate(t *testing.T) {
 	outreachHandler := aioutreachhttp.New(fakeAIOutreachService{}, "agent-token")
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{
 		AIOutreach:          &outreachHandler,
 		AIOutreachCandidate: true,
 	})

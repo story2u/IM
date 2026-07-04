@@ -38,13 +38,13 @@ func TestHealthReadinessAndMetrics(t *testing.T) {
 	handler := New(config.Config{
 		RuntimeRole:  "api",
 		Version:      "test",
-		ContractRoot: legacyContractRoot(t),
+		ContractRoot: projectContractRoot(t),
 	})
 
 	assertStatus(t, handler, "/", http.StatusOK, `"service":"cloud-backend"`)
 	assertStatus(t, handler, "/healthz", http.StatusOK, `"ok":true`)
 	assertStatus(t, handler, "/readyz", http.StatusOK, `"count":3`)
-	assertStatus(t, handler, "/metrics", http.StatusOK, "wework_go_contract_catalog_ok 1")
+	assertStatus(t, handler, "/metrics", http.StatusOK, "im_go_contract_catalog_ok 1")
 	assertStatus(t, handler, "/api/v1/session/me", http.StatusNotFound, "404 page not found")
 	assertStatus(t, handler, "/api/v1/stream/channels", http.StatusNotFound, "404 page not found")
 	assertStatus(t, handler, "/ws/conversations", http.StatusNotFound, "404 page not found")
@@ -144,7 +144,7 @@ func TestRoutesExposePhaseOneMetadata(t *testing.T) {
 // TestNewWithModulesCanMountDeviceCallAudioBridgeCandidate keeps bridge status opt-in.
 func TestNewWithModulesCanMountDeviceCallAudioBridgeCandidate(t *testing.T) {
 	deviceBridgeHandler := devicebridgehttp.New(fakeDeviceBridgeService{}, auth.Guard{}, "agent-token", false)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{DeviceBridge: &deviceBridgeHandler, DeviceCallAudioBridgeCandidate: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{DeviceBridge: &deviceBridgeHandler, DeviceCallAudioBridgeCandidate: true})
 
 	assertStatus(t, handler, "/api/v1/devices/device-1/call-audio-bridge/status", http.StatusUnauthorized, "missing bearer token")
 	assertPostStatus(t, handler, "/api/v1/devices/device-1/call-audio-bridge/status", http.StatusUnauthorized, "authentication required")
@@ -166,7 +166,7 @@ func TestNewWithModulesCanMountDeviceCallAudioBridgeCandidate(t *testing.T) {
 // TestNewWithModulesCanMountAgentRetiredCandidate keeps legacy Agent retirements opt-in.
 func TestNewWithModulesCanMountAgentRetiredCandidate(t *testing.T) {
 	agentRetiredHandler := agentretiredhttp.New(nil, "agent-token", false)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{AgentRetired: &agentRetiredHandler, AgentRetiredCandidate: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{AgentRetired: &agentRetiredHandler, AgentRetiredCandidate: true})
 
 	assertPostStatus(t, handler, "/api/v1/agents/heartbeat", http.StatusGone, "legacy App/HTTP-Agent heartbeat is disabled")
 	assertPostStatus(t, handler, "/agents/wework/login/event", http.StatusUnauthorized, "authentication required")
@@ -188,7 +188,7 @@ func TestNewWithModulesCanMountAgentRetiredCandidate(t *testing.T) {
 // TestNewWithModulesCanMountWeWorkUserInfoLastCandidate keeps debug reads opt-in.
 func TestNewWithModulesCanMountWeWorkUserInfoLastCandidate(t *testing.T) {
 	weworkUserInfoHandler := weworkuserinfohttp.New(auth.Guard{}, nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{WeWorkUserInfo: &weworkUserInfoHandler, WeWorkUserInfoLastCandidate: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{WeWorkUserInfo: &weworkUserInfoHandler, WeWorkUserInfoLastCandidate: true})
 
 	assertStatus(t, handler, "/wework/user-info/last?device_id=device-1", http.StatusUnauthorized, "missing bearer token")
 
@@ -205,7 +205,7 @@ func TestNewWithModulesCanMountWeWorkUserInfoLastCandidate(t *testing.T) {
 // TestNewWithModulesCanMountWeWorkLoginQRCodeCandidate keeps login QR writes opt-in.
 func TestNewWithModulesCanMountWeWorkLoginQRCodeCandidate(t *testing.T) {
 	weworkLoginHandler := weworkloginhttp.New(auth.Guard{}, nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{WeWorkLogin: &weworkLoginHandler, WeWorkLoginQRCode: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{WeWorkLogin: &weworkLoginHandler, WeWorkLoginQRCode: true})
 
 	assertPostStatus(t, handler, "/wework/login/qrcode", http.StatusUnauthorized, "missing bearer token")
 
@@ -222,7 +222,7 @@ func TestNewWithModulesCanMountWeWorkLoginQRCodeCandidate(t *testing.T) {
 // TestNewWithModulesCanMountWeWorkLoginVerifyCandidate keeps login verify writes opt-in.
 func TestNewWithModulesCanMountWeWorkLoginVerifyCandidate(t *testing.T) {
 	weworkLoginHandler := weworkloginhttp.New(auth.Guard{}, nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{WeWorkLogin: &weworkLoginHandler, WeWorkLoginVerify: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{WeWorkLogin: &weworkLoginHandler, WeWorkLoginVerify: true})
 
 	assertPostStatus(t, handler, "/wework/login/verify-code", http.StatusUnauthorized, "missing bearer token")
 
@@ -239,7 +239,7 @@ func TestNewWithModulesCanMountWeWorkLoginVerifyCandidate(t *testing.T) {
 // TestNewWithModulesCanMountWeWorkLogoutCandidate keeps logout writes opt-in.
 func TestNewWithModulesCanMountWeWorkLogoutCandidate(t *testing.T) {
 	weworkLoginHandler := weworkloginhttp.New(auth.Guard{}, nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{WeWorkLogin: &weworkLoginHandler, WeWorkLogout: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{WeWorkLogin: &weworkLoginHandler, WeWorkLogout: true})
 
 	assertPostStatus(t, handler, "/wework/logout", http.StatusUnauthorized, "missing bearer token")
 
@@ -256,7 +256,7 @@ func TestNewWithModulesCanMountWeWorkLogoutCandidate(t *testing.T) {
 // TestNewWithModulesCanMountWeWorkLoginStatusCandidate keeps login status opt-in.
 func TestNewWithModulesCanMountWeWorkLoginStatusCandidate(t *testing.T) {
 	weworkLoginHandler := weworkloginhttp.New(auth.Guard{}, nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{WeWorkLogin: &weworkLoginHandler, WeWorkLoginStatus: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{WeWorkLogin: &weworkLoginHandler, WeWorkLoginStatus: true})
 
 	assertStatus(t, handler, "/wework/login/status?device_id=device-1", http.StatusUnauthorized, "missing bearer token")
 
@@ -273,7 +273,7 @@ func TestNewWithModulesCanMountWeWorkLoginStatusCandidate(t *testing.T) {
 // TestNewWithModulesCanMountWeWorkUserInfoRequestCandidate keeps user-info requests opt-in.
 func TestNewWithModulesCanMountWeWorkUserInfoRequestCandidate(t *testing.T) {
 	weworkUserInfoHandler := weworkuserinfohttp.NewWithRequest(auth.Guard{}, nil, nil, nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{WeWorkUserInfo: &weworkUserInfoHandler, WeWorkUserInfoRequest: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{WeWorkUserInfo: &weworkUserInfoHandler, WeWorkUserInfoRequest: true})
 
 	assertPostStatus(t, handler, "/wework/user-info/request", http.StatusUnauthorized, "missing bearer token")
 
@@ -290,7 +290,7 @@ func TestNewWithModulesCanMountWeWorkUserInfoRequestCandidate(t *testing.T) {
 // TestNewWithModulesCanMountWeWorkUserInfoCandidatesCandidate keeps user-info candidates opt-in.
 func TestNewWithModulesCanMountWeWorkUserInfoCandidatesCandidate(t *testing.T) {
 	weworkUserInfoHandler := weworkuserinfohttp.New(auth.Guard{}, nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{WeWorkUserInfo: &weworkUserInfoHandler, WeWorkUserInfoCandidates: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{WeWorkUserInfo: &weworkUserInfoHandler, WeWorkUserInfoCandidates: true})
 
 	assertStatus(t, handler, "/wework/user-info/candidates?device_id=device-1", http.StatusUnauthorized, "missing bearer token")
 
@@ -307,7 +307,7 @@ func TestNewWithModulesCanMountWeWorkUserInfoCandidatesCandidate(t *testing.T) {
 // TestNewWithModulesCanMountDeviceCallAudioBridgeTargetsCandidate keeps bridge targets opt-in.
 func TestNewWithModulesCanMountDeviceCallAudioBridgeTargetsCandidate(t *testing.T) {
 	deviceBridgeHandler := devicebridgehttp.New(fakeDeviceBridgeService{}, auth.Guard{}, "agent-token", false)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{DeviceBridge: &deviceBridgeHandler, DeviceCallAudioBridgeTargets: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{DeviceBridge: &deviceBridgeHandler, DeviceCallAudioBridgeTargets: true})
 
 	assertStatus(t, handler, "/api/v1/devices/call-audio-bridge/targets", http.StatusUnauthorized, "authentication required")
 
@@ -324,7 +324,7 @@ func TestNewWithModulesCanMountDeviceCallAudioBridgeTargetsCandidate(t *testing.
 // TestNewWithModulesCanMountDeviceSDKWebRTCCandidate keeps SDK WebRTC debug URL opt-in.
 func TestNewWithModulesCanMountDeviceSDKWebRTCCandidate(t *testing.T) {
 	deviceSDKHandler := devicesdkhttp.New(fakeDeviceSDKService{}, auth.Guard{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceSDKWebRTC: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceSDKWebRTC: true})
 
 	assertStatus(t, handler, "/api/v1/devices/device-1/sdk/webrtc", http.StatusUnauthorized, "missing bearer token")
 
@@ -341,7 +341,7 @@ func TestNewWithModulesCanMountDeviceSDKWebRTCCandidate(t *testing.T) {
 // TestNewWithModulesCanMountDevicesListCandidate keeps device list opt-in.
 func TestNewWithModulesCanMountDevicesListCandidate(t *testing.T) {
 	deviceSDKHandler := devicesdkhttp.New(fakeDeviceSDKService{}, auth.Guard{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DevicesList: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DevicesList: true})
 
 	assertStatus(t, handler, "/api/v1/devices", http.StatusUnauthorized, "missing bearer token")
 
@@ -358,7 +358,7 @@ func TestNewWithModulesCanMountDevicesListCandidate(t *testing.T) {
 // TestNewWithModulesCanMountDeviceDiscoveryRefreshCandidate keeps discovery refresh opt-in.
 func TestNewWithModulesCanMountDeviceDiscoveryRefreshCandidate(t *testing.T) {
 	deviceSDKHandler := devicesdkhttp.New(fakeDeviceSDKService{}, auth.Guard{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceDiscoveryRefresh: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceDiscoveryRefresh: true})
 
 	assertPostStatus(t, handler, "/api/v1/devices/discovery/refresh", http.StatusUnauthorized, "missing bearer token")
 
@@ -375,7 +375,7 @@ func TestNewWithModulesCanMountDeviceDiscoveryRefreshCandidate(t *testing.T) {
 // TestNewWithModulesCanMountDeviceDiscoveryProbeCandidate keeps discovery probe opt-in.
 func TestNewWithModulesCanMountDeviceDiscoveryProbeCandidate(t *testing.T) {
 	deviceSDKHandler := devicesdkhttp.New(fakeDeviceSDKService{}, auth.Guard{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceDiscoveryProbe: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceDiscoveryProbe: true})
 
 	assertPostStatus(t, handler, "/api/v1/devices/discovery/probe", http.StatusUnauthorized, "missing bearer token")
 
@@ -392,7 +392,7 @@ func TestNewWithModulesCanMountDeviceDiscoveryProbeCandidate(t *testing.T) {
 // TestNewWithModulesCanMountDevicesManualCandidate keeps manual device writes opt-in.
 func TestNewWithModulesCanMountDevicesManualCandidate(t *testing.T) {
 	manualHandler := devicesmanualhttp.New(auth.Guard{}, nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{DevicesManual: &manualHandler, DevicesManualCandidate: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{DevicesManual: &manualHandler, DevicesManualCandidate: true})
 
 	assertPostStatus(t, handler, "/api/v1/devices/manual", http.StatusUnauthorized, "missing bearer token")
 	assertDeleteStatus(t, handler, "/api/v1/devices/manual?agent_id=agent-1&device_id=device-1", http.StatusUnauthorized, "missing bearer token")
@@ -414,7 +414,7 @@ func TestNewWithModulesCanMountDevicesManualCandidate(t *testing.T) {
 // TestNewWithModulesCanMountDeviceSDKStatusCandidate keeps SDK status opt-in.
 func TestNewWithModulesCanMountDeviceSDKStatusCandidate(t *testing.T) {
 	deviceSDKHandler := devicesdkhttp.New(fakeDeviceSDKService{}, auth.Guard{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceSDKStatus: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceSDKStatus: true})
 
 	assertStatus(t, handler, "/api/v1/devices/device-1/sdk/status", http.StatusUnauthorized, "missing bearer token")
 
@@ -453,7 +453,7 @@ func routeExists(routes []Route, method string, path string) bool {
 // TestNewWithModulesCanMountDeviceSDKControlCandidate keeps SDK control task submission opt-in.
 func TestNewWithModulesCanMountDeviceSDKControlCandidate(t *testing.T) {
 	deviceSDKHandler := devicesdkhttp.New(fakeDeviceSDKService{}, auth.Guard{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceSDKControl: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceSDKControl: true})
 
 	assertPostStatus(t, handler, "/api/v1/devices/device-1/sdk/open-wework", http.StatusUnauthorized, "missing bearer token")
 	assertPostStatus(t, handler, "/api/v1/devices/device-1/sdk/stop-wework", http.StatusUnauthorized, "missing bearer token")
@@ -479,7 +479,7 @@ func TestNewWithModulesCanMountDeviceSDKControlCandidate(t *testing.T) {
 // TestNewWithModulesCanMountSendTextCandidate keeps legacy send text opt-in.
 func TestNewWithModulesCanMountSendTextCandidate(t *testing.T) {
 	sendTextHandler := sendtexthttp.New(auth.Guard{}, nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{SendText: &sendTextHandler, SendTextCandidate: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{SendText: &sendTextHandler, SendTextCandidate: true})
 
 	assertPostStatus(t, handler, "/send/text", http.StatusUnauthorized, "missing bearer token")
 
@@ -496,7 +496,7 @@ func TestNewWithModulesCanMountSendTextCandidate(t *testing.T) {
 // TestNewWithModulesCanMountGroupInviteCandidate keeps legacy group invite opt-in.
 func TestNewWithModulesCanMountGroupInviteCandidate(t *testing.T) {
 	groupInviteHandler := groupinvitehttp.New(auth.Guard{}, nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{GroupInvite: &groupInviteHandler, GroupInviteCandidate: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{GroupInvite: &groupInviteHandler, GroupInviteCandidate: true})
 
 	assertPostStatus(t, handler, "/group/invite", http.StatusUnauthorized, "missing bearer token")
 
@@ -520,7 +520,7 @@ func TestNewWithModulesCanMountSendMediaCandidates(t *testing.T) {
 		SendVoiceCandidate: true,
 		SendFileCandidate:  true,
 	}
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, modules)
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, modules)
 
 	assertPostStatus(t, handler, "/send/image", http.StatusUnauthorized, "missing bearer token")
 	assertPostStatus(t, handler, "/send/video", http.StatusUnauthorized, "missing bearer token")
@@ -555,7 +555,7 @@ func TestNewWithModulesCanMountConversationCallCandidates(t *testing.T) {
 		ConversationCallAvail:           true,
 		ConversationCallRelease:         true,
 	}
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, modules)
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, modules)
 
 	assertPostStatus(t, handler, "/api/v1/conversations/conv-1/call", http.StatusUnauthorized, "missing bearer token")
 	assertPostStatus(t, handler, "/api/v1/conversations/conv-1/call/hangup", http.StatusUnauthorized, "missing bearer token")
@@ -583,7 +583,7 @@ func TestNewWithModulesCanMountConversationCallCandidates(t *testing.T) {
 // TestNewWithModulesCanMountDeviceSDKRTCSessionCandidate keeps LiveKit session opt-in.
 func TestNewWithModulesCanMountDeviceSDKRTCSessionCandidate(t *testing.T) {
 	deviceSDKHandler := devicesdkhttp.New(fakeDeviceSDKService{}, auth.Guard{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceSDKRTCSession: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceSDKRTCSession: true})
 
 	assertStatus(t, handler, "/api/v1/devices/device-1/sdk/rtc-session", http.StatusUnauthorized, "missing bearer token")
 
@@ -600,7 +600,7 @@ func TestNewWithModulesCanMountDeviceSDKRTCSessionCandidate(t *testing.T) {
 // TestNewWithModulesCanMountDeviceRTCActiveCandidate keeps LiveKit active marks opt-in.
 func TestNewWithModulesCanMountDeviceRTCActiveCandidate(t *testing.T) {
 	deviceSDKHandler := devicesdkhttp.NewWithAgentAuth(fakeDeviceSDKService{}, auth.Guard{}, "agent-token", false)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceRTCActive: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceRTCActive: true})
 
 	assertPostBodyStatus(t, handler, "/api/v1/devices/device-1/rtc-active", `{"participant_identity":"user-1"}`, http.StatusUnauthorized, "missing bearer token")
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/devices/rtc/active", nil)
@@ -626,7 +626,7 @@ func TestNewWithModulesCanMountDeviceRTCActiveCandidate(t *testing.T) {
 // TestNewWithModulesCanMountDeviceRTCControlCandidate keeps control lease routes opt-in.
 func TestNewWithModulesCanMountDeviceRTCControlCandidate(t *testing.T) {
 	deviceSDKHandler := devicesdkhttp.NewWithAgentAuth(fakeDeviceSDKService{}, auth.Guard{}, "agent-token", false)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceRTCControl: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceRTCControl: true})
 
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/devices/device-1/control/state", nil)
 	request.Header.Set("X-Agent-Token", "agent-token")
@@ -660,7 +660,7 @@ func TestNewWithModulesCanMountDeviceRTCControlCandidate(t *testing.T) {
 // TestNewWithModulesCanMountDeviceRTCMediaPrepareCandidate keeps media prepare opt-in.
 func TestNewWithModulesCanMountDeviceRTCMediaPrepareCandidate(t *testing.T) {
 	deviceSDKHandler := devicesdkhttp.New(fakeDeviceSDKService{}, auth.Guard{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceRTCMediaPrepare: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceRTCMediaPrepare: true})
 
 	assertPostBodyStatus(t, handler, "/api/v1/devices/device-1/media/start", `{"participant_identity":"user-1","activate":false}`, http.StatusUnauthorized, "missing bearer token")
 	assertPostBodyStatus(t, handler, "/api/v1/devices/device-1/media/camera-stream", `{"addr":"webrtc://relay/live/slot-18"}`, http.StatusUnauthorized, "missing bearer token")
@@ -690,7 +690,7 @@ func TestNewWithModulesCanMountDeviceRTCMediaPrepareCandidate(t *testing.T) {
 // TestNewWithModulesCanMountContactReadCandidates keeps contact cache routes opt-in.
 func TestNewWithModulesCanMountContactReadCandidates(t *testing.T) {
 	contactHandler := contactshttp.New(auth.Guard{}, nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{
 		Contacts:                 &contactHandler,
 		ContactExternalCandidate: true,
 		ContactCorpUserCandidate: true,
@@ -720,7 +720,7 @@ func TestNewWithModulesCanMountContactReadCandidates(t *testing.T) {
 // TestNewWithModulesCanMountContactSyncExternalCandidate keeps contact sync writes opt-in.
 func TestNewWithModulesCanMountContactSyncExternalCandidate(t *testing.T) {
 	contactHandler := contactshttp.New(auth.Guard{}, nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{
 		Contacts:                     &contactHandler,
 		ContactSyncExternalCandidate: true,
 	})
@@ -743,7 +743,7 @@ func TestNewWithModulesCanMountContactSyncExternalCandidate(t *testing.T) {
 // TestNewWithModulesCanMountContactSyncFullCandidate keeps contact full sync writes opt-in.
 func TestNewWithModulesCanMountContactSyncFullCandidate(t *testing.T) {
 	contactHandler := contactshttp.New(auth.Guard{}, nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{
 		Contacts:                 &contactHandler,
 		ContactSyncFullCandidate: true,
 	})
@@ -766,7 +766,7 @@ func TestNewWithModulesCanMountContactSyncFullCandidate(t *testing.T) {
 // TestNewWithModulesCanMountContactSyncRefreshStaleCandidate keeps stale refresh writes opt-in.
 func TestNewWithModulesCanMountContactSyncRefreshStaleCandidate(t *testing.T) {
 	contactHandler := contactshttp.New(auth.Guard{}, nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{
 		Contacts:                         &contactHandler,
 		ContactSyncRefreshStaleCandidate: true,
 	})
@@ -789,7 +789,7 @@ func TestNewWithModulesCanMountContactSyncRefreshStaleCandidate(t *testing.T) {
 // TestNewWithModulesCanMountRealtimeReadCandidates keeps realtime replay routes opt-in.
 func TestNewWithModulesCanMountRealtimeReadCandidates(t *testing.T) {
 	realtimeHandler := realtimehttp.New(auth.Guard{}, nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{
 		Realtime:                  &realtimeHandler,
 		RealtimeReplayCandidate:   true,
 		RealtimeSnapshotCandidate: true,
@@ -819,7 +819,7 @@ func TestNewWithModulesCanMountRealtimeReadCandidates(t *testing.T) {
 // TestNewWithModulesCanMountSessionMeCandidate keeps candidate routes opt-in.
 func TestNewWithModulesCanMountSessionMeCandidate(t *testing.T) {
 	sessionHandler := sessionhttp.New(fakeCurrentUserService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Session: &sessionHandler, SessionMe: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Session: &sessionHandler, SessionMe: true})
 
 	assertStatus(t, handler, "/api/v1/session/me", http.StatusOK, `"assignee_id":"cs-001"`)
 
@@ -836,7 +836,7 @@ func TestNewWithModulesCanMountSessionMeCandidate(t *testing.T) {
 // TestNewWithModulesCanMountSessionAdminLoginCandidate keeps admin login opt-in.
 func TestNewWithModulesCanMountSessionAdminLoginCandidate(t *testing.T) {
 	sessionHandler := sessionhttp.New(fakeCurrentUserService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Session: &sessionHandler, SessionAdminLogin: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Session: &sessionHandler, SessionAdminLogin: true})
 
 	assertPostBodyStatus(t, handler, "/api/v1/session/admin-login", `{"username":"admin","password":"secret"}`, http.StatusOK, `"token":"jwt-admin"`)
 
@@ -853,7 +853,7 @@ func TestNewWithModulesCanMountSessionAdminLoginCandidate(t *testing.T) {
 // TestNewWithModulesCanMountSessionLoginCandidate keeps assignee login opt-in.
 func TestNewWithModulesCanMountSessionLoginCandidate(t *testing.T) {
 	sessionHandler := sessionhttp.New(fakeCurrentUserService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Session: &sessionHandler, SessionLogin: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Session: &sessionHandler, SessionLogin: true})
 
 	assertPostBodyStatus(t, handler, "/api/v1/session/login", `{"assignee_id":"cs-001"}`, http.StatusOK, `"token":"jwt-cs"`)
 
@@ -870,7 +870,7 @@ func TestNewWithModulesCanMountSessionLoginCandidate(t *testing.T) {
 // TestNewWithModulesCanMountSessionCSLoginCandidate keeps CS password login opt-in.
 func TestNewWithModulesCanMountSessionCSLoginCandidate(t *testing.T) {
 	sessionHandler := sessionhttp.New(fakeCurrentUserService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Session: &sessionHandler, SessionCSLogin: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Session: &sessionHandler, SessionCSLogin: true})
 
 	assertPostBodyStatus(t, handler, "/api/v1/session/cs-login", `{"assignee_id":"cs-001","password":"secret"}`, http.StatusOK, `"token":"jwt-cs-password"`)
 
@@ -887,7 +887,7 @@ func TestNewWithModulesCanMountSessionCSLoginCandidate(t *testing.T) {
 // TestNewWithModulesCanMountSessionGenerateCSTokenCandidate keeps impersonation opt-in.
 func TestNewWithModulesCanMountSessionGenerateCSTokenCandidate(t *testing.T) {
 	sessionHandler := sessionhttp.New(fakeCurrentUserService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Session: &sessionHandler, SessionGenerateCSToken: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Session: &sessionHandler, SessionGenerateCSToken: true})
 
 	assertPostBodyStatus(t, handler, "/api/v1/session/admin/generate-cs-token", `{"assignee_id":"cs-001"}`, http.StatusOK, `"token":"jwt-cs-generated"`)
 
@@ -904,7 +904,7 @@ func TestNewWithModulesCanMountSessionGenerateCSTokenCandidate(t *testing.T) {
 // TestNewWithModulesCanMountSessionRefreshCandidate keeps refresh opt-in too.
 func TestNewWithModulesCanMountSessionRefreshCandidate(t *testing.T) {
 	sessionHandler := sessionhttp.New(fakeCurrentUserService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Session: &sessionHandler, SessionRefresh: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Session: &sessionHandler, SessionRefresh: true})
 
 	assertPostStatus(t, handler, "/api/v1/session/refresh", http.StatusOK, `"token":"jwt-new"`)
 
@@ -921,7 +921,7 @@ func TestNewWithModulesCanMountSessionRefreshCandidate(t *testing.T) {
 // TestNewWithModulesCanMountSessionLogoutCandidate keeps logout opt-in too.
 func TestNewWithModulesCanMountSessionLogoutCandidate(t *testing.T) {
 	sessionHandler := sessionhttp.New(fakeCurrentUserService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Session: &sessionHandler, SessionLogout: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Session: &sessionHandler, SessionLogout: true})
 
 	assertPostStatus(t, handler, "/api/v1/session/logout", http.StatusOK, `"success":true`)
 
@@ -938,7 +938,7 @@ func TestNewWithModulesCanMountSessionLogoutCandidate(t *testing.T) {
 // TestNewWithModulesCanMountStreamChannelsCandidate keeps channel catalog opt-in.
 func TestNewWithModulesCanMountStreamChannelsCandidate(t *testing.T) {
 	streamHandler := streamchannelshttp.New(auth.Guard{}, fakeStreamChannelsService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{
 		StreamChannels:          &streamHandler,
 		StreamChannelsCandidate: true,
 	})
@@ -961,7 +961,7 @@ func TestNewWithModulesCanMountStreamChannelsCandidate(t *testing.T) {
 // TestNewWithModulesCanMountWSGatewayCandidate keeps websocket gateway opt-in.
 func TestNewWithModulesCanMountWSGatewayCandidate(t *testing.T) {
 	wsHandler := wsgateway.New(wsgateway.Authenticator{}, wsgateway.NewHub())
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{
 		WSGateway:          &wsHandler,
 		WSGatewayCandidate: true,
 	})
@@ -984,7 +984,7 @@ func TestNewWithModulesCanMountWSGatewayCandidate(t *testing.T) {
 // TestNewWithModulesCanMountConversationMessagesCandidate keeps message details opt-in.
 func TestNewWithModulesCanMountConversationMessagesCandidate(t *testing.T) {
 	messagesHandler := messageshttp.New(auth.Guard{}, fakeMessageService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Messages: &messagesHandler, ConversationMessages: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Messages: &messagesHandler, ConversationMessages: true})
 
 	assertStatus(t, handler, "/api/v1/conversations/conv-001/messages", http.StatusUnauthorized, "missing bearer token")
 
@@ -1001,7 +1001,7 @@ func TestNewWithModulesCanMountConversationMessagesCandidate(t *testing.T) {
 // TestNewWithModulesCanMountWorkbenchBootstrapCandidate keeps bootstrap opt-in.
 func TestNewWithModulesCanMountWorkbenchBootstrapCandidate(t *testing.T) {
 	workbenchHandler := workbenchhttp.New(auth.Guard{}, fakeWorkbenchBootstrapService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Workbench: &workbenchHandler, WorkbenchBootstrap: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Workbench: &workbenchHandler, WorkbenchBootstrap: true})
 
 	assertStatus(t, handler, "/api/v1/cs/workbench/bootstrap", http.StatusUnauthorized, "missing bearer token")
 
@@ -1018,7 +1018,7 @@ func TestNewWithModulesCanMountWorkbenchBootstrapCandidate(t *testing.T) {
 // TestNewWithModulesCanMountWorkbenchSummaryCandidate keeps summary opt-in.
 func TestNewWithModulesCanMountWorkbenchSummaryCandidate(t *testing.T) {
 	workbenchHandler := workbenchhttp.New(auth.Guard{}, fakeWorkbenchBootstrapService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Workbench: &workbenchHandler, WorkbenchSummary: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Workbench: &workbenchHandler, WorkbenchSummary: true})
 
 	assertStatus(t, handler, "/api/v1/cs/workbench/summary", http.StatusUnauthorized, "missing bearer token")
 
@@ -1035,7 +1035,7 @@ func TestNewWithModulesCanMountWorkbenchSummaryCandidate(t *testing.T) {
 // TestNewWithModulesCanMountWorkbenchConversationsCandidate keeps conversations opt-in.
 func TestNewWithModulesCanMountWorkbenchConversationsCandidate(t *testing.T) {
 	workbenchHandler := workbenchhttp.New(auth.Guard{}, fakeWorkbenchBootstrapService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Workbench: &workbenchHandler, WorkbenchConversations: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Workbench: &workbenchHandler, WorkbenchConversations: true})
 
 	assertStatus(t, handler, "/api/v1/cs/workbench/conversations", http.StatusUnauthorized, "missing bearer token")
 
@@ -1052,7 +1052,7 @@ func TestNewWithModulesCanMountWorkbenchConversationsCandidate(t *testing.T) {
 // TestNewWithModulesCanMountWorkbenchSearchCandidate keeps search opt-in.
 func TestNewWithModulesCanMountWorkbenchSearchCandidate(t *testing.T) {
 	workbenchHandler := workbenchhttp.New(auth.Guard{}, fakeWorkbenchBootstrapService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Workbench: &workbenchHandler, WorkbenchSearch: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Workbench: &workbenchHandler, WorkbenchSearch: true})
 
 	assertStatus(t, handler, "/api/v1/cs/workbench/search?q=golden", http.StatusUnauthorized, "missing bearer token")
 
@@ -1069,7 +1069,7 @@ func TestNewWithModulesCanMountWorkbenchSearchCandidate(t *testing.T) {
 // TestNewWithModulesCanMountConversationListCandidate keeps legacy list opt-in.
 func TestNewWithModulesCanMountConversationListCandidate(t *testing.T) {
 	workbenchHandler := workbenchhttp.New(auth.Guard{}, fakeWorkbenchBootstrapService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Workbench: &workbenchHandler, ConversationList: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Workbench: &workbenchHandler, ConversationList: true})
 
 	assertStatus(t, handler, "/api/v1/conversations", http.StatusUnauthorized, "missing bearer token")
 
@@ -1086,7 +1086,7 @@ func TestNewWithModulesCanMountConversationListCandidate(t *testing.T) {
 // TestNewWithModulesCanMountConversationCustomerProfileCandidate keeps customer profile edits opt-in.
 func TestNewWithModulesCanMountConversationCustomerProfileCandidate(t *testing.T) {
 	workbenchHandler := workbenchhttp.New(auth.Guard{}, fakeWorkbenchBootstrapService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Workbench: &workbenchHandler, ConversationCustomerProfile: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Workbench: &workbenchHandler, ConversationCustomerProfile: true})
 
 	request := httptest.NewRequest(http.MethodPatch, "/api/v1/conversations/conv-1/customer-profile", strings.NewReader(`{"remark_name":"新备注"}`))
 	response := httptest.NewRecorder()
@@ -1108,7 +1108,7 @@ func TestNewWithModulesCanMountConversationCustomerProfileCandidate(t *testing.T
 // TestNewWithModulesCanMountContactProfileResolveCandidate keeps contact profile resolve opt-in.
 func TestNewWithModulesCanMountContactProfileResolveCandidate(t *testing.T) {
 	workbenchHandler := workbenchhttp.New(auth.Guard{}, fakeWorkbenchBootstrapService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Workbench: &workbenchHandler, ContactProfileResolve: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Workbench: &workbenchHandler, ContactProfileResolve: true})
 
 	assertPostStatus(t, handler, "/api/v1/conversations/conv-1/contact-profile/resolve", http.StatusUnauthorized, "missing bearer token")
 
@@ -1125,7 +1125,7 @@ func TestNewWithModulesCanMountContactProfileResolveCandidate(t *testing.T) {
 // TestNewWithModulesCanMountContactProfileRefreshCandidate keeps contact profile refresh opt-in.
 func TestNewWithModulesCanMountContactProfileRefreshCandidate(t *testing.T) {
 	workbenchHandler := workbenchhttp.New(auth.Guard{}, fakeWorkbenchBootstrapService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Workbench: &workbenchHandler, ContactProfileRefresh: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Workbench: &workbenchHandler, ContactProfileRefresh: true})
 
 	assertPostStatus(t, handler, "/api/v1/conversations/conv-1/contact-profile/refresh", http.StatusUnauthorized, "missing bearer token")
 
@@ -1142,7 +1142,7 @@ func TestNewWithModulesCanMountContactProfileRefreshCandidate(t *testing.T) {
 // TestNewWithModulesCanMountConversationAccountStatsCandidate keeps account stats opt-in.
 func TestNewWithModulesCanMountConversationAccountStatsCandidate(t *testing.T) {
 	workbenchHandler := workbenchhttp.New(auth.Guard{}, fakeWorkbenchBootstrapService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Workbench: &workbenchHandler, ConversationAccountStats: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Workbench: &workbenchHandler, ConversationAccountStats: true})
 
 	assertStatus(t, handler, "/api/v1/conversations/account-stats", http.StatusUnauthorized, "missing bearer token")
 
@@ -1159,7 +1159,7 @@ func TestNewWithModulesCanMountConversationAccountStatsCandidate(t *testing.T) {
 // TestNewWithModulesCanMountConversationPanelBootstrapCandidate keeps panel bootstrap opt-in.
 func TestNewWithModulesCanMountConversationPanelBootstrapCandidate(t *testing.T) {
 	workbenchHandler := workbenchhttp.New(auth.Guard{}, fakeWorkbenchBootstrapService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Workbench: &workbenchHandler, ConversationPanelBootstrap: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Workbench: &workbenchHandler, ConversationPanelBootstrap: true})
 
 	assertStatus(t, handler, "/api/v1/conversations/panel-bootstrap", http.StatusUnauthorized, "missing bearer token")
 
@@ -1176,7 +1176,7 @@ func TestNewWithModulesCanMountConversationPanelBootstrapCandidate(t *testing.T)
 // TestNewWithModulesCanMountConversationPanelSnapshotCandidate keeps panel snapshot opt-in.
 func TestNewWithModulesCanMountConversationPanelSnapshotCandidate(t *testing.T) {
 	workbenchHandler := workbenchhttp.New(auth.Guard{}, fakeWorkbenchBootstrapService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Workbench: &workbenchHandler, ConversationPanelSnapshot: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Workbench: &workbenchHandler, ConversationPanelSnapshot: true})
 
 	assertStatus(t, handler, "/api/v1/conversations/panel-snapshot", http.StatusUnauthorized, "missing bearer token")
 
@@ -1193,7 +1193,7 @@ func TestNewWithModulesCanMountConversationPanelSnapshotCandidate(t *testing.T) 
 // TestNewWithModulesCanMountAIReplyLogsCandidate keeps reply logs opt-in.
 func TestNewWithModulesCanMountAIReplyLogsCandidate(t *testing.T) {
 	workbenchHandler := workbenchhttp.New(auth.Guard{}, fakeWorkbenchBootstrapService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Workbench: &workbenchHandler, AIReplyLogs: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Workbench: &workbenchHandler, AIReplyLogs: true})
 
 	assertStatus(t, handler, "/api/v1/admin/ai-config/reply-logs", http.StatusUnauthorized, "missing bearer token")
 
@@ -1210,7 +1210,7 @@ func TestNewWithModulesCanMountAIReplyLogsCandidate(t *testing.T) {
 // TestNewWithModulesCanMountAssignmentWorkloadsCandidate keeps workloads opt-in.
 func TestNewWithModulesCanMountAssignmentWorkloadsCandidate(t *testing.T) {
 	workbenchHandler := workbenchhttp.New(auth.Guard{}, fakeWorkbenchBootstrapService{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Workbench: &workbenchHandler, AssignmentWorkloads: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Workbench: &workbenchHandler, AssignmentWorkloads: true})
 
 	assertStatus(t, handler, "/api/v1/assignments/workloads", http.StatusUnauthorized, "missing bearer token")
 
@@ -1703,12 +1703,12 @@ func assertResponse(t *testing.T, handler http.Handler, request *http.Request, p
 	}
 }
 
-func legacyContractRoot(t *testing.T) string {
+func projectContractRoot(t *testing.T) string {
 	t.Helper()
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {
 		t.Fatal("runtime.Caller failed")
 	}
-	repoRoot := filepath.Clean(filepath.Join(filepath.Dir(file), "..", "..", ".."))
-	return filepath.Join(repoRoot, "Python", "contracts", "v1")
+	repoRoot := filepath.Clean(filepath.Join(filepath.Dir(file), "..", ".."))
+	return filepath.Join(repoRoot, "contracts", "v1")
 }

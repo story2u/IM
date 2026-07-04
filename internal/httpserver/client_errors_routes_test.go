@@ -16,7 +16,7 @@ import (
 // TestNewWithModulesCanMountClientErrorsCandidate keeps report writes opt-in.
 func TestNewWithModulesCanMountClientErrorsCandidate(t *testing.T) {
 	clientErrorsHandler := clienterrorshttp.New(fakeClientErrorReportService{}, nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{
 		ClientErrors:          &clientErrorsHandler,
 		ClientErrorsCandidate: true,
 	})

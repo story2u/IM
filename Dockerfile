@@ -17,6 +17,7 @@ FROM alpine:3.22
 RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /app
 COPY --from=build /out/app /app/app
+COPY --from=build /src/contracts /app/contracts
 
 ENV GO_BACKEND_ADDR=:9000
 EXPOSE 9000

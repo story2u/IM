@@ -11,7 +11,7 @@ import (
 // TestNewWithModulesCanMountArchiveCallbackCandidate keeps callback opt-in.
 func TestNewWithModulesCanMountArchiveCallbackCandidate(t *testing.T) {
 	callbackHandler := archivecallbackhttp.New(nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{
 		ArchiveCallback:          &callbackHandler,
 		ArchiveCallbackCandidate: true,
 	})
@@ -39,7 +39,7 @@ func TestNewWithModulesCanMountArchiveCallbackCandidate(t *testing.T) {
 // TestNewWithModulesCanMountArchiveCallbackReceiptsCandidate keeps the static monitor route opt-in.
 func TestNewWithModulesCanMountArchiveCallbackReceiptsCandidate(t *testing.T) {
 	callbackHandler := archivecallbackhttp.New(nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{
 		ArchiveCallback:          &callbackHandler,
 		ArchiveCallbackCandidate: true,
 		ArchiveCallbackReceipts:  true,

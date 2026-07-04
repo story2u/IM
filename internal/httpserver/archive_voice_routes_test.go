@@ -12,7 +12,7 @@ import (
 // TestNewWithModulesCanMountArchiveVoiceRetryCandidate keeps manual retry opt-in.
 func TestNewWithModulesCanMountArchiveVoiceRetryCandidate(t *testing.T) {
 	voiceHandler := voicetranscriptionhttp.New(auth.Guard{}, nil)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{
 		ArchiveVoiceTranscription:  &voiceHandler,
 		ArchiveVoiceRetryCandidate: true,
 	})

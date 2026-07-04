@@ -24,7 +24,7 @@ import (
 func TestNewWithModulesCanMountTasksCandidate(t *testing.T) {
 	taskService := tasks.NewService(tasks.NewMemoryStore())
 	taskHandler := taskshttp.New(auth.Guard{}, nil, taskService, "agent-token", false)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{Tasks: &taskHandler, TasksCandidate: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{Tasks: &taskHandler, TasksCandidate: true})
 
 	create := httptest.NewRequest(http.MethodPost, "/api/v1/tasks", strings.NewReader(taskRouteCreateBody()))
 	create.Header.Set("X-Agent-Token", "agent-token")
@@ -45,7 +45,7 @@ func TestNewWithModulesCanMountTasksCandidate(t *testing.T) {
 func TestNewWithModulesCanMountConversationReplyCandidate(t *testing.T) {
 	taskService := tasks.NewService(tasks.NewMemoryStore())
 	replyHandler := conversationreplyhttp.New(auth.Guard{}, conversationreply.Service{Tasks: taskService})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{ConversationReply: &replyHandler, ConversationReplyCandidate: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{ConversationReply: &replyHandler, ConversationReplyCandidate: true})
 
 	assertPostStatus(t, handler, "/api/v1/conversations/conv-001/reply", http.StatusUnauthorized, "missing bearer token")
 
@@ -61,7 +61,7 @@ func TestNewWithModulesCanMountConversationReplyCandidate(t *testing.T) {
 
 func TestNewWithModulesCanMountConversationRevokeCandidate(t *testing.T) {
 	revokeHandler := conversationrevokehttp.New(auth.Guard{}, conversationrevoke.Service{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{ConversationRevoke: &revokeHandler, ConversationRevokeCandidate: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{ConversationRevoke: &revokeHandler, ConversationRevokeCandidate: true})
 
 	assertPostStatus(t, handler, "/api/v1/conversations/conv-001/messages/trace-001/revoke", http.StatusUnauthorized, "missing bearer token")
 
@@ -77,7 +77,7 @@ func TestNewWithModulesCanMountConversationRevokeCandidate(t *testing.T) {
 
 func TestNewWithModulesCanMountConversationResendCandidate(t *testing.T) {
 	resendHandler := conversationresendhttp.New(auth.Guard{}, conversationresend.Service{})
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{ConversationResend: &resendHandler, ConversationResendCandidate: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{ConversationResend: &resendHandler, ConversationResendCandidate: true})
 
 	assertPostStatus(t, handler, "/api/v1/conversations/conv-001/messages/trace-001/resend", http.StatusUnauthorized, "missing bearer token")
 
@@ -93,7 +93,7 @@ func TestNewWithModulesCanMountConversationResendCandidate(t *testing.T) {
 
 func TestNewWithModulesCanMountFriendAddedEventCandidate(t *testing.T) {
 	friendAddedHandler := friendaddedhttp.New(auth.Guard{}, friendadded.Service{}, "agent-token", false)
-	handler := NewWithModules(config.Config{ContractRoot: legacyContractRoot(t)}, Modules{FriendAddedEvent: &friendAddedHandler, FriendAddedEventCandidate: true})
+	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{FriendAddedEvent: &friendAddedHandler, FriendAddedEventCandidate: true})
 
 	assertPostStatus(t, handler, "/api/v1/events/friend-added", http.StatusUnauthorized, "authentication required")
 

@@ -1,6 +1,5 @@
-// Package contracts loads the legacy JSON schema catalog used as the
-// compatibility boundary between the Python implementation and the Go rewrite.
-// Phase one only verifies schema visibility and JSON validity.
+// Package contracts loads the JSON schema catalog used by the standalone IM API.
+// The catalog is a runtime asset and is validated by readiness checks.
 package contracts
 
 import (
@@ -67,7 +66,7 @@ func LoadCatalog(root string) ([]SchemaFile, error) {
 	return catalog, nil
 }
 
-// RequireSchemas verifies that phase-one compatibility anchors are present.
+// RequireSchemas verifies that required schema anchors are present.
 func RequireSchemas(catalog []SchemaFile, required ...string) error {
 	present := make(map[string]bool, len(catalog))
 	for _, schema := range catalog {

@@ -1,6 +1,5 @@
-// Route metadata keeps the phase-one ServeMux registration and route diff
-// reports on the same source. Business route ownership remains with Python
-// until a later migration phase explicitly adds handlers here.
+// Route metadata keeps ServeMux registration and route reports on the same
+// source. Product routes are mounted when their implementation flags are enabled.
 package httpserver
 
 import (
@@ -43,7 +42,7 @@ import (
 	"im-go/internal/wsgateway"
 )
 
-// Route describes a Go HTTP route exposed by the current migration phase.
+// Route describes a Go HTTP route exposed by the current implementation phase.
 type Route struct {
 	Method         string `json:"method"`
 	Path           string `json:"path"`
