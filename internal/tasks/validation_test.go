@@ -149,6 +149,18 @@ func TestValidateCreateJSONSupportsRPACallTaskTypes(t *testing.T) {
 	}
 }
 
+func TestValidateCreateJSONSupportsDeviceAppControlPayload(t *testing.T) {
+	body := `{"task_id":"task-device-app","source":"cloud-web","target":{"agent_id":"sdk:zimo","device_id":"zimo"},"task_type":"device_open_app","payload":{"username":"__device__","app_id":"crm","package_name":"com.example.crm"},"created_at":"2026-06-29T09:00:00Z"}`
+
+	request, err := ValidateCreateJSON([]byte(body))
+	if err != nil {
+		t.Fatalf("ValidateCreateJSON returned error: %v", err)
+	}
+	if request.TaskType != "device_open_app" || request.Payload["app_id"] != "crm" || request.Payload["package_name"] != "com.example.crm" {
+		t.Fatalf("request = %+v", request)
+	}
+}
+
 func validTaskCreateBody() string {
 	return `{"task_id":"task-golden-0001","source":"cloud-web","target":{"agent_id":"sdk:zimo","device_id":"zimo"},"task_type":"send_text","payload":{"username":"Qiu","receiver":"Qiu","text":"hello","queue":"fast","client_batch_id":"batch-1","client_batch_index":0},"created_at":"2026-06-29T09:00:00Z","trace_id":"trace-golden-0001"}`
 }

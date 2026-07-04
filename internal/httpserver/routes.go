@@ -929,6 +929,8 @@ var deviceSDKStatusRoutes = []Route{
 }
 
 var deviceSDKControlRoutes = []Route{
+	{Method: http.MethodPost, Path: "/api/v1/devices/{device_id}/apps/open", Owner: "go", Phase: "phase4-device-app-control-candidate"},
+	{Method: http.MethodPost, Path: "/api/v1/devices/{device_id}/apps/stop", Owner: "go", Phase: "phase4-device-app-control-candidate"},
 	{Method: http.MethodPost, Path: "/api/v1/devices/{device_id}/sdk/open-wework", Owner: "go", Phase: "phase4-device-sdk-control-candidate"},
 	{Method: http.MethodPost, Path: "/api/v1/devices/{device_id}/sdk/stop-wework", Owner: "go", Phase: "phase4-device-sdk-control-candidate"},
 	{Method: http.MethodPost, Path: "/api/v1/devices/{device_id}/sdk/prepare-call-audio-output", Owner: "go", Phase: "phase4-device-sdk-control-candidate"},

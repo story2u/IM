@@ -111,6 +111,7 @@ var payloadFields = map[string]bool{
 	"timeout_sec":                             true,
 	"_send_policy":                            true,
 	"verify_code":                             true,
+	"app_id":                                  true,
 	"package_name":                            true,
 	"pkg":                                     true,
 	"sop_audit":                               true,

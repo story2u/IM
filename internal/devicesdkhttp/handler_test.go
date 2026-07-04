@@ -678,6 +678,53 @@ func TestOpenWeWorkHandlerRejectsCSRole(t *testing.T) {
 	}
 }
 
+func TestOpenAppHandlerSubmitsGenericAppTask(t *testing.T) {
+	service := &fakeWebRTCService{}
+	handler := New(service, auth.Guard{Verifier: testVerifier(t)})
+	token := issueToken(t, "supervisor")
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/devices/device-1/apps/open", strings.NewReader(`{"app_id":"crm","package_name":"com.example.crm","username":"device-owner"}`))
+	request.Header.Set("Authorization", "Bearer "+token)
+	request.SetPathValue("device_id", "device-1")
+	handler.OpenAppHandler(response, request)
+
+	if response.Code != http.StatusOK || service.controlTaskType != "device_open_app" || service.controlPayloadArg["app_id"] != "crm" || service.controlPayloadArg["package_name"] != "com.example.crm" || service.controlPayloadArg["username"] != "device-owner" {
+		t.Fatalf("response=%d %s service=%+v", response.Code, response.Body.String(), service)
+	}
+}
+
+func TestStopAppHandlerDefaultsPackageNameAndUsername(t *testing.T) {
+	service := &fakeWebRTCService{}
+	handler := New(service, auth.Guard{Verifier: testVerifier(t)})
+	token := issueToken(t, "admin")
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/devices/device-1/apps/stop", strings.NewReader(`{"app_id":"com.example.crm"}`))
+	request.Header.Set("Authorization", "Bearer "+token)
+	request.SetPathValue("device_id", "device-1")
+	handler.StopAppHandler(response, request)
+
+	if response.Code != http.StatusOK || service.controlTaskType != "device_stop_app" || service.controlPayloadArg["app_id"] != "com.example.crm" || service.controlPayloadArg["package_name"] != "com.example.crm" || service.controlPayloadArg["username"] != "__device__" {
+		t.Fatalf("response=%d %s service=%+v", response.Code, response.Body.String(), service)
+	}
+}
+
+func TestOpenAppHandlerRequiresAppID(t *testing.T) {
+	handler := New(&fakeWebRTCService{}, auth.Guard{Verifier: testVerifier(t)})
+	token := issueToken(t, "admin")
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/devices/device-1/apps/open", strings.NewReader(`{"username":"device-owner"}`))
+	request.Header.Set("Authorization", "Bearer "+token)
+	request.SetPathValue("device_id", "device-1")
+	handler.OpenAppHandler(response, request)
+
+	if response.Code != http.StatusUnprocessableEntity || !strings.Contains(response.Body.String(), "app_id is required") {
+		t.Fatalf("response = %d %s", response.Code, response.Body.String())
+	}
+}
+
 func TestPrepareCallAudioOutputHandlerValidatesCallType(t *testing.T) {
 	handler := New(&fakeWebRTCService{}, auth.Guard{Verifier: testVerifier(t)})
 	token := issueToken(t, "cs")

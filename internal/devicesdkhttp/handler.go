@@ -509,6 +509,16 @@ func (handler Handler) StopWeWorkHandler(w http.ResponseWriter, r *http.Request)
 	})
 }
 
+// OpenAppHandler serializes POST /api/v1/devices/{device_id}/apps/open.
+func (handler Handler) OpenAppHandler(w http.ResponseWriter, r *http.Request) {
+	handler.appControlHandler(w, r, "device_open_app")
+}
+
+// StopAppHandler serializes POST /api/v1/devices/{device_id}/apps/stop.
+func (handler Handler) StopAppHandler(w http.ResponseWriter, r *http.Request) {
+	handler.appControlHandler(w, r, "device_stop_app")
+}
+
 // PrepareCallAudioOutputHandler serializes POST /api/v1/devices/{device_id}/sdk/prepare-call-audio-output.
 func (handler Handler) PrepareCallAudioOutputHandler(w http.ResponseWriter, r *http.Request) {
 	if _, err := handler.Guard.RequireRoles(r.Context(), r.Header.Get("Authorization"), "admin", "supervisor", "cs"); err != nil {
@@ -531,6 +541,22 @@ func (handler Handler) PrepareCallAudioOutputHandler(w http.ResponseWriter, r *h
 		"username":  "__device__",
 		"call_type": callType,
 	})
+}
+
+func (handler Handler) appControlHandler(w http.ResponseWriter, r *http.Request, taskType string) {
+	if _, err := handler.Guard.RequireRoles(r.Context(), r.Header.Get("Authorization"), "admin", "supervisor"); err != nil {
+		writeAuthError(w, err)
+		return
+	}
+	if handler.Service == nil {
+		writeError(w, http.StatusServiceUnavailable, "device sdk service is not configured")
+		return
+	}
+	payload, ok := readAppControlPayload(w, r)
+	if !ok {
+		return
+	}
+	handler.writeControlResponse(w, r, taskType, payload)
 }
 
 func (handler Handler) controlHandler(w http.ResponseWriter, r *http.Request, roles []string, taskType string, payload map[string]any) {
@@ -570,6 +596,41 @@ func (handler Handler) requireControlRole(w http.ResponseWriter, r *http.Request
 		return auth.Session{}, false
 	}
 	return session, true
+}
+
+func readAppControlPayload(w http.ResponseWriter, r *http.Request) (map[string]any, bool) {
+	var request struct {
+		AppID       string `json:"app_id"`
+		PackageName string `json:"package_name"`
+		Username    string `json:"username"`
+	}
+	decoder := json.NewDecoder(r.Body)
+	decoder.UseNumber()
+	if err := decoder.Decode(&request); err != nil {
+		writeError(w, http.StatusUnprocessableEntity, "invalid json body")
+		return nil, false
+	}
+	appID := strings.TrimSpace(request.AppID)
+	packageName := strings.TrimSpace(request.PackageName)
+	if appID == "" {
+		appID = packageName
+	}
+	if packageName == "" {
+		packageName = appID
+	}
+	if appID == "" {
+		writeError(w, http.StatusUnprocessableEntity, "app_id is required")
+		return nil, false
+	}
+	username := strings.TrimSpace(request.Username)
+	if username == "" {
+		username = "__device__"
+	}
+	return map[string]any{
+		"username":     username,
+		"app_id":       appID,
+		"package_name": packageName,
+	}, true
 }
 
 func readParticipantIdentity(w http.ResponseWriter, r *http.Request) (string, bool) {

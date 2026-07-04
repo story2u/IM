@@ -443,6 +443,8 @@ func NewWithModules(cfg config.Config, modules Modules) http.Handler {
 		mux.HandleFunc(http.MethodGet+" "+"/api/v1/devices/{device_id}/sdk/status", modules.DeviceSDK.StatusHandler)
 	}
 	if modules.DeviceSDK != nil && modules.DeviceSDKControl {
+		mux.HandleFunc(http.MethodPost+" "+"/api/v1/devices/{device_id}/apps/open", modules.DeviceSDK.OpenAppHandler)
+		mux.HandleFunc(http.MethodPost+" "+"/api/v1/devices/{device_id}/apps/stop", modules.DeviceSDK.StopAppHandler)
 		mux.HandleFunc(http.MethodPost+" "+"/api/v1/devices/{device_id}/sdk/open-wework", modules.DeviceSDK.OpenWeWorkHandler)
 		mux.HandleFunc(http.MethodPost+" "+"/api/v1/devices/{device_id}/sdk/stop-wework", modules.DeviceSDK.StopWeWorkHandler)
 		mux.HandleFunc(http.MethodPost+" "+"/api/v1/devices/{device_id}/sdk/prepare-call-audio-output", modules.DeviceSDK.PrepareCallAudioOutputHandler)

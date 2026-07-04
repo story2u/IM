@@ -497,21 +497,25 @@ func TestNewWithModulesCanMountDeviceSDKControlCandidate(t *testing.T) {
 	deviceSDKHandler := devicesdkhttp.New(fakeDeviceSDKService{}, auth.Guard{})
 	handler := NewWithModules(config.Config{ContractRoot: projectContractRoot(t)}, Modules{DeviceSDK: &deviceSDKHandler, DeviceSDKControl: true})
 
+	assertPostStatus(t, handler, "/api/v1/devices/device-1/apps/open", http.StatusUnauthorized, "missing bearer token")
+	assertPostStatus(t, handler, "/api/v1/devices/device-1/apps/stop", http.StatusUnauthorized, "missing bearer token")
 	assertPostStatus(t, handler, "/api/v1/devices/device-1/sdk/open-wework", http.StatusUnauthorized, "missing bearer token")
 	assertPostStatus(t, handler, "/api/v1/devices/device-1/sdk/stop-wework", http.StatusUnauthorized, "missing bearer token")
 	assertPostStatus(t, handler, "/api/v1/devices/device-1/sdk/prepare-call-audio-output", http.StatusUnauthorized, "missing bearer token")
 
 	routes := RoutesWithModules(Modules{DeviceSDK: &deviceSDKHandler, DeviceSDKControl: true})
-	if len(routes) != 7 {
-		t.Fatalf("len(RoutesWithModules()) = %d, want 7", len(routes))
+	if len(routes) != 9 {
+		t.Fatalf("len(RoutesWithModules()) = %d, want 9", len(routes))
 	}
 	expected := []Route{
+		{Method: http.MethodPost, Path: "/api/v1/devices/{device_id}/apps/open", Phase: "phase4-device-app-control-candidate"},
+		{Method: http.MethodPost, Path: "/api/v1/devices/{device_id}/apps/stop", Phase: "phase4-device-app-control-candidate"},
 		{Method: http.MethodPost, Path: "/api/v1/devices/{device_id}/sdk/open-wework", Phase: "phase4-device-sdk-control-candidate"},
 		{Method: http.MethodPost, Path: "/api/v1/devices/{device_id}/sdk/stop-wework", Phase: "phase4-device-sdk-control-candidate"},
 		{Method: http.MethodPost, Path: "/api/v1/devices/{device_id}/sdk/prepare-call-audio-output", Phase: "phase4-device-sdk-control-candidate"},
 	}
 	for index, want := range expected {
-		route := routes[len(routes)-3+index]
+		route := routes[len(routes)-5+index]
 		if route.Path != want.Path || route.Method != want.Method || route.Phase != want.Phase {
 			t.Fatalf("unexpected device sdk control route metadata at %d: %+v", index, route)
 		}
