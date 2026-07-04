@@ -37,7 +37,7 @@ type Options struct {
 	Store              tasks.Store
 	DeviceLockStore    senddispatcher.DeviceLockStore
 	DeviceIDResolver   senddispatcher.SDKDeviceIDResolver
-	SDKExecutor        senddispatcher.SDKExecutor
+	OutboundExecutor   senddispatcher.OutboundExecutor
 	ListDevices        senddispatcher.ListDevicesFunc
 	DeviceHealth       senddispatcher.SDKDeviceHealthRecorder
 	DeviceHealthReader senddispatcher.SDKDeviceHealthReader
@@ -170,8 +170,8 @@ func New(options Options) (Module, error) {
 			}
 		}
 	case "", "http", "provider", "sdk":
-		if options.SDKExecutor != nil {
-			dispatcher.ExecuteBatch = senddispatcher.NewSDKExecutorBatchFunc(options.SDKExecutor, dispatcher.ExecutorAdapterOptions())
+		if options.OutboundExecutor != nil {
+			dispatcher.ExecuteBatch = senddispatcher.NewOutboundExecutorBatchFunc(options.OutboundExecutor, dispatcher.OutboundExecutorAdapterOptions())
 		}
 	default:
 		return Module{}, fmt.Errorf("unsupported send connector mode %q", options.Config.SendConnectorMode)

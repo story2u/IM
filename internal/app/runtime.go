@@ -212,7 +212,7 @@ func NewRuntime(ctx context.Context, cfg config.Config, options Options) (*Runti
 		var deviceHealthReader senddispatcher.SDKDeviceHealthReader
 		var taskStatusPublisher *taskstatuspublisher.Publisher
 		var realtimeHub *taskstatuspublisher.RedisHub
-		var connectorExecutor senddispatcher.SDKExecutor
+		var connectorExecutor senddispatcher.OutboundExecutor
 		var listConnectorDevices senddispatcher.ListDevicesFunc
 		if runtime.Redis != nil {
 			lockClient, err := runtime.Redis.Client(redisclient.KindLock)
@@ -260,7 +260,7 @@ func NewRuntime(ctx context.Context, cfg config.Config, options Options) (*Runti
 			DB:                 runtime.DB,
 			DBDialect:          runtime.Dialect,
 			DeviceLockStore:    deviceLockStore,
-			SDKExecutor:        connectorExecutor,
+			OutboundExecutor:   connectorExecutor,
 			ListDevices:        listConnectorDevices,
 			DeviceHealth:       deviceHealthRecorder,
 			DeviceHealthReader: deviceHealthReader,

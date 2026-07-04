@@ -35,7 +35,7 @@ func TestClientExecutePostsWrappedTaskAndDecodesResult(t *testing.T) {
 	defer server.Close()
 
 	client := New(server.URL+"/", Options{Token: " connector-token ", Timeout: time.Second})
-	result, err := client.Execute(context.Background(), senddispatcher.SDKTaskPayload{"task_id": "task-connector-1", "device_id": "zimo"})
+	result, err := client.Execute(context.Background(), senddispatcher.OutboundExecutionPayload{"task_id": "task-connector-1", "device_id": "zimo"})
 	if err != nil {
 		t.Fatalf("Execute returned error: %v", err)
 	}
@@ -67,7 +67,7 @@ func TestClientExecuteBatchSupportsArrayResponse(t *testing.T) {
 	defer server.Close()
 
 	client := New(server.URL, Options{})
-	results, err := client.ExecuteBatch(context.Background(), []senddispatcher.SDKTaskPayload{
+	results, err := client.ExecuteBatch(context.Background(), []senddispatcher.OutboundExecutionPayload{
 		{"task_id": "task-1"},
 		{"task_id": "task-2"},
 	})
@@ -114,7 +114,7 @@ func TestClientReportsNon2xxResponse(t *testing.T) {
 	defer server.Close()
 
 	client := New(server.URL, Options{})
-	_, err := client.Execute(context.Background(), senddispatcher.SDKTaskPayload{"task_id": "task-connector-1"})
+	_, err := client.Execute(context.Background(), senddispatcher.OutboundExecutionPayload{"task_id": "task-connector-1"})
 	if err == nil || !strings.Contains(err.Error(), "502") || !strings.Contains(err.Error(), "executor unavailable") {
 		t.Fatalf("Execute error = %v", err)
 	}

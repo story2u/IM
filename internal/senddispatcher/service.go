@@ -67,15 +67,20 @@ type Service struct {
 	MaxAgeSeconds                    func() float64
 }
 
-// ExecutorAdapterOptions returns the optional SDK executor adapter wiring for this service.
-func (service Service) ExecutorAdapterOptions() SDKExecutorAdapterOptions {
-	return SDKExecutorAdapterOptions{
+// OutboundExecutorAdapterOptions returns the optional outbound executor adapter wiring for this service.
+func (service Service) OutboundExecutorAdapterOptions() OutboundExecutorAdapterOptions {
+	return OutboundExecutorAdapterOptions{
 		Now:          service.Now,
 		StatusWriter: service.Terminal,
 		DeviceHealth: service.DeviceHealth,
 		Terminal:     service.TerminalSync,
 		Env:          service.Env,
 	}
+}
+
+// ExecutorAdapterOptions is a compatibility wrapper for historical call sites.
+func (service Service) ExecutorAdapterOptions() SDKExecutorAdapterOptions {
+	return service.OutboundExecutorAdapterOptions()
 }
 
 // PreflightResult is the outcome of checking one claimed task before SDK execution.

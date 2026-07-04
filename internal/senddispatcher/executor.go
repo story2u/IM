@@ -9,29 +9,41 @@ import (
 	"im-go/internal/tasks"
 )
 
-// SDKTaskPayload is the flat task dictionary consumed by the legacy SDK executor.
-type SDKTaskPayload map[string]any
+// OutboundExecutionPayload is the flat task dictionary consumed by an outbound executor.
+type OutboundExecutionPayload map[string]any
 
-// SDKExecutorResult is the dictionary returned by the legacy SDK executor.
-type SDKExecutorResult map[string]any
+// SDKTaskPayload is a compatibility alias for the historical executor contract.
+type SDKTaskPayload = OutboundExecutionPayload
 
-// SDKExecutor executes one SDK task payload.
-type SDKExecutor interface {
-	Execute(ctx context.Context, task SDKTaskPayload) (SDKExecutorResult, error)
+// OutboundExecutionResult is the dictionary returned by an outbound executor.
+type OutboundExecutionResult map[string]any
+
+// SDKExecutorResult is a compatibility alias for the historical executor contract.
+type SDKExecutorResult = OutboundExecutionResult
+
+// OutboundExecutor executes one outbound task payload.
+type OutboundExecutor interface {
+	Execute(ctx context.Context, task OutboundExecutionPayload) (OutboundExecutionResult, error)
 }
 
-// SDKBatchExecutor optionally executes same-device SDK task payloads in one burst.
-type SDKBatchExecutor interface {
-	ExecuteBatch(ctx context.Context, tasks []SDKTaskPayload) ([]SDKExecutorResult, error)
+// SDKExecutor is a compatibility alias for the historical executor contract.
+type SDKExecutor = OutboundExecutor
+
+// OutboundBatchExecutor optionally executes same-device outbound payloads in one burst.
+type OutboundBatchExecutor interface {
+	ExecuteBatch(ctx context.Context, tasks []OutboundExecutionPayload) ([]OutboundExecutionResult, error)
 }
+
+// SDKBatchExecutor is a compatibility alias for the historical executor contract.
+type SDKBatchExecutor = OutboundBatchExecutor
 
 // SDKContactRetryResolver refreshes a contact target before one safe retry.
 type SDKContactRetryResolver interface {
 	ResolveSDKContactRetry(ctx context.Context, request SDKContactRetryRequest) (SDKContactRetryTarget, error)
 }
 
-// SDKExecutorAdapterOptions controls deterministic adapter behavior in harness tests.
-type SDKExecutorAdapterOptions struct {
+// OutboundExecutorAdapterOptions controls deterministic adapter behavior in harness tests.
+type OutboundExecutorAdapterOptions struct {
 	Now          func() time.Time
 	StatusWriter TerminalUpdater
 	DeviceHealth SDKDeviceHealthRecorder
@@ -40,6 +52,9 @@ type SDKExecutorAdapterOptions struct {
 	RetrySleep   func(context.Context, time.Duration) error
 	Env          EnvLookup
 }
+
+// SDKExecutorAdapterOptions is a compatibility alias for the historical executor adapter.
+type SDKExecutorAdapterOptions = OutboundExecutorAdapterOptions
 
 var sdkTaskPayloadReservedKeys = map[string]struct{}{
 	"task_id":    {},
@@ -81,8 +96,8 @@ func BuildSDKTaskPayload(record tasks.Record, deviceID string) SDKTaskPayload {
 	return payload
 }
 
-// NewSDKExecutorBatchFunc adapts a legacy SDK executor to the dispatcher ExecuteBatchFunc boundary.
-func NewSDKExecutorBatchFunc(executor SDKExecutor, options SDKExecutorAdapterOptions) ExecuteBatchFunc {
+// NewOutboundExecutorBatchFunc adapts an outbound executor to the dispatcher ExecuteBatchFunc boundary.
+func NewOutboundExecutorBatchFunc(executor OutboundExecutor, options OutboundExecutorAdapterOptions) ExecuteBatchFunc {
 	return func(ctx context.Context, deviceID string, records []tasks.Record) ([]tasks.Record, error) {
 		if len(records) == 0 {
 			return nil, nil
@@ -149,6 +164,11 @@ func NewSDKExecutorBatchFunc(executor SDKExecutor, options SDKExecutorAdapterOpt
 		}
 		return finalized, nil
 	}
+}
+
+// NewSDKExecutorBatchFunc is a compatibility wrapper for historical call sites.
+func NewSDKExecutorBatchFunc(executor SDKExecutor, options SDKExecutorAdapterOptions) ExecuteBatchFunc {
+	return NewOutboundExecutorBatchFunc(executor, options)
 }
 
 // FinalizeSDKExecutorResult mirrors the core success/error mapping in _finalize_sdk_task_result.

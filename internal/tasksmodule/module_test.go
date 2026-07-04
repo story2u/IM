@@ -188,17 +188,17 @@ func TestNewWiresDispatcherTaskStatusPublisher(t *testing.T) {
 	if module.SendDispatcher.TerminalSync.AI != ai {
 		t.Fatalf("ai terminal syncer = %#v", module.SendDispatcher.TerminalSync.AI)
 	}
-	if module.SendDispatcher.ExecutorAdapterOptions().Terminal.Status != publisher {
-		t.Fatalf("executor adapter options = %#v", module.SendDispatcher.ExecutorAdapterOptions())
+	if module.SendDispatcher.OutboundExecutorAdapterOptions().Terminal.Status != publisher {
+		t.Fatalf("outbound executor adapter options = %#v", module.SendDispatcher.OutboundExecutorAdapterOptions())
 	}
-	if module.SendDispatcher.ExecutorAdapterOptions().Terminal.AI != ai {
-		t.Fatalf("executor adapter ai terminal options = %#v", module.SendDispatcher.ExecutorAdapterOptions())
+	if module.SendDispatcher.OutboundExecutorAdapterOptions().Terminal.AI != ai {
+		t.Fatalf("outbound executor adapter ai terminal options = %#v", module.SendDispatcher.OutboundExecutorAdapterOptions())
 	}
-	if module.SendDispatcher.ExecutorAdapterOptions().StatusWriter == nil {
-		t.Fatalf("executor adapter status writer missing: %#v", module.SendDispatcher.ExecutorAdapterOptions())
+	if module.SendDispatcher.OutboundExecutorAdapterOptions().StatusWriter == nil {
+		t.Fatalf("outbound executor adapter status writer missing: %#v", module.SendDispatcher.OutboundExecutorAdapterOptions())
 	}
-	if module.SendDispatcher.ExecutorAdapterOptions().DeviceHealth != health {
-		t.Fatalf("executor adapter device health missing: %#v", module.SendDispatcher.ExecutorAdapterOptions())
+	if module.SendDispatcher.OutboundExecutorAdapterOptions().DeviceHealth != health {
+		t.Fatalf("outbound executor adapter device health missing: %#v", module.SendDispatcher.OutboundExecutorAdapterOptions())
 	}
 	if module.SendDispatcher.DeviceHealthReader != health {
 		t.Fatalf("dispatcher device health reader missing: %#v", module.SendDispatcher.DeviceHealthReader)
@@ -217,12 +217,12 @@ func TestNewWiresTaskChangePublisher(t *testing.T) {
 	}
 }
 
-// TestNewWiresSDKExecutorAndDeviceLister keeps the real executor boundary injectable.
-func TestNewWiresSDKExecutorAndDeviceLister(t *testing.T) {
+// TestNewWiresOutboundExecutorAndDeviceLister keeps the HTTP connector boundary injectable.
+func TestNewWiresOutboundExecutorAndDeviceLister(t *testing.T) {
 	now := time.Date(2026, 7, 1, 9, 0, 0, 0, time.UTC)
-	executor := &recordingSDKExecutor{result: senddispatcher.SDKExecutorResult{"success": true}}
+	executor := &recordingOutboundExecutor{result: senddispatcher.OutboundExecutionResult{"success": true}}
 	module, err := New(Options{
-		SDKExecutor: executor,
+		OutboundExecutor: executor,
 		ListDevices: func(context.Context) ([]string, error) {
 			return []string{"zimo"}, nil
 		},
@@ -239,7 +239,7 @@ func TestNewWiresSDKExecutorAndDeviceLister(t *testing.T) {
 		t.Fatalf("devices=%#v err=%v", devices, err)
 	}
 	record := tasks.Record{
-		TaskID:    "task-sdk-1",
+		TaskID:    "task-outbound-1",
 		Source:    "cloud-web",
 		Target:    tasks.Target{AgentID: "sdk:zimo", DeviceID: "zimo"},
 		TaskType:  "send_text",
@@ -343,17 +343,17 @@ func (publisher *recordingTaskChangePublisher) Publish(context.Context, string, 
 	return nil
 }
 
-type recordingSDKExecutor struct {
-	result senddispatcher.SDKExecutorResult
-	calls  []senddispatcher.SDKTaskPayload
+type recordingOutboundExecutor struct {
+	result senddispatcher.OutboundExecutionResult
+	calls  []senddispatcher.OutboundExecutionPayload
 }
 
-func (executor *recordingSDKExecutor) Execute(_ context.Context, payload senddispatcher.SDKTaskPayload) (senddispatcher.SDKExecutorResult, error) {
+func (executor *recordingOutboundExecutor) Execute(_ context.Context, payload senddispatcher.OutboundExecutionPayload) (senddispatcher.OutboundExecutionResult, error) {
 	executor.calls = append(executor.calls, payload)
 	if executor.result != nil {
 		return executor.result, nil
 	}
-	return senddispatcher.SDKExecutorResult{"success": true}, nil
+	return senddispatcher.OutboundExecutionResult{"success": true}, nil
 }
 
 type recordingSDKDeviceHealthRecorder struct{}

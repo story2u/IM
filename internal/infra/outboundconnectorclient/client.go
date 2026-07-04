@@ -32,8 +32,8 @@ type Client struct {
 	Timeout    time.Duration
 }
 
-var _ senddispatcher.SDKExecutor = (*Client)(nil)
-var _ senddispatcher.SDKBatchExecutor = (*Client)(nil)
+var _ senddispatcher.OutboundExecutor = (*Client)(nil)
+var _ senddispatcher.OutboundBatchExecutor = (*Client)(nil)
 
 // New builds a connector client. It does not ping the connector at startup.
 func New(baseURL string, options Options) *Client {
@@ -54,7 +54,7 @@ func New(baseURL string, options Options) *Client {
 }
 
 // Execute calls POST /execute with {"task": ...}.
-func (client *Client) Execute(ctx context.Context, task senddispatcher.SDKTaskPayload) (senddispatcher.SDKExecutorResult, error) {
+func (client *Client) Execute(ctx context.Context, task senddispatcher.OutboundExecutionPayload) (senddispatcher.OutboundExecutionResult, error) {
 	var raw any
 	if err := client.doJSON(ctx, http.MethodPost, "/execute", map[string]any{"task": task}, &raw); err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (client *Client) Execute(ctx context.Context, task senddispatcher.SDKTaskPa
 }
 
 // ExecuteBatch calls POST /execute-batch with {"tasks": [...]}.
-func (client *Client) ExecuteBatch(ctx context.Context, tasks []senddispatcher.SDKTaskPayload) ([]senddispatcher.SDKExecutorResult, error) {
+func (client *Client) ExecuteBatch(ctx context.Context, tasks []senddispatcher.OutboundExecutionPayload) ([]senddispatcher.OutboundExecutionResult, error) {
 	var raw any
 	if err := client.doJSON(ctx, http.MethodPost, "/execute-batch", map[string]any{"tasks": tasks}, &raw); err != nil {
 		return nil, err
@@ -124,17 +124,17 @@ func (client *Client) doJSON(ctx context.Context, method string, path string, bo
 	return nil
 }
 
-func decodeResult(raw any) (senddispatcher.SDKExecutorResult, error) {
+func decodeResult(raw any) (senddispatcher.OutboundExecutionResult, error) {
 	if wrapped, ok := raw.(map[string]any); ok {
 		if result, ok := wrapped["result"].(map[string]any); ok {
-			return senddispatcher.SDKExecutorResult(result), nil
+			return senddispatcher.OutboundExecutionResult(result), nil
 		}
-		return senddispatcher.SDKExecutorResult(wrapped), nil
+		return senddispatcher.OutboundExecutionResult(wrapped), nil
 	}
 	return nil, fmt.Errorf("send connector returned invalid result")
 }
 
-func decodeResults(raw any) ([]senddispatcher.SDKExecutorResult, error) {
+func decodeResults(raw any) ([]senddispatcher.OutboundExecutionResult, error) {
 	if wrapped, ok := raw.(map[string]any); ok {
 		if results, ok := wrapped["results"].([]any); ok {
 			return decodeResultList(results), nil
@@ -149,14 +149,14 @@ func decodeResults(raw any) ([]senddispatcher.SDKExecutorResult, error) {
 	return nil, fmt.Errorf("send connector returned invalid batch result")
 }
 
-func decodeResultList(items []any) []senddispatcher.SDKExecutorResult {
-	results := make([]senddispatcher.SDKExecutorResult, 0, len(items))
+func decodeResultList(items []any) []senddispatcher.OutboundExecutionResult {
+	results := make([]senddispatcher.OutboundExecutionResult, 0, len(items))
 	for _, item := range items {
 		result, ok := item.(map[string]any)
 		if !ok {
 			result = map[string]any{"success": false, "error": "send connector returned invalid task result"}
 		}
-		results = append(results, senddispatcher.SDKExecutorResult(result))
+		results = append(results, senddispatcher.OutboundExecutionResult(result))
 	}
 	return results
 }
