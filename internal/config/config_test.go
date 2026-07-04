@@ -732,6 +732,38 @@ func TestLoadReadsSessionMeCandidateFlag(t *testing.T) {
 	}
 }
 
+func TestLoadUsesNeutralCallAudioBridgeEnvBeforeLegacyAlias(t *testing.T) {
+	clearCallAudioBridgeEnv(t)
+	t.Setenv("RPA_CALL_AUDIO_BRIDGE_STATUS_FILE", "/tmp/rpa-status.json")
+	t.Setenv("RPA_CALL_AUDIO_BRIDGE_TARGETS_FILE", "/tmp/rpa-targets.json")
+	t.Setenv("RPA_CALL_AUDIO_BRIDGE_HOST_DATA_ROOT", "/tmp/rpa-data")
+	t.Setenv("RPA_CALL_AUDIO_BRIDGE_STATUS_STALE_SEC", "120")
+	t.Setenv("MYT_CALL_AUDIO_BRIDGE_STATUS_FILE", "/tmp/myt-status.json")
+	t.Setenv("MYT_CALL_AUDIO_BRIDGE_TARGETS_FILE", "/tmp/myt-targets.json")
+	t.Setenv("MYT_CALL_AUDIO_BRIDGE_HOST_DATA_ROOT", "/tmp/myt-data")
+	t.Setenv("MYT_CALL_AUDIO_BRIDGE_STATUS_STALE_SEC", "240")
+
+	cfg := Load()
+
+	if cfg.CallAudioBridgeStatusFile != "/tmp/rpa-status.json" || cfg.CallAudioBridgeTargetsFile != "/tmp/rpa-targets.json" || cfg.CallAudioBridgeHostDataRoot != "/tmp/rpa-data" || cfg.CallAudioBridgeStaleSec != 120 {
+		t.Fatalf("call audio bridge config = status=%q targets=%q host_data=%q stale=%.1f", cfg.CallAudioBridgeStatusFile, cfg.CallAudioBridgeTargetsFile, cfg.CallAudioBridgeHostDataRoot, cfg.CallAudioBridgeStaleSec)
+	}
+}
+
+func TestLoadReadsLegacyMytCallAudioBridgeAliases(t *testing.T) {
+	clearCallAudioBridgeEnv(t)
+	t.Setenv("MYT_CALL_AUDIO_BRIDGE_STATUS_FILE", "/tmp/myt-status.json")
+	t.Setenv("MYT_CALL_AUDIO_BRIDGE_TARGETS_FILE", "/tmp/myt-targets.json")
+	t.Setenv("MYT_CALL_AUDIO_BRIDGE_HOST_DATA_ROOT", "/tmp/myt-data")
+	t.Setenv("MYT_CALL_AUDIO_BRIDGE_STATUS_STALE_SEC", "240")
+
+	cfg := Load()
+
+	if cfg.CallAudioBridgeStatusFile != "/tmp/myt-status.json" || cfg.CallAudioBridgeTargetsFile != "/tmp/myt-targets.json" || cfg.CallAudioBridgeHostDataRoot != "/tmp/myt-data" || cfg.CallAudioBridgeStaleSec != 240 {
+		t.Fatalf("legacy call audio bridge config = status=%q targets=%q host_data=%q stale=%.1f", cfg.CallAudioBridgeStatusFile, cfg.CallAudioBridgeTargetsFile, cfg.CallAudioBridgeHostDataRoot, cfg.CallAudioBridgeStaleSec)
+	}
+}
+
 // TestLoadKeepsSessionMeCandidateDisabledByDefault protects phase-one startup.
 func TestLoadKeepsSessionMeCandidateDisabledByDefault(t *testing.T) {
 	t.Setenv("GO_ENABLE_SESSION_ADMIN_LOGIN_CANDIDATE", "")
@@ -851,10 +883,7 @@ func TestLoadKeepsSessionMeCandidateDisabledByDefault(t *testing.T) {
 	t.Setenv("GO_ENABLE_DEVICE_RTC_ACTIVE_CANDIDATE", "")
 	t.Setenv("GO_ENABLE_DEVICE_RTC_CONTROL_CANDIDATE", "")
 	t.Setenv("GO_ENABLE_DEVICE_RTC_MEDIA_PREPARE_CANDIDATE", "")
-	t.Setenv("RPA_CALL_AUDIO_BRIDGE_STATUS_FILE", "")
-	t.Setenv("RPA_CALL_AUDIO_BRIDGE_TARGETS_FILE", "")
-	t.Setenv("RPA_CALL_AUDIO_BRIDGE_HOST_DATA_ROOT", "")
-	t.Setenv("RPA_CALL_AUDIO_BRIDGE_STATUS_STALE_SEC", "")
+	clearCallAudioBridgeEnv(t)
 	t.Setenv("P1_MANAGER_CACHE_FILE", "")
 	t.Setenv("RTC_MEDIA_CAMERA_ADDR_TEMPLATE", "")
 	t.Setenv("RTC_MEDIA_WHIP_PUBLISH_URL_TEMPLATE", "")
@@ -1430,7 +1459,7 @@ func TestLoadUsesStandaloneDataRootDefaults(t *testing.T) {
 	t.Setenv("GO_DATA_DIR", "")
 	t.Setenv("SYSTEM_LOG_DIR", "")
 	t.Setenv("KNOWLEDGE_UPLOAD_ROOT", "")
-	t.Setenv("RPA_CALL_AUDIO_BRIDGE_STATUS_FILE", "")
+	clearCallAudioBridgeEnv(t)
 	t.Setenv("P1_MANAGER_CACHE_FILE", "")
 
 	cfg := Load()
@@ -1881,6 +1910,22 @@ func TestLoadSendConnectorConfig(t *testing.T) {
 	cfg = Load()
 	if cfg.SendConnectorBaseURL != "http://compat-connector.local" || cfg.SendConnectorTimeoutSec != 1800 {
 		t.Fatalf("send connector compatibility alias base=%q timeout=%d", cfg.SendConnectorBaseURL, cfg.SendConnectorTimeoutSec)
+	}
+}
+
+func clearCallAudioBridgeEnv(t *testing.T) {
+	t.Helper()
+	for _, key := range []string{
+		"RPA_CALL_AUDIO_BRIDGE_STATUS_FILE",
+		"RPA_CALL_AUDIO_BRIDGE_TARGETS_FILE",
+		"RPA_CALL_AUDIO_BRIDGE_HOST_DATA_ROOT",
+		"RPA_CALL_AUDIO_BRIDGE_STATUS_STALE_SEC",
+		"MYT_CALL_AUDIO_BRIDGE_STATUS_FILE",
+		"MYT_CALL_AUDIO_BRIDGE_TARGETS_FILE",
+		"MYT_CALL_AUDIO_BRIDGE_HOST_DATA_ROOT",
+		"MYT_CALL_AUDIO_BRIDGE_STATUS_STALE_SEC",
+	} {
+		t.Setenv(key, "")
 	}
 }
 

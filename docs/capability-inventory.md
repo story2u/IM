@@ -47,7 +47,7 @@
 | 能力 | 当前主要位置 | 目标动作 |
 | --- | --- | --- |
 | 设备 SDK 和控制 | `internal/devicesdk*`, `cmd/api` device routes | 降级为 automation provider，默认 compose 不启动 |
-| 设备桥接和屏幕/音频 | `internal/devicebridge*`, cloud `MYT_*` env | 降级为 provider sidecar，补 owner、租约、权限、超时和删除条件 |
+| 设备桥接和屏幕/音频 | `internal/devicebridge*`, cloud `RPA_CALL_AUDIO_BRIDGE_*` env | 降级为可选 provider sidecar，补 owner、租约、权限、超时和删除条件 |
 | 通话和 RTC | `internal/conversationcall*`, `internal/infra/devicertcstate` | 由 provider 执行，IM core 只记录请求、状态和结果 |
 | 媒体处理和对象存储 | `internal/sendmedia*`, `internal/archivemedia`, archive media workers | 作为 media provider，失败可重试、可补偿 |
 | 语音转写 | `internal/voicetranscription*`, `cmd/voice-transcription-worker` | 作为 media/AI provider，凭证和限流不进入 core |
