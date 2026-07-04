@@ -41,7 +41,7 @@ jobs:
       VPS_USER: ${{ vars.VPS_USER || secrets.VPS_USER }}
       VPS_PORT: ${{ vars.VPS_PORT || secrets.VPS_PORT || '22' }}
       VPS_DEPLOY_DIR: ${{ vars.VPS_DEPLOY_DIR || secrets.VPS_DEPLOY_DIR || '/opt/wework' }}
-      VPS_COMPOSE_SERVICES: ${{ vars.VPS_COMPOSE_SERVICES || 'go-redis go-cache-redis go-api go-web go-outbox-worker go-incoming-worker' }}
+      VPS_COMPOSE_SERVICES: ${{ vars.VPS_COMPOSE_SERVICES || 'go-postgres go-redis go-cache-redis go-api go-web go-incoming-worker' }}
       DEPLOY_VERSION: ${{ inputs.version || github.event.workflow_run.head_branch || github.ref_name || 'main' }}
       DEPLOY_ENVIRONMENT: ${{ inputs.environment || 'production' }}
       GHCR_USERNAME: ${{ vars.GHCR_USERNAME || github.actor }}
@@ -128,14 +128,7 @@ jobs:
           export GO_IMAGE_TAG="$VERSION"
           export GO_API_IMAGE="$REGISTRY/$IMAGE_PREFIX/wework-api:$VERSION"
           export GO_WEB_IMAGE="$REGISTRY/$IMAGE_PREFIX/wework-web:$VERSION"
-          export GO_OUTBOX_WORKER_IMAGE="$REGISTRY/$IMAGE_PREFIX/wework-outbox-worker:$VERSION"
           export GO_INCOMING_WORKER_IMAGE="$REGISTRY/$IMAGE_PREFIX/wework-incoming-worker:$VERSION"
-          export GO_CONTACT_SYNC_WORKER_IMAGE="$REGISTRY/$IMAGE_PREFIX/wework-contact-sync-worker:$VERSION"
-          export GO_SEND_DISPATCHER_IMAGE="$REGISTRY/$IMAGE_PREFIX/wework-send-dispatcher:$VERSION"
-          export GO_ARCHIVE_SYNC_WORKER_IMAGE="$REGISTRY/$IMAGE_PREFIX/wework-archive-sync-worker:$VERSION"
-          export GO_ARCHIVE_INGEST_WORKER_IMAGE="$REGISTRY/$IMAGE_PREFIX/wework-archive-ingest-worker:$VERSION"
-          export GO_ARCHIVE_MEDIA_WORKER_IMAGE="$REGISTRY/$IMAGE_PREFIX/wework-archive-media-worker:$VERSION"
-          export GO_VOICE_TRANSCRIPTION_WORKER_IMAGE="$REGISTRY/$IMAGE_PREFIX/wework-voice-transcription-worker:$VERSION"
 
           echo "Pulling images for: $COMPOSE_SERVICES"
           docker compose --env-file .env pull $COMPOSE_SERVICES

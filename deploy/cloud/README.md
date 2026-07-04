@@ -1,6 +1,6 @@
 # Standalone Cloud Compose
 
-This directory contains the cloud compose baseline for the standalone Go + Next.js IM project. It is intended for development, staging, and controlled production rollout of this repository as an independent system.
+This directory contains the minimal cloud compose baseline for validating message receive on the standalone Go + Next.js IM project.
 
 ## Usage
 
@@ -8,10 +8,16 @@ This directory contains the cloud compose baseline for the standalone Go + Next.
 cd go/deploy/cloud
 cp .env.example .env
 docker compose --env-file .env config
-docker compose --env-file .env up -d --build go-api go-web go-redis
+docker compose --env-file .env up -d --build \
+  go-postgres \
+  go-redis \
+  go-cache-redis \
+  go-api \
+  go-web \
+  go-incoming-worker
 ```
 
-Set `GO_IMAGE_TAG`, `GO_WEB_VERSION`, `GO_WEB_COMMIT`, and `GO_WEB_BUILD_TIME` before building release images when the tag, visible Next.js version marker, `/version.txt`, and container runtime metadata must point at the same artifact.
+The compose file intentionally includes only Postgres, Redis, API, Web, and the incoming message worker. Add sending, archive, contact sync, or transcription workers later through explicit compose overlays.
 
 ## GitHub Actions VPS Deploy
 
@@ -19,27 +25,13 @@ The `Deploy to VPS` workflow deploys the GHCR images built by `Docker Build & Pu
 
 - Variables or secrets: `VPS_HOST`, `VPS_USER`, optional `VPS_PORT`, optional `VPS_DEPLOY_DIR`, optional `VPS_API_URL`, optional `VPS_WEB_URL`.
 - Secret: `VPS_SSH_KEY`, the private key used by the workflow to SSH into the VPS.
-- Optional secret: `VPS_ENV_FILE`, the full production `.env` content to write to the VPS deploy directory. Use the repository root `.env.example` as the VPS template and replace every `change-me` value before saving the secret.
-- Optional variable: `VPS_COMPOSE_SERVICES`, defaults to `go-redis go-cache-redis go-api go-web go-outbox-worker go-incoming-worker`.
+- Optional secret: `VPS_ENV_FILE`, the production `.env` content to write to the VPS deploy directory. Use the repository root `.env.example` as the VPS template and replace every `change-me` value before saving the secret.
+- Optional variable: `VPS_COMPOSE_SERVICES`, defaults to `go-postgres go-redis go-cache-redis go-api go-web go-incoming-worker`.
 - Optional variable/secret: `GHCR_USERNAME` / `GHCR_TOKEN` when the package registry requires a token other than the workflow token.
 
 The SSH user must be able to write `VPS_DEPLOY_DIR` and run `docker compose`. On a fresh Ubuntu VPS, install Docker and add the deploy user to the `docker` group, or use a restricted root login dedicated to deployment.
 
 The workflow copies `deploy/cloud/docker-compose.yml` and `.env.example` to the VPS, preserves an existing `.env`, and overwrites `.env` only when `VPS_ENV_FILE` is set. It exports GHCR image names such as `ghcr.io/story2u/wework-api:main` at deploy time, so the compose file pulls release images instead of building locally.
-
-Start workers only for the product surface being validated:
-
-```bash
-docker compose --env-file .env up -d --build \
-  go-outbox-worker \
-  go-incoming-worker \
-  go-contact-sync-worker \
-  go-send-dispatcher \
-  go-archive-sync-worker \
-  go-archive-ingest-worker \
-  go-archive-media-worker \
-  go-voice-transcription-worker
-```
 
 ## Release Readiness
 
@@ -49,7 +41,6 @@ Generate a readiness report from the Go project root and keep the artifact with 
 go run ./cmd/release-readiness -all -format markdown
 go run ./cmd/release-readiness -profile session-access -format markdown
 go run ./cmd/release-readiness -profile incoming-ingest -format markdown
-go run ./cmd/release-readiness -profile send-dispatch -format markdown
 ```
 
 The command checks route metadata, runtime flags, required settings, compose services, and fixture coverage. The release readiness model is documented in `docs/release-readiness.md`.
@@ -58,39 +49,22 @@ Use `-strict` in a release gate so disabled flags or missing settings fail befor
 
 ## Minimum Required Settings
 
-- `CLOUD_DB_DSN`
 - `SESSION_JWT_SECRET`
-- `CLOUD_WS_REDIS_URL` and `CLOUD_EVENTBUS_REDIS_URL` when using realtime or queues
-- `CLOUD_CACHE_REDIS_URL` when using locks, provider leases, or cache-backed diagnostics
-- `CLOUD_CACHE_REDIS_PREFIX` for the cache namespace; defaults to `im`
-- `CLOUD_INGEST_STREAM_NAME` and `CLOUD_INGEST_STREAM_GROUP` for incoming connector events; default to `im:ingest:incoming` and `im-ingest-workers`
-- Object storage upload URL/token when media or archive workers are enabled
+- `POSTGRES_PASSWORD` and `CLOUD_DB_DSN` only when changing the bundled Postgres password or using an external database.
 
-Provider-specific settings are optional unless the matching connector or provider is enabled.
-
-`go-send-dispatcher` is part of the standalone worker set, but it does not assume a bundled message platform. Set `GO_SEND_CONNECTOR_MODE=fake` plus `SEND_DEVICE_ALLOWLIST` for local/CI send smoke validation without an external connector. Leave `GO_SEND_CONNECTOR_BASE_URL` empty in that mode. Set the base URL only when an HTTP-compatible outbound connector is enabled for real delivery. `GO_SEND_PROVIDER_BASE_URL` remains a compatibility alias.
-
-Connector session, user-info, and notify routes should be enabled with `GO_ENABLE_CONNECTOR_*_CANDIDATE` flags. Older `GO_ENABLE_WEWORK_*_CANDIDATE` names remain compatibility aliases for existing deployments.
+The receive callback route is enabled by default in compose with `GO_ENABLE_CONNECTOR_NOTIFY_CALLBACK_CANDIDATE=1`.
 
 ## Runtime Roles
 
 Core roles:
 
-- `go-api`: stateless HTTP API and realtime gateway.
+- `go-postgres`: bundled PostgreSQL for VPS validation.
+- `go-api`: stateless HTTP API and connector callback endpoint.
 - `go-web`: Next.js web console.
-- `go-outbox-worker`: durable event relay.
 - `go-incoming-worker`: inbound connector event consumer.
-- `go-send-dispatcher`: outbound task dispatcher.
 - `go-redis` / `go-cache-redis`: eventbus, realtime, locks, pending queues and cache.
 
-Optional roles:
-
-- `go-contact-sync-worker`: contact synchronization.
-- `go-archive-sync-worker`: archive cursor and sync jobs.
-- `go-archive-ingest-worker`: archive message ingest.
-- `go-archive-media-worker`: archive media preparation/download/upload.
-- `go-voice-transcription-worker`: voice transcription retry.
-- External connector/provider services: message channels, automation providers, media providers and platform integrations.
+Other workers are intentionally out of this baseline until their product surfaces are enabled.
 
 ## Connector And Provider Policy
 
@@ -99,22 +73,10 @@ Message platforms are connectors. Automation backends are providers. The compose
 Practical rules:
 
 - Keep core API/Web/Redis/DB deployable without a specific message platform.
-- Keep `go-send-dispatcher` deployable with fake or HTTP outbound connectors for validation.
 - Do not add provider sidecars to the default compose graph; use explicit overrides or external services for provider-specific deployments.
 - Put provider secrets behind dedicated env names and avoid leaking them into core service assumptions.
 - Prefer one provider service per capability boundary instead of embedding device or vendor logic in `go-api`.
 - Document every temporary bridge with an owner, replacement path and removal condition.
-
-## Existing Transition Flags
-
-The current compose file still contains `GO_ENABLE_*_CANDIDATE` flags and some profile names from the Phase 1 implementation. Treat them as deployment controls, not long-term architecture.
-
-Follow-up milestones will:
-
-- Rename readiness artifacts to release terminology.
-- Replace supplier-specific service names with connector/provider roles.
-- Remove temporary bridge services once native providers exist.
-- Delete product surfaces that do not fit the standalone IM roadmap.
 
 ## Validation
 
@@ -134,5 +96,4 @@ For staging deployments, also verify:
 - API `/healthz`, `/readyz`, and `/metrics`.
 - Web `/version.txt`.
 - Worker logs and queue lag.
-- Outbox relay delivery.
 - Connector/provider health endpoints for any enabled integration.
