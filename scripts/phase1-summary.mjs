@@ -180,7 +180,7 @@ function formatReasons(reasons) {
 }
 
 function readReadinessSummary() {
-  const aggregate = readJSON("release-readiness-all.json") ?? readJSON("cutover-all.json");
+  const aggregate = readJSON("release-readiness-all.json");
   if (Array.isArray(aggregate?.profiles)) {
     return normalizeReadinessSummary(aggregate);
   }
@@ -197,9 +197,7 @@ function readReadinessSummary() {
   for (const name of names.sort()) {
     const isReleaseArtifact =
       name.startsWith("release-readiness-") && name.endsWith(".json") && name !== "release-readiness-all.json";
-    const isLegacyArtifact =
-      name.startsWith("cutover-") && name.endsWith(".json") && name !== "cutover-all.json";
-    if (!isReleaseArtifact && !isLegacyArtifact) {
+    if (!isReleaseArtifact) {
       continue;
     }
     const report = readJSON(name);

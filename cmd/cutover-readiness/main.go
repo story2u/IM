@@ -1,4 +1,4 @@
-// Command cutover-readiness emits profile-based release readiness reports.
+// Command cutover-readiness keeps the legacy CLI path for release readiness reports.
 package main
 
 import (
@@ -9,16 +9,16 @@ import (
 	"sort"
 	"strings"
 
-	"im-go/internal/cutover"
 	"im-go/internal/httpserver"
+	"im-go/internal/readiness"
 )
 
 type aggregateReport struct {
-	Profiles    []cutover.Report `json:"profiles"`
-	ProfileName []string         `json:"profile_names"`
-	ReadyCount  int              `json:"ready_count"`
-	TotalCount  int              `json:"total_count"`
-	Ready       bool             `json:"ready"`
+	Profiles    []readiness.Report `json:"profiles"`
+	ProfileName []string           `json:"profile_names"`
+	ReadyCount  int                `json:"ready_count"`
+	TotalCount  int                `json:"total_count"`
+	Ready       bool               `json:"ready"`
 }
 
 func main() {
@@ -35,7 +35,7 @@ func main() {
 	flag.Parse()
 
 	if *listProfiles {
-		for _, profile := range cutover.DefaultProfiles() {
+		for _, profile := range readiness.DefaultProfiles() {
 			fmt.Printf("%s\t%s\n", profile.Name, profile.Description)
 		}
 		return
@@ -68,7 +68,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	report := evaluateProfiles(selectedProfiles, cutover.Inputs{
+	report := evaluateProfiles(selectedProfiles, readiness.Inputs{
 		Routes:       httpserver.CandidateRoutes(),
 		Env:          env,
 		Services:     services,
@@ -99,10 +99,10 @@ func main() {
 
 func markdownRunbook(profileNames []string) string {
 	var b strings.Builder
-	b.WriteString("# Release Profile Runbooks\n\n")
-	b.WriteString("These runbooks are generated from `internal/cutover.DefaultProfiles()` and define the minimum route, flag, env, service, and golden-fixture evidence expected before a profile can be released.\n\n")
+	b.WriteString("# Release Readiness Profile Guides\n\n")
+	b.WriteString("These runbooks are generated from `internal/readiness.DefaultProfiles()` and define the minimum route, flag, env, service, and golden-fixture evidence expected before a profile can be released.\n\n")
 	b.WriteString("Common sequence:\n\n")
-	b.WriteString("1. Run `go run ./cmd/cutover-readiness -profile <profile> -format markdown` and inspect failures.\n")
+	b.WriteString("1. Run `go run ./cmd/release-readiness -profile <profile> -format markdown` and inspect failures.\n")
 	b.WriteString("2. Fix route, golden, and compose-service failures first; these are repository issues.\n")
 	b.WriteString("3. Configure required env/secrets in the release environment.\n")
 	b.WriteString("4. Run the related golden/live/shadow gate, then enable the listed `GO_ENABLE_*` flags.\n")
@@ -121,7 +121,7 @@ func markdownRunbook(profileNames []string) string {
 	return b.String()
 }
 
-func writeProfileRunbook(b *strings.Builder, profile cutover.Profile) {
+func writeProfileRunbook(b *strings.Builder, profile readiness.Profile) {
 	b.WriteString("## ")
 	b.WriteString(profile.Name)
 	b.WriteString("\n\n")
@@ -129,8 +129,8 @@ func writeProfileRunbook(b *strings.Builder, profile cutover.Profile) {
 	b.WriteString("\n\n")
 	b.WriteString("Readiness command:\n\n")
 	b.WriteString("```bash\n")
-	b.WriteString(fmt.Sprintf("go run ./cmd/cutover-readiness -profile %s -format markdown\n", profile.Name))
-	b.WriteString(fmt.Sprintf("go run ./cmd/cutover-readiness -profile %s -strict\n", profile.Name))
+	b.WriteString(fmt.Sprintf("go run ./cmd/release-readiness -profile %s -format markdown\n", profile.Name))
+	b.WriteString(fmt.Sprintf("go run ./cmd/release-readiness -profile %s -strict\n", profile.Name))
 	b.WriteString("```\n\n")
 	b.WriteString("Suggested order:\n\n")
 	b.WriteString("1. Ensure every route below is present in Go candidate metadata.\n")
@@ -146,7 +146,7 @@ func writeProfileRunbook(b *strings.Builder, profile cutover.Profile) {
 	writeListSection(b, "Golden Suites", profile.GoldenSuites)
 }
 
-func writeRouteTable(b *strings.Builder, routes []cutover.RouteRequirement) {
+func writeRouteTable(b *strings.Builder, routes []readiness.RouteRequirement) {
 	b.WriteString("### Routes\n\n")
 	if len(routes) == 0 {
 		b.WriteString("- None.\n\n")
@@ -176,7 +176,7 @@ func writeListSection(b *strings.Builder, title string, values []string) {
 	b.WriteString("\n")
 }
 
-func writeEnvChoiceSection(b *strings.Builder, choices []cutover.EnvChoiceRequirement) {
+func writeEnvChoiceSection(b *strings.Builder, choices []readiness.EnvChoiceRequirement) {
 	b.WriteString("### Required Env Alternatives\n\n")
 	if len(choices) == 0 {
 		b.WriteString("- None.\n\n")
@@ -210,7 +210,7 @@ func escapeRunbookText(value string) string {
 
 func resolveSelectedProfiles(profileName string, profileList string, all bool) []string {
 	if all {
-		profiles := cutoverProfileNames()
+		profiles := releaseProfileNames()
 		sort.Strings(profiles)
 		return profiles
 	}
@@ -236,8 +236,8 @@ func resolveSelectedProfiles(profileName string, profileList string, all bool) [
 	return []string{strings.TrimSpace(profileName)}
 }
 
-func resolveProfileOrExit(name string) cutover.Profile {
-	profile, ok := cutover.ProfileByName(name)
+func resolveProfileOrExit(name string) readiness.Profile {
+	profile, ok := readiness.ProfileByName(name)
 	if !ok {
 		fmt.Fprintf(os.Stderr, "unknown profile %q\nknown profiles: %s\n", name, strings.Join(profileNames(), ", "))
 		os.Exit(1)
@@ -245,8 +245,8 @@ func resolveProfileOrExit(name string) cutover.Profile {
 	return profile
 }
 
-func cutoverProfileNames() []string {
-	profiles := cutover.DefaultProfiles()
+func releaseProfileNames() []string {
+	profiles := readiness.DefaultProfiles()
 	names := make([]string, 0, len(profiles))
 	for _, profile := range profiles {
 		names = append(names, profile.Name)
@@ -254,12 +254,12 @@ func cutoverProfileNames() []string {
 	return names
 }
 
-func evaluateProfiles(profileNames []string, inputs cutover.Inputs) aggregateReport {
-	reports := make([]cutover.Report, 0, len(profileNames))
+func evaluateProfiles(profileNames []string, inputs readiness.Inputs) aggregateReport {
+	reports := make([]readiness.Report, 0, len(profileNames))
 	readyCount := 0
 	for _, name := range profileNames {
 		profile := resolveProfileOrExit(name)
-		report := cutover.Evaluate(profile, inputs)
+		report := readiness.Evaluate(profile, inputs)
 		if report.Ready {
 			readyCount++
 		}
@@ -289,25 +289,25 @@ func markdownAggregateReport(report aggregateReport) string {
 		b.WriteString(profileReport.Profile)
 		b.WriteString("`\n\n")
 		b.WriteString(fmt.Sprintf("Description: %s\n\n", profileReport.Description))
-		b.WriteString(cutover.MarkdownReport(profileReport))
+		b.WriteString(readiness.MarkdownReport(profileReport))
 	}
 	return b.String()
 }
 
 func loadEnv(path string) (map[string]string, error) {
-	return cutover.LoadDotEnv(path)
+	return readiness.LoadDotEnv(path)
 }
 
 func loadServices(path string) ([]string, error) {
-	return cutover.LoadComposeServices(path)
+	return readiness.LoadComposeServices(path)
 }
 
 func loadSuites(path string) ([]string, error) {
-	return cutover.ListGoldenSuites(path)
+	return readiness.ListGoldenSuites(path)
 }
 
 func profileNames() []string {
-	profiles := cutover.DefaultProfiles()
+	profiles := readiness.DefaultProfiles()
 	names := make([]string, 0, len(profiles))
 	for _, profile := range profiles {
 		names = append(names, profile.Name)

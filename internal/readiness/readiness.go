@@ -1,5 +1,5 @@
-// Package cutover defines machine-checkable release readiness profiles.
-package cutover
+// Package readiness defines machine-checkable release readiness profiles.
+package readiness
 
 import (
 	"bufio"

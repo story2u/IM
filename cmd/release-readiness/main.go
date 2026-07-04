@@ -9,8 +9,8 @@ import (
 	"sort"
 	"strings"
 
-	readiness "im-go/internal/cutover"
 	"im-go/internal/httpserver"
+	"im-go/internal/readiness"
 )
 
 type aggregateReport struct {

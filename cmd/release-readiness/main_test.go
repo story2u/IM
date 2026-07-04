@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	readiness "im-go/internal/cutover"
 	"im-go/internal/httpserver"
+	"im-go/internal/readiness"
 )
 
 func TestResolveSelectedProfiles(t *testing.T) {

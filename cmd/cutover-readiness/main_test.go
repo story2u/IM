@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"im-go/internal/cutover"
 	"im-go/internal/httpserver"
+	"im-go/internal/readiness"
 )
 
 func TestResolveSelectedProfiles(t *testing.T) {
@@ -38,7 +38,7 @@ func TestResolveSelectedProfiles(t *testing.T) {
 
 func TestMarkdownAggregateReport(t *testing.T) {
 	report := aggregateReport{
-		Profiles: []cutover.Report{
+		Profiles: []readiness.Report{
 			{
 				Profile:     "admin-observability",
 				Description: "Admin observability",
@@ -72,10 +72,10 @@ func TestMarkdownRunbookIncludesProfileRequirements(t *testing.T) {
 	runbook := markdownRunbook([]string{"session-access", "archive-voice-transcription"})
 
 	for _, want := range []string{
-		"# Release Profile Runbooks",
+		"# Release Readiness Profile Guides",
 		"[session-access](#session-access)",
 		"## session-access",
-		"go run ./cmd/cutover-readiness -profile session-access -strict",
+		"go run ./cmd/release-readiness -profile session-access -strict",
 		"`GO_ENABLE_SESSION_ADMIN_LOGIN_CANDIDATE`",
 		"`CLOUD_DB_DSN`",
 		"`go-api`",
@@ -92,9 +92,9 @@ func TestMarkdownRunbookIncludesProfileRequirements(t *testing.T) {
 
 func TestEvaluateProfilesAggregateCounts(t *testing.T) {
 	profileNames := []string{"session-access", "admin-observability"}
-	env, services, suites := syntheticCutoverInputs(t, profileNames)
+	env, services, suites := syntheticReadinessInputs(t, profileNames)
 
-	report := evaluateProfiles(profileNames, cutover.Inputs{
+	report := evaluateProfiles(profileNames, readiness.Inputs{
 		Routes:       httpserver.CandidateRoutes(),
 		Env:          env,
 		Services:     services,
@@ -114,10 +114,10 @@ func TestEvaluateProfilesAggregateCounts(t *testing.T) {
 
 func TestEvaluateProfilesCountsWithFailure(t *testing.T) {
 	profileNames := []string{"session-access", "admin-observability"}
-	env, services, suites := syntheticCutoverInputs(t, profileNames)
+	env, services, suites := syntheticReadinessInputs(t, profileNames)
 	delete(env, "GO_ENABLE_SESSION_ADMIN_LOGIN_CANDIDATE")
 
-	report := evaluateProfiles(profileNames, cutover.Inputs{
+	report := evaluateProfiles(profileNames, readiness.Inputs{
 		Routes:       httpserver.CandidateRoutes(),
 		Env:          env,
 		Services:     services,
@@ -132,12 +132,12 @@ func TestEvaluateProfilesCountsWithFailure(t *testing.T) {
 	}
 }
 
-func syntheticCutoverInputs(t *testing.T, profileNames []string) (map[string]string, []string, []string) {
+func syntheticReadinessInputs(t *testing.T, profileNames []string) (map[string]string, []string, []string) {
 	env := map[string]string{}
 	serviceSet := map[string]struct{}{}
 	suiteSet := map[string]struct{}{}
 	for _, name := range profileNames {
-		profile, ok := cutover.ProfileByName(name)
+		profile, ok := readiness.ProfileByName(name)
 		if !ok {
 			t.Fatalf("profile %q missing", name)
 		}

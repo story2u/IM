@@ -1,6 +1,5 @@
-// Package taskstore persists phase-six task records in the legacy tasks table.
-// It mirrors the Python TaskRepository column contract while remaining behind
-// an explicit adapter boundary for later route cutover.
+// Package taskstore persists task records in the durable tasks table.
+// It keeps storage details behind an explicit adapter boundary for later route rollout.
 package taskstore
 
 import (
