@@ -88,6 +88,7 @@ func New(options Options) (Module, error) {
 		NewID:      options.NewID,
 	}
 	processor.Register(incomingqueue.EventTypeDeviceMessageIncoming, handler.Handle)
+	processor.Register(incomingqueue.EventTypeConnectorInbound, handler.Handle)
 	worker := incomingqueue.Worker{
 		Reader:      queue,
 		Processor:   processor,

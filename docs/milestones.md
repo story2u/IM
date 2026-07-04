@@ -56,6 +56,7 @@
 - `InboundEvent` 到 message/projection/outbox/realtime 的链路可重放。
 - 新 connector 不需要修改 IM core。
 - 真实通道失败不影响 fake connector 测试。
+- `connector-inbound-event.schema.json`、`internal/connector` 和 incoming worker 的 connector event 测试形成基础证据。
 
 ## 阶段 4：通道中立消息发送
 

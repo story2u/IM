@@ -56,6 +56,7 @@ Connector 职责：
 - 把标准 `OutboundMessage` 转换为外部平台请求。
 - 上报送达、失败、撤回、删除、会话变更等 receipt。
 - 维护外部身份与本地 contact/conversation 的绑定关系。
+- 本仓库内置 `internal.webhook` fake connector，用于不依赖真实平台的本地、CI 和 readiness smoke。
 
 Core 职责：
 
@@ -66,7 +67,7 @@ Core 职责：
 - 推送 realtime event。
 - 记录审计。
 
-企微是 connector，不是 core。后续可加入 Web chat、短信、邮件、内部测试通道和其他 IM 平台。
+`contracts/v1/connector-inbound-event.schema.json` 是首个通道中立 inbound contract。企微是 connector，不是 core。后续可加入 Web chat、短信、邮件、内部测试通道和其他 IM 平台。
 
 ## 3. RPA 与自动化 Provider
 

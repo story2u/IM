@@ -12,10 +12,10 @@ func TestLoadCatalogReadsProjectSchemas(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadCatalog() error = %v", err)
 	}
-	if len(catalog) != 3 {
-		t.Fatalf("expected 3 project schemas, got %d", len(catalog))
+	if len(catalog) != 4 {
+		t.Fatalf("expected 4 project schemas, got %d", len(catalog))
 	}
-	if err := RequireSchemas(catalog, "agent-heartbeat.schema.json", "task-create.schema.json", "task-status.schema.json"); err != nil {
+	if err := RequireSchemas(catalog, "agent-heartbeat.schema.json", "connector-inbound-event.schema.json", "task-create.schema.json", "task-status.schema.json"); err != nil {
 		t.Fatalf("RequireSchemas() error = %v", err)
 	}
 }

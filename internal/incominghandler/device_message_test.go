@@ -83,6 +83,39 @@ func TestBuildDeviceMessageInputAppliesFallbacks(t *testing.T) {
 	}
 }
 
+func TestBuildDeviceMessageInputRecognizesConnectorInboundEvent(t *testing.T) {
+	now := time.Date(2026, 6, 30, 9, 0, 0, 0, time.UTC)
+	input := BuildDeviceMessageInput(map[string]any{
+		"event_type":  "connector.inbound.message",
+		"kind":        "connector.inbound_message",
+		"trace_id":    "trace-connector-1",
+		"tenant_id":   "tenant-1",
+		"occurred_at": "2026-06-25T00:00:00Z",
+		"data": map[string]any{
+			"connector_id":       "internal-webhook",
+			"channel":            "internal.webhook",
+			"sender_id":          "contact-1",
+			"sender_name":        "Alice",
+			"content":            "hello from connector",
+			"msg_type":           "text",
+			"conversation_id":    "conv-connector",
+			"conversation_key":   "internal-webhook:contact-1",
+			"external_userid":    "contact-1",
+			"conversation_type":  "single",
+			"message_origin":     "connector:internal.webhook",
+			"connector_event_id": "external-event-1",
+		},
+	}, now)
+
+	if input.Options.IngestSource != IngestSourceConnectorInbound || input.Options.CanonicalSource != CanonicalSourceConnector {
+		t.Fatalf("options = %+v", input.Options)
+	}
+	message := input.Message
+	if message.TraceID != "trace-connector-1" || message.WeWorkUserID != "" || message.ExternalUserID != "contact-1" || message.MessageOrigin != "connector:internal.webhook" {
+		t.Fatalf("message = %+v", message)
+	}
+}
+
 func TestDeviceMessageHandlerCallsService(t *testing.T) {
 	service := &fakeIngestService{}
 	handler := DeviceMessageHandler{

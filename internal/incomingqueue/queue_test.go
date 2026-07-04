@@ -5,11 +5,14 @@ import (
 	"testing"
 )
 
-// TestResolveOptionsMirrorsPythonDefaults protects ingest stream env defaults.
-func TestResolveOptionsMirrorsPythonDefaults(t *testing.T) {
+// TestResolveOptionsUsesStandaloneDefaults protects ingest stream defaults.
+func TestResolveOptionsUsesStandaloneDefaults(t *testing.T) {
 	options := ResolveOptions(ResolveInput{Hostname: "host-a", ConsumerSuffix: "deadbeef"})
 	if options.StreamName != DefaultStreamName || options.DLQStreamName != DefaultStreamName+":dlq" || options.GroupName != DefaultGroupName {
 		t.Fatalf("options = %#v", options)
+	}
+	if options.StreamName != "im:ingest:incoming" || options.GroupName != "im-ingest-workers" {
+		t.Fatalf("standalone defaults = %#v", options)
 	}
 	if options.ConsumerName != "host-a-deadbeef" || options.BatchSize != 50 || options.BatchConcurrency != 30 || options.MaxRetries != 5 {
 		t.Fatalf("options = %#v", options)
@@ -19,7 +22,7 @@ func TestResolveOptionsMirrorsPythonDefaults(t *testing.T) {
 	}
 }
 
-// TestResolveOptionsClampsInvalidEnv mirrors Python max/min parsing.
+// TestResolveOptionsClampsInvalidEnv protects max/min parsing.
 func TestResolveOptionsClampsInvalidEnv(t *testing.T) {
 	options := ResolveOptions(ResolveInput{
 		Hostname:       "host-a",
@@ -46,8 +49,8 @@ func TestResolveOptionsClampsInvalidEnv(t *testing.T) {
 	}
 }
 
-// TestPrepareEnqueuePayloadAppliesLegacyDefaults protects XADD payload defaults.
-func TestPrepareEnqueuePayloadAppliesLegacyDefaults(t *testing.T) {
+// TestPrepareEnqueuePayloadAppliesQueueDefaults protects XADD payload defaults.
+func TestPrepareEnqueuePayloadAppliesQueueDefaults(t *testing.T) {
 	input := map[string]any{"trace_id": "trace-1", "data": map[string]any{"msg_type": "text"}}
 	event := PrepareEnqueuePayload(input, func() string { return "generated" })
 	if event["attempt"] != 1 || event["event_id"] != "trace-1" || event["event_type"] != EventTypeDeviceMessageIncoming || event["tenant_id"] != "" {
@@ -91,6 +94,23 @@ func TestResolveTraceFieldsMirrorsIncomingPipelineDimensions(t *testing.T) {
 		t.Fatalf("fields = %#v", fields)
 	}
 	if fields.EventType != "device.message_received" || fields.ConversationID != "conv-1" || fields.TaskID != "task-1" || fields.WeWorkUserID != "ww-1" {
+		t.Fatalf("fields = %#v", fields)
+	}
+}
+
+func TestResolveTraceFieldsSupportsConnectorInboundEvents(t *testing.T) {
+	fields := ResolveTraceFields(map[string]any{
+		"event_type": EventTypeConnectorInbound,
+		"event_id":   "evt-connector-1",
+		"tenant_id":  "tenant-1",
+		"data": map[string]any{
+			"connector_id":    "internal-webhook",
+			"channel":         "internal.webhook",
+			"conversation_id": "conv-1",
+			"msg_type":        "text",
+		},
+	})
+	if fields.PipelineType != "incoming" || fields.TraceID != "evt-connector-1" || fields.TenantID != "tenant-1" || fields.EventType != EventTypeConnectorInbound {
 		t.Fatalf("fields = %#v", fields)
 	}
 }

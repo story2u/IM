@@ -10,12 +10,15 @@ import (
 	"time"
 
 	"im-go/internal/archivereconcile"
+	"im-go/internal/incomingqueue"
 	"im-go/internal/incomingwrite"
 )
 
 const (
 	IngestSourceDeviceMessageReceived = "device_message_received"
+	IngestSourceConnectorInbound      = "connector_inbound_message"
 	CanonicalSourceDevicePrimary      = "device_primary"
+	CanonicalSourceConnector          = "connector"
 )
 
 // IngestService is the incoming write service boundary used by device handlers.
@@ -74,7 +77,7 @@ func (handler DeviceMessageHandler) Handle(ctx context.Context, payload map[stri
 	return nil
 }
 
-// BuildDeviceMessageInput mirrors Python process_incoming_device_message_event field mapping.
+// BuildDeviceMessageInput maps queued realtime or connector events to the write model.
 func BuildDeviceMessageInput(payload map[string]any, now time.Time) DeviceMessageInput {
 	if now.IsZero() {
 		now = time.Now().UTC()
@@ -90,6 +93,14 @@ func BuildDeviceMessageInput(payload map[string]any, now time.Time) DeviceMessag
 	traceID := firstText(payload["trace_id"], payload["event_id"])
 	if traceID == "" {
 		traceID = fallbackTraceID(deviceID, now)
+	}
+	ingestSource := IngestSourceDeviceMessageReceived
+	canonicalSource := CanonicalSourceDevicePrimary
+	eventType := strings.TrimSpace(textValue(payload["event_type"]))
+	kind := strings.TrimSpace(textValue(payload["kind"]))
+	if eventType == incomingqueue.EventTypeConnectorInbound || kind == "connector.inbound_message" {
+		ingestSource = IngestSourceConnectorInbound
+		canonicalSource = CanonicalSourceConnector
 	}
 	messageTime := parseTime(firstText(data["timestamp"], payload["occurred_at"]), now)
 	tenantID := firstText(payload["tenant_id"], data["tenant_id"])
@@ -121,8 +132,8 @@ func BuildDeviceMessageInput(payload map[string]any, now time.Time) DeviceMessag
 		Message: message,
 		Options: incomingwrite.BuildOptions{
 			TenantID:              tenantID,
-			IngestSource:          IngestSourceDeviceMessageReceived,
-			CanonicalSource:       CanonicalSourceDevicePrimary,
+			IngestSource:          ingestSource,
+			CanonicalSource:       canonicalSource,
 			ReconciledFromArchive: false,
 		},
 	}

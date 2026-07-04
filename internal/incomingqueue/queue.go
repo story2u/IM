@@ -10,9 +10,10 @@ import (
 
 const (
 	EventTypeDeviceMessageIncoming = "device.message.incoming"
+	EventTypeConnectorInbound      = "connector.inbound.message"
 
-	DefaultStreamName              = "wework:ingest:incoming"
-	DefaultGroupName               = "wework-ingest-workers"
+	DefaultStreamName              = "im:ingest:incoming"
+	DefaultGroupName               = "im-ingest-workers"
 	DefaultBatchConcurrency        = 30
 	DefaultBatchSize               = 50
 	DefaultMaxRetries              = 5
@@ -20,7 +21,7 @@ const (
 	DefaultPendingClaimIntervalSec = 5.0
 )
 
-// Options captures Python IncomingEventQueueService stream tuning.
+// Options captures incoming event stream tuning.
 type Options struct {
 	StreamName              string
 	DLQStreamName           string
@@ -41,7 +42,7 @@ type ResolveInput struct {
 	ConsumerSuffix string
 }
 
-// ResolveOptions mirrors Python env/default parsing for the ingest stream.
+// ResolveOptions applies env/default parsing for the ingest stream.
 func ResolveOptions(input ResolveInput) Options {
 	env := input.Env
 	streamName := envText(env, "CLOUD_INGEST_STREAM_NAME", DefaultStreamName)
@@ -70,7 +71,7 @@ func ResolveOptions(input ResolveInput) Options {
 	}
 }
 
-// PrepareEnqueuePayload applies Python enqueue defaults without mutating input.
+// PrepareEnqueuePayload applies queue defaults without mutating input.
 func PrepareEnqueuePayload(payload map[string]any, newID func() string) map[string]any {
 	event := cloneMap(payload)
 	if _, ok := event["attempt"]; !ok {
@@ -138,13 +139,13 @@ type TraceFields struct {
 	EventType      string
 }
 
-// ResolveTraceFields mirrors Python _resolve_incoming_trace_fields.
+// ResolveTraceFields extracts incoming pipeline span dimensions.
 func ResolveTraceFields(payload map[string]any) TraceFields {
 	data, _ := payload["data"].(map[string]any)
 	eventType := strings.TrimSpace(textValue(payload["event_type"]))
 	kind := strings.TrimSpace(textValue(payload["kind"]))
 	pipelineType := ""
-	if eventType == EventTypeDeviceMessageIncoming || kind == "device.message_received" {
+	if eventType == EventTypeDeviceMessageIncoming || eventType == EventTypeConnectorInbound || kind == "device.message_received" || kind == "connector.inbound_message" {
 		pipelineType = "incoming"
 	}
 	return TraceFields{
@@ -167,7 +168,7 @@ type FailureDecision struct {
 	Payload    map[string]any
 }
 
-// BuildFailureDecision mirrors Python retry scheduling and DLQ payload mutation.
+// BuildFailureDecision applies retry scheduling and DLQ payload mutation.
 func BuildFailureDecision(payload map[string]any, err error, maxRetries int) FailureDecision {
 	attempt := maxInt(1, intValue(payload["attempt"], 1))
 	if attempt >= maxRetries {

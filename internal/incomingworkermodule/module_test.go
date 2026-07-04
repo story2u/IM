@@ -9,6 +9,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"im-go/internal/archivereconcile"
+	"im-go/internal/incominghandler"
 	"im-go/internal/incomingqueue"
 	"im-go/internal/incomingwrite"
 )
@@ -64,6 +65,41 @@ func TestNewRegistersDeviceMessageHandlerAndTicks(t *testing.T) {
 	}
 	if module.Processor.MaxRetries != incomingqueue.DefaultMaxRetries || module.RedisQueue != nil {
 		t.Fatalf("module = %+v", module)
+	}
+}
+
+func TestNewRegistersConnectorInboundHandlerAndTicks(t *testing.T) {
+	queue := &fakeQueue{new: []incomingqueue.Message{{
+		ID: "1-0",
+		Payload: map[string]any{
+			"event_type": incomingqueue.EventTypeConnectorInbound,
+			"kind":       "connector.inbound_message",
+			"trace_id":   "trace-connector-1",
+			"tenant_id":  "tenant-1",
+			"data": map[string]any{
+				"sender_id":         "customer-1",
+				"sender_name":       "Alice",
+				"content":           "hello",
+				"conversation_id":   "conv-1",
+				"conversation_type": "single",
+				"message_origin":    "connector:internal.webhook",
+			},
+		},
+	}}}
+	service := &fakeIngestService{}
+	module, err := New(Options{Queue: queue, Service: service})
+	if err != nil {
+		t.Fatalf("New returned error: %v", err)
+	}
+	result, err := module.Tick(context.Background())
+	if err != nil {
+		t.Fatalf("Tick returned error: %v", err)
+	}
+	if result.Processed != 1 || result.Acked != 1 {
+		t.Fatalf("result = %#v", result)
+	}
+	if service.message.TraceID != "trace-connector-1" || service.message.MessageOrigin != "connector:internal.webhook" || service.options.IngestSource != incominghandler.IngestSourceConnectorInbound {
+		t.Fatalf("service input = %+v options=%+v", service.message, service.options)
 	}
 }
 
