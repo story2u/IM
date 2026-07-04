@@ -35,14 +35,14 @@ go test ./...
 go vet ./...
 ```
 
-阶段 gate 仍可用于生成现有证据产物：
+Release gate 用于生成当前发布证据产物：
 
 ```bash
 cd go
-SKIP_NPM_CI=1 bash scripts/phase1_gate.sh
+SKIP_NPM_CI=1 bash scripts/release_gate.sh
 ```
 
-`phase1_gate.sh` 会产出：
+`release_gate.sh` 默认写入 `tmp/release-gate`，并产出：
 
 - `web-routes.json` / `web-routes.md`：Next.js 路由清单与入口检查。
 - `web-unit-test.out` / `web-unit-test.json` / `web-unit-test.md`：前端单元测试摘要。

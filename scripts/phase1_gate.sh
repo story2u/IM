@@ -1173,4 +1173,4 @@ else
   echo "skip web e2e tests (RUN_WEB_E2E != 1)"
 fi
 
-echo "Phase 1 gate passed. Artifacts: $ARTIFACT_DIR"
+echo "Release gate passed. Artifacts: $ARTIFACT_DIR"

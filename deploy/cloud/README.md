@@ -106,7 +106,7 @@ Follow-up milestones will:
 cd go
 go test ./...
 go vet ./...
-SKIP_NPM_CI=1 bash scripts/phase1_gate.sh
+SKIP_NPM_CI=1 bash scripts/release_gate.sh
 
 cd web
 npm run test

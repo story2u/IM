@@ -71,7 +71,7 @@
 
 | 资产 | 当前位置 | 替代方向 |
 | --- | --- | --- |
-| `phase1` 脚本和 artifact 命名 | `scripts/phase1_gate.sh`, `tmp/phase1`, golden case names | 新增 release gate 命名入口，保留 wrapper 到稳定替代出现 |
+| `phase1` 脚本和 artifact 命名 | `scripts/phase1_gate.sh`, `tmp/phase1`, golden case names | 使用 `scripts/release_gate.sh` 作为推荐入口，旧脚本保留为内部执行和兼容入口 |
 | `GO_ENABLE_*_CANDIDATE` | `internal/config`, `cmd/api`, cloud compose | 改为 `GO_ENABLE_*` 或 release/readiness flag，保留 env alias 一段时间 |
 | 供应商字段兼容别名 | `wework_user_id`, `GO_SEND_PROVIDER_BASE_URL` 等 | 新写路径使用 `channel_user_id`、`connector_*`、`provider_*` |
 | 以具体通道命名的 HTTP routes | `/wework/*`, notify routes, device SDK open/stop routes | 移到 connector/provider admin namespace，或保留为 adapter-only route |
@@ -91,11 +91,11 @@
 
 ## 下一批 PR 顺序
 
-1. 发布命名中性化：新增 `scripts/release_gate.sh`，把 `phase1_gate.sh` 降为 wrapper 或兼容入口。
-2. Connector 边界收敛：把入站、出站、联系人同步中的 WeWork 字段继续收敛为 channel identity 和 connector metadata。
-3. Provider 边界收敛：把设备 SDK、RTC、音频桥接、浏览器/点击能力移出 core 路由语义。
-4. 默认 compose 瘦身：core 只启动 API、Web、Redis、DB、outbox、incoming、send dispatcher 和 fake connector/provider。
-5. Review 队列删除：对低价值高耦合能力逐项开 PR，删除或降级前补 readiness 影响说明。
+1. Connector 边界收敛：把入站、出站、联系人同步中的 WeWork 字段继续收敛为 channel identity 和 connector metadata。
+2. Provider 边界收敛：把设备 SDK、RTC、音频桥接、浏览器/点击能力移出 core 路由语义。
+3. 默认 compose 瘦身：core 只启动 API、Web、Redis、DB、outbox、incoming、send dispatcher 和 fake connector/provider。
+4. Review 队列删除：对低价值高耦合能力逐项开 PR，删除或降级前补 readiness 影响说明。
+5. 过渡命名收尾：把 artifact manifest、summary 脚本和 CI job 名称逐步切到 release/readiness 语义。
 
 ## 完成标准
 

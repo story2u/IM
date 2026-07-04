@@ -97,7 +97,7 @@ go/
 
 输出：
 
-- `phase1_gate_manifest.json`
+- `release_gate_manifest.json`
 - CI job summary
 - 基础 pass / fail
 
@@ -210,7 +210,7 @@ Go 约束：
 | Go vet | `go vet ./...` |
 | Frontend unit | `cd web && npm run test` |
 | Frontend build | `cd web && npm run build` |
-| Phase gate | `SKIP_NPM_CI=1 bash scripts/phase1_gate.sh` |
+| Release gate | `SKIP_NPM_CI=1 bash scripts/release_gate.sh` |
 | API local run | `go run ./cmd/api` |
 | Readiness profile | `go run ./cmd/release-readiness -all -format markdown` |
 

@@ -101,7 +101,7 @@ rg -n "<外部项目对照词>|<发布切换旧命名>|<单一供应商名>" REA
 rg -n "<供应商或设备核心命名>" internal cmd scripts deploy
 go test ./...
 go vet ./...
-SKIP_NPM_CI=1 bash scripts/phase1_gate.sh
+SKIP_NPM_CI=1 bash scripts/release_gate.sh
 ```
 
 搜索结果不是零才算失败；真正的失败是命中项仍把供应商、过渡命名或外部项目当成 core 约束。每次保留命中都要能解释为 connector/provider/integration、兼容入口或明确的下线项。
