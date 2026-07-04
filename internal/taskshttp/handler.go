@@ -1,6 +1,6 @@
-// Package taskshttp adapts phase-six task APIs to HTTP.
+// Package taskshttp adapts task APIs to HTTP.
 // The adapter keeps task creation behind explicit candidate wiring and does
-// not dispatch SDK work; it only serializes the legacy route contract.
+// not dispatch SDK work; it only serializes the task route contract.
 package taskshttp
 
 import (
@@ -25,7 +25,7 @@ type Service interface {
 	Retry(ctx context.Context, taskID string) (tasks.Record, error)
 }
 
-// TaskChangePublisher publishes Python-compatible task change websocket events.
+// TaskChangePublisher publishes task change websocket events.
 type TaskChangePublisher interface {
 	Publish(ctx context.Context, channel string, event string, topic string, payload map[string]any) error
 }

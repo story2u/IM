@@ -35,6 +35,26 @@ func TestValidateCreateJSONBuildsAcceptedRecord(t *testing.T) {
 	}
 }
 
+func TestNewAcceptedRecordPrefersChannelUserID(t *testing.T) {
+	channelUserID := "channel-user-001"
+	weworkUserID := "wework-user-001"
+	request, err := ValidateCreateJSON([]byte(validTaskCreateBody()))
+	if err != nil {
+		t.Fatalf("ValidateCreateJSON returned error: %v", err)
+	}
+	request.ChannelUserID = &channelUserID
+	request.WeWorkUserID = &weworkUserID
+
+	record := NewAcceptedRecord(request, time.Date(2026, 6, 29, 10, 0, 0, 0, time.UTC))
+
+	if record.ChannelUserID == nil || *record.ChannelUserID != channelUserID {
+		t.Fatalf("ChannelUserID = %#v, want %q", record.ChannelUserID, channelUserID)
+	}
+	if record.WeWorkUserID == nil || *record.WeWorkUserID != channelUserID {
+		t.Fatalf("WeWorkUserID = %#v, want compatibility alias %q", record.WeWorkUserID, channelUserID)
+	}
+}
+
 // TestValidateCreateJSONRejectsContractDrift covers schema-critical failures.
 func TestValidateCreateJSONRejectsContractDrift(t *testing.T) {
 	cases := []struct {

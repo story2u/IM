@@ -57,7 +57,7 @@ func TestClaimNextSDKDispatchTaskSelectsAndClaimsInTransaction(t *testing.T) {
 	}
 }
 
-// TestClaimNextSDKDispatchTaskCommitsEmptySelection mirrors Python no-row behavior.
+// TestClaimNextSDKDispatchTaskCommitsEmptySelection covers no-row commit behavior.
 func TestClaimNextSDKDispatchTaskCommitsEmptySelection(t *testing.T) {
 	tx := &fakeTaskStoreTx{rows: []RowScanner{fakeRow{err: sql.ErrNoRows}}}
 	source := &fakeTransactioner{tx: tx}

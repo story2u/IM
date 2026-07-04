@@ -1,6 +1,5 @@
-// Task validation keeps Go candidates aligned with task-create.schema.json.
-// It implements the compatibility-critical subset locally so phase-six routes
-// can reject malformed SDK tasks before any database or dispatcher side effect.
+// Task validation keeps incoming requests aligned with task-create.schema.json.
+// It rejects malformed SDK tasks before any database or dispatcher side effect.
 package tasks
 
 import (

@@ -11,21 +11,23 @@ import (
 	"im-go/internal/tasks"
 )
 
-// TestRepositoryUpsertSerializesLegacyColumns protects tasks table writes.
-func TestRepositoryUpsertSerializesLegacyColumns(t *testing.T) {
+// TestRepositoryUpsertSerializesTaskColumns protects tasks table writes.
+func TestRepositoryUpsertSerializesTaskColumns(t *testing.T) {
 	db := &fakeDB{}
 	repository := Repository{DB: db, Dialect: "mysql"}
 	traceID := "trace-golden-0001"
+	channelUserID := "channel-user-001"
 	record := tasks.Record{
-		TaskID:    "task-golden-0001",
-		Source:    "cloud-web",
-		Target:    tasks.Target{AgentID: "sdk:zimo", DeviceID: "zimo"},
-		TaskType:  "send_text",
-		Payload:   map[string]any{"username": "Qiu", "text": "hello"},
-		Status:    tasks.StatusAccepted,
-		CreatedAt: time.Date(2026, 6, 29, 9, 0, 0, 0, time.UTC),
-		UpdatedAt: time.Date(2026, 6, 29, 10, 0, 0, 0, time.UTC),
-		TraceID:   &traceID,
+		TaskID:        "task-golden-0001",
+		Source:        "cloud-web",
+		Target:        tasks.Target{AgentID: "sdk:zimo", DeviceID: "zimo"},
+		TaskType:      "send_text",
+		Payload:       map[string]any{"username": "Qiu", "text": "hello"},
+		Status:        tasks.StatusAccepted,
+		CreatedAt:     time.Date(2026, 6, 29, 9, 0, 0, 0, time.UTC),
+		UpdatedAt:     time.Date(2026, 6, 29, 10, 0, 0, 0, time.UTC),
+		TraceID:       &traceID,
+		ChannelUserID: &channelUserID,
 	}
 
 	if err := repository.Upsert(context.Background(), record); err != nil {
@@ -40,6 +42,9 @@ func TestRepositoryUpsertSerializesLegacyColumns(t *testing.T) {
 	if db.execArgs[0] != "task-golden-0001" || db.execArgs[6] != "accepted" {
 		t.Fatalf("unexpected task args: %#v", db.execArgs)
 	}
+	if db.execArgs[13] != channelUserID {
+		t.Fatalf("channel identity arg = %#v, want %q", db.execArgs[13], channelUserID)
+	}
 	payload := map[string]any{}
 	if err := json.Unmarshal([]byte(db.execArgs[5].(string)), &payload); err != nil {
 		t.Fatalf("payload JSON failed: %v", err)
@@ -51,7 +56,9 @@ func TestRepositoryUpsertSerializesLegacyColumns(t *testing.T) {
 
 // TestRepositoryGetScansTaskRecord protects SQL-to-domain mapping.
 func TestRepositoryGetScansTaskRecord(t *testing.T) {
-	db := &fakeDB{row: taskRow("task-golden-0001", "accepted")}
+	row := taskRow("task-golden-0001", "accepted")
+	row[13] = "channel-user-001"
+	db := &fakeDB{row: row}
 	repository := Repository{DB: db}
 
 	record, ok, err := repository.Get(context.Background(), "task-golden-0001")
@@ -64,10 +71,16 @@ func TestRepositoryGetScansTaskRecord(t *testing.T) {
 	if record.TraceID == nil || *record.TraceID != "trace-golden-0001" {
 		t.Fatalf("TraceID = %#v", record.TraceID)
 	}
+	if record.ChannelUserID == nil || *record.ChannelUserID != "channel-user-001" {
+		t.Fatalf("ChannelUserID = %#v", record.ChannelUserID)
+	}
+	if record.WeWorkUserID == nil || *record.WeWorkUserID != "channel-user-001" {
+		t.Fatalf("WeWorkUserID = %#v", record.WeWorkUserID)
+	}
 }
 
-// TestRepositoryListBuildsLegacyFilters protects list query behavior.
-func TestRepositoryListBuildsLegacyFilters(t *testing.T) {
+// TestRepositoryListBuildsTaskFilters protects list query behavior.
+func TestRepositoryListBuildsTaskFilters(t *testing.T) {
 	status := tasks.StatusAccepted
 	limit := 1
 	db := &fakeDB{rows: [][]any{taskRow("task-golden-0001", "accepted")}}

@@ -97,7 +97,41 @@ func TestUpdateTerminalStatusStoresExecutionTimestamps(t *testing.T) {
 	}
 }
 
-// TestDeliveryUpdateFromTaskMapsTerminalStatuses mirrors Python status mapping.
+func TestRetryPreservesChannelIdentity(t *testing.T) {
+	channelUserID := "channel-user-001"
+	store := newRecordingStore(Record{
+		TaskID:        "task-golden-0001",
+		Source:        "cloud-web",
+		Target:        Target{AgentID: "sdk:zimo", DeviceID: "zimo"},
+		TaskType:      "send_text",
+		Payload:       map[string]any{"text": "hello"},
+		Status:        StatusFailed,
+		CreatedAt:     time.Date(2026, 6, 29, 9, 0, 0, 0, time.UTC),
+		UpdatedAt:     time.Date(2026, 6, 29, 9, 1, 0, 0, time.UTC),
+		ChannelUserID: &channelUserID,
+		WeWorkUserID:  &channelUserID,
+	}, nil)
+	service := NewService(store)
+	service.Now = func() time.Time { return time.Date(2026, 6, 29, 10, 0, 0, 0, time.UTC) }
+	service.NewID = func(prefix string) string { return prefix + "retry0001" }
+
+	record, err := service.Retry(context.Background(), "task-golden-0001")
+	if err != nil {
+		t.Fatalf("Retry returned error: %v", err)
+	}
+
+	if record.TaskID != "task-retry0001" || record.Status != StatusAccepted {
+		t.Fatalf("unexpected retry record: %#v", record)
+	}
+	if record.ChannelUserID == nil || *record.ChannelUserID != channelUserID {
+		t.Fatalf("ChannelUserID = %#v, want %q", record.ChannelUserID, channelUserID)
+	}
+	if record.WeWorkUserID == nil || *record.WeWorkUserID != channelUserID {
+		t.Fatalf("WeWorkUserID = %#v, want compatibility alias %q", record.WeWorkUserID, channelUserID)
+	}
+}
+
+// TestDeliveryUpdateFromTaskMapsTerminalStatuses covers terminal send status mapping.
 func TestDeliveryUpdateFromTaskMapsTerminalStatuses(t *testing.T) {
 	taskError := " phone offline "
 	record := Record{TaskID: "task-golden-0001", Status: StatusTimeout, Error: &taskError}

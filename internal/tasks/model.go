@@ -1,11 +1,11 @@
-// Package tasks contains the phase-six task contract primitives.
-// The package does not execute SDK work; it only validates legacy task-create
-// payloads and builds accepted task records for later storage adapters.
+// Package tasks contains task contract primitives.
+// The package does not execute SDK work; it validates task-create payloads and
+// builds accepted task records for storage adapters.
 package tasks
 
 import "time"
 
-// Status is the legacy task status enum.
+// Status is the task lifecycle enum.
 type Status string
 
 const (
@@ -17,7 +17,7 @@ const (
 	StatusCancelled Status = "cancelled"
 )
 
-// ValidStatus reports whether a status belongs to the legacy enum.
+// ValidStatus reports whether a status belongs to the supported enum.
 func ValidStatus(status Status) bool {
 	switch status {
 	case StatusAccepted, StatusRunning, StatusSuccess, StatusFailed, StatusTimeout, StatusCancelled:
@@ -27,7 +27,7 @@ func ValidStatus(status Status) bool {
 	}
 }
 
-// Target mirrors TaskTarget in the Python domain model.
+// Target identifies the worker and device destination for a task.
 type Target struct {
 	AgentID  string `json:"agent_id"`
 	DeviceID string `json:"device_id"`
@@ -35,18 +35,19 @@ type Target struct {
 
 // CreateRequest is a validated task-create payload.
 type CreateRequest struct {
-	TaskID       string         `json:"task_id"`
-	Source       string         `json:"source"`
-	Target       Target         `json:"target"`
-	TaskType     string         `json:"task_type"`
-	Payload      map[string]any `json:"payload"`
-	CreatedAt    time.Time      `json:"created_at"`
-	TraceID      *string        `json:"trace_id"`
-	WeWorkUserID *string        `json:"-"`
-	EnterpriseID *string        `json:"-"`
+	TaskID        string         `json:"task_id"`
+	Source        string         `json:"source"`
+	Target        Target         `json:"target"`
+	TaskType      string         `json:"task_type"`
+	Payload       map[string]any `json:"payload"`
+	CreatedAt     time.Time      `json:"created_at"`
+	TraceID       *string        `json:"trace_id"`
+	ChannelUserID *string        `json:"-"`
+	WeWorkUserID  *string        `json:"-"`
+	EnterpriseID  *string        `json:"-"`
 }
 
-// Record mirrors the HTTP response shape of Python TaskRecord.
+// Record is the HTTP and storage representation of a task.
 type Record struct {
 	TaskID                string         `json:"task_id"`
 	Source                string         `json:"source"`
@@ -60,6 +61,7 @@ type Record struct {
 	Error                 *string        `json:"error"`
 	RetryCount            int            `json:"retry_count"`
 	NextRetryAt           *time.Time     `json:"next_retry_at"`
+	ChannelUserID         *string        `json:"channel_user_id"`
 	WeWorkUserID          *string        `json:"wework_user_id"`
 	EnterpriseID          *string        `json:"enterprise_id"`
 	DispatchedAt          *time.Time     `json:"dispatched_at"`
@@ -67,7 +69,7 @@ type Record struct {
 	SkippedDeviceDispatch bool           `json:"skipped_device_dispatch,omitempty"`
 }
 
-// Query filters task list reads with the same fields as the Python endpoint.
+// Query filters task list reads.
 type Query struct {
 	Status   *Status
 	AgentID  string
@@ -91,18 +93,31 @@ func NewAcceptedRecord(request CreateRequest, now time.Time) Record {
 		now = time.Now()
 	}
 	now = now.UTC()
+	channelUserID := firstNonBlankPtr(request.ChannelUserID, request.WeWorkUserID)
 	return Record{
-		TaskID:       request.TaskID,
-		Source:       request.Source,
-		Target:       request.Target,
-		TaskType:     request.TaskType,
-		Payload:      request.Payload,
-		Status:       StatusAccepted,
-		CreatedAt:    request.CreatedAt,
-		UpdatedAt:    now,
-		TraceID:      request.TraceID,
-		RetryCount:   0,
-		WeWorkUserID: request.WeWorkUserID,
-		EnterpriseID: request.EnterpriseID,
+		TaskID:        request.TaskID,
+		Source:        request.Source,
+		Target:        request.Target,
+		TaskType:      request.TaskType,
+		Payload:       request.Payload,
+		Status:        StatusAccepted,
+		CreatedAt:     request.CreatedAt,
+		UpdatedAt:     now,
+		TraceID:       request.TraceID,
+		RetryCount:    0,
+		ChannelUserID: channelUserID,
+		WeWorkUserID:  channelUserID,
+		EnterpriseID:  request.EnterpriseID,
 	}
+}
+
+func firstNonBlankPtr(values ...*string) *string {
+	for _, value := range values {
+		if value == nil || *value == "" {
+			continue
+		}
+		copied := *value
+		return &copied
+	}
+	return nil
 }

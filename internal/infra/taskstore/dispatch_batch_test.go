@@ -8,8 +8,8 @@ import (
 	"im-go/internal/tasks"
 )
 
-// TestSDKDispatchBatchGroupKeyMatchesLegacyRules freezes same-chat grouping.
-func TestSDKDispatchBatchGroupKeyMatchesLegacyRules(t *testing.T) {
+// TestSDKDispatchBatchGroupKeyMatchesTaskRules freezes same-chat grouping.
+func TestSDKDispatchBatchGroupKeyMatchesTaskRules(t *testing.T) {
 	record := batchTask("task-golden-0001", "send_text", map[string]any{
 		"username":        " Qiu ",
 		"aliases":         "alias-1",
@@ -37,8 +37,8 @@ func TestSDKDispatchBatchGroupKeyMatchesLegacyRules(t *testing.T) {
 	}
 }
 
-// TestBuildSDKDispatchFollowupSelectMatchesLegacyFilters freezes followup predicates.
-func TestBuildSDKDispatchFollowupSelectMatchesLegacyFilters(t *testing.T) {
+// TestBuildSDKDispatchFollowupSelectMatchesTaskFilters freezes followup predicates.
+func TestBuildSDKDispatchFollowupSelectMatchesTaskFilters(t *testing.T) {
 	sql, args, err := BuildSDKDispatchFollowupSelect(SDKDispatchFollowupQuery{
 		FirstTask:           tasks.Record{Target: tasks.Target{DeviceID: " zimo "}},
 		TaskTypes:           []string{"send_text", "unsupported", "send_image"},

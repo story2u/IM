@@ -47,7 +47,7 @@ type Transactioner interface {
 	BeginTaskStoreTx(ctx context.Context) (TaskStoreTx, error)
 }
 
-// Repository implements tasks.Store over the legacy tasks table.
+// Repository implements tasks.Store over the durable tasks table.
 type Repository struct {
 	DB      Queryer
 	Tx      Transactioner
@@ -60,7 +60,7 @@ func NewSQLRepository(db *sql.DB, dialect string) *Repository {
 	return &Repository{DB: queryer, Tx: queryer, Dialect: dialect}
 }
 
-// Upsert writes or replaces one task record using the legacy column layout.
+// Upsert writes or replaces one task record using the current column layout.
 func (repository *Repository) Upsert(ctx context.Context, task tasks.Record) error {
 	if repository.DB == nil {
 		return fmt.Errorf("task database is not configured")
@@ -83,7 +83,7 @@ func (repository *Repository) Upsert(ctx context.Context, task tasks.Record) err
 		stringPtrValue(task.Error),
 		task.RetryCount,
 		timePtrValue(task.NextRetryAt),
-		stringPtrValue(task.WeWorkUserID),
+		stringPtrValue(taskChannelUserID(task)),
 		stringPtrValue(task.EnterpriseID),
 		timePtrValue(task.DispatchedAt),
 		timePtrValue(task.ScriptStartedAt),
@@ -265,6 +265,7 @@ func scanTask(scanner RowScanner) (tasks.Record, error) {
 	if err != nil {
 		return tasks.Record{}, err
 	}
+	channelUserID := stringPtrFromDB(weworkUserID)
 	return tasks.Record{
 		TaskID:          stringFromDB(taskID),
 		Source:          stringFromDB(source),
@@ -278,7 +279,8 @@ func scanTask(scanner RowScanner) (tasks.Record, error) {
 		Error:           stringPtrFromDB(taskError),
 		RetryCount:      intFromDB(retryCount),
 		NextRetryAt:     timePtrFromDB(nextRetryAt),
-		WeWorkUserID:    stringPtrFromDB(weworkUserID),
+		ChannelUserID:   channelUserID,
+		WeWorkUserID:    channelUserID,
 		EnterpriseID:    stringPtrFromDB(enterpriseID),
 		DispatchedAt:    timePtrFromDB(dispatchedAt),
 		ScriptStartedAt: timePtrFromDB(scriptStartedAt),
@@ -318,6 +320,21 @@ func stringPtrValue(value *string) any {
 		return nil
 	}
 	return *value
+}
+
+func taskChannelUserID(task tasks.Record) *string {
+	return firstNonBlankStringPtr(task.ChannelUserID, task.WeWorkUserID)
+}
+
+func firstNonBlankStringPtr(values ...*string) *string {
+	for _, value := range values {
+		if value == nil || strings.TrimSpace(*value) == "" {
+			continue
+		}
+		copied := strings.TrimSpace(*value)
+		return &copied
+	}
+	return nil
 }
 
 func stringFromDB(value any) string {

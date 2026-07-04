@@ -1,4 +1,4 @@
-// Task service keeps phase-six task state transitions explicit.
+// Task service keeps task state transitions explicit.
 // The default store is in-memory for candidate harness runs; database-backed
 // persistence is a later adapter behind the same Store interface.
 package tasks
@@ -72,7 +72,7 @@ func (service Service) Get(ctx context.Context, taskID string) (Record, error) {
 	return record, nil
 }
 
-// List returns tasks filtered in the same order as the Python in-memory cache.
+// List returns tasks from the configured store.
 func (service Service) List(ctx context.Context, query Query) ([]Record, error) {
 	return service.store().List(ctx, query)
 }
@@ -155,15 +155,16 @@ func (service Service) Retry(ctx context.Context, taskID string) (Record, error)
 	now := service.now()
 	traceID := service.newID("trace-")
 	request := CreateRequest{
-		TaskID:       service.newID("task-"),
-		Source:       source.Source,
-		Target:       source.Target,
-		TaskType:     source.TaskType,
-		Payload:      cloneMap(source.Payload),
-		CreatedAt:    now,
-		TraceID:      &traceID,
-		WeWorkUserID: source.WeWorkUserID,
-		EnterpriseID: source.EnterpriseID,
+		TaskID:        service.newID("task-"),
+		Source:        source.Source,
+		Target:        source.Target,
+		TaskType:      source.TaskType,
+		Payload:       cloneMap(source.Payload),
+		CreatedAt:     now,
+		TraceID:       &traceID,
+		ChannelUserID: source.ChannelUserID,
+		WeWorkUserID:  source.WeWorkUserID,
+		EnterpriseID:  source.EnterpriseID,
 	}
 	return service.Create(ctx, request)
 }

@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-// TestBuildSDKDispatchClaimSelectMatchesLegacyFilters freezes claim predicates.
-func TestBuildSDKDispatchClaimSelectMatchesLegacyFilters(t *testing.T) {
+// TestBuildSDKDispatchClaimSelectMatchesTaskFilters freezes claim predicates.
+func TestBuildSDKDispatchClaimSelectMatchesTaskFilters(t *testing.T) {
 	sql, args, err := BuildSDKDispatchClaimSelect(SDKDispatchClaimQuery{
 		DeviceIDs:           []string{" zimo ", "", "ada"},
 		TaskTypes:           []string{"send_text", "send_image"},

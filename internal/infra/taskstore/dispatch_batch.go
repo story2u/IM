@@ -45,7 +45,7 @@ type SDKDispatchBatchClaimQuery struct {
 	ForUpdateSkipLocked bool
 }
 
-// BuildSDKDispatchFollowupSelect mirrors Python _build_sdk_dispatch_followup_select.
+// BuildSDKDispatchFollowupSelect builds the same-device followup selector.
 func BuildSDKDispatchFollowupSelect(query SDKDispatchFollowupQuery) (string, []any, error) {
 	taskTypes := cleanBatchableTaskTypes(query.TaskTypes)
 	if len(taskTypes) == 0 {

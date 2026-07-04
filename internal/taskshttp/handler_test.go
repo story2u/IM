@@ -22,7 +22,7 @@ func TestCreateHandlerAcceptsAgentTokenAndStoresAcceptedTask(t *testing.T) {
 	}
 }
 
-// TestCreateHandlerRequiresAgentOrSession keeps optional_agent_auth compatible.
+// TestCreateHandlerRequiresAgentOrSession covers optional agent authentication.
 func TestCreateHandlerRequiresAgentOrSession(t *testing.T) {
 	handler := testHandler(t)
 	response := perform(handler.CreateHandler, http.MethodPost, "/api/v1/tasks", validCreateBody(), "", "")
@@ -60,7 +60,7 @@ func TestRetryHandlerRequiresSupervisor(t *testing.T) {
 	}
 }
 
-// TestHandlersPublishTaskChangeEventsAfterSuccessfulWrites freezes Python ws_hub.publish compatibility.
+// TestHandlersPublishTaskChangeEventsAfterSuccessfulWrites covers realtime task events.
 func TestHandlersPublishTaskChangeEventsAfterSuccessfulWrites(t *testing.T) {
 	publisher := &recordingTaskChangePublisher{}
 	handler := testHandler(t)

@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-// TestBuildSDKDispatchBacklogSelectMatchesPythonFilters freezes backlog SQL.
-func TestBuildSDKDispatchBacklogSelectMatchesPythonFilters(t *testing.T) {
+// TestBuildSDKDispatchBacklogSelectMatchesTaskFilters freezes backlog SQL.
+func TestBuildSDKDispatchBacklogSelectMatchesTaskFilters(t *testing.T) {
 	sqlText, args, err := BuildSDKDispatchBacklogSelect(SDKDispatchBacklogQuery{
 		DeviceIDs: []string{" zimo ", "ada"},
 		TaskTypes: []string{"send_text", " ", "send_image"},
@@ -46,7 +46,7 @@ func TestBuildSDKDispatchBacklogSelectMatchesPythonFilters(t *testing.T) {
 	}
 }
 
-// TestSummarizeSDKDispatchBacklogGroupsRows mirrors Python backlog payload.
+// TestSummarizeSDKDispatchBacklogGroupsRows covers backlog payload aggregation.
 func TestSummarizeSDKDispatchBacklogGroupsRows(t *testing.T) {
 	now := time.Date(2026, 6, 29, 9, 10, 0, 0, time.UTC)
 	db := &backlogFakeDB{rows: &backlogRows{rows: [][]any{
@@ -74,7 +74,7 @@ func TestSummarizeSDKDispatchBacklogGroupsRows(t *testing.T) {
 	}
 }
 
-// TestSummarizeSDKDispatchBacklogReturnsEmptyForInvalidScope preserves Python no-op.
+// TestSummarizeSDKDispatchBacklogReturnsEmptyForInvalidScope preserves invalid-scope no-op behavior.
 func TestSummarizeSDKDispatchBacklogReturnsEmptyForInvalidScope(t *testing.T) {
 	db := &backlogFakeDB{}
 	repository := Repository{DB: db}

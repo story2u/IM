@@ -17,7 +17,7 @@ type SDKDispatchClaimQuery struct {
 	ForUpdateSkipLocked bool
 }
 
-// BuildSDKDispatchClaimSelect mirrors Python _build_sdk_dispatch_claim_select.
+// BuildSDKDispatchClaimSelect builds the accepted-task selector for SDK dispatch.
 func BuildSDKDispatchClaimSelect(query SDKDispatchClaimQuery) (string, []any, error) {
 	taskTypes := cleanStrings(query.TaskTypes)
 	if len(taskTypes) == 0 {

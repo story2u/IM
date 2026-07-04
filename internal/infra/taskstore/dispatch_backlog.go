@@ -20,14 +20,14 @@ type SDKDispatchBacklogDeviceSummary struct {
 	OldestAgeSec int
 }
 
-// SDKDispatchBacklogSummary mirrors Python summarize_sdk_dispatch_backlog.
+// SDKDispatchBacklogSummary is the aggregate accepted-task backlog view.
 type SDKDispatchBacklogSummary struct {
 	AcceptedTotal        int
 	OldestAcceptedAgeSec int
 	ByDevice             map[string]SDKDispatchBacklogDeviceSummary
 }
 
-// BuildSDKDispatchBacklogSelect mirrors Python summarize_sdk_dispatch_backlog SQL.
+// BuildSDKDispatchBacklogSelect builds the backlog aggregation query.
 func BuildSDKDispatchBacklogSelect(query SDKDispatchBacklogQuery) (string, []any, error) {
 	taskTypes := cleanStrings(query.TaskTypes)
 	if len(taskTypes) == 0 {

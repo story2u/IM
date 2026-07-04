@@ -1,4 +1,4 @@
-// Status validation mirrors TaskStatusUpdate from the Python API schema.
+// Status validation parses task status update requests.
 package tasks
 
 import (
@@ -47,7 +47,7 @@ func ValidateStatusUpdateJSON(data []byte) (StatusUpdate, error) {
 	return StatusUpdate{Status: status, Error: errorText}, nil
 }
 
-// ParseQuery converts the legacy list-task query fields into a service query.
+// ParseQuery converts list-task query fields into a service query.
 func ParseQuery(values map[string][]string) (Query, error) {
 	var query Query
 	statusText := firstQuery(values, "status")

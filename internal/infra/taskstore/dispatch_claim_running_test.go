@@ -46,7 +46,7 @@ func TestClaimSDKDispatchRowMarksRunningWithStatusGuard(t *testing.T) {
 	}
 }
 
-// TestClaimSDKDispatchRowUsesUnknownWorker mirrors Python fallback detail text.
+// TestClaimSDKDispatchRowUsesUnknownWorker covers fallback detail text.
 func TestClaimSDKDispatchRowUsesUnknownWorker(t *testing.T) {
 	db := &fakeDB{row: taskRow("task-golden-0001", "running")}
 	repository := Repository{DB: db}
