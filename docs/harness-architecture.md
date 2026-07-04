@@ -205,7 +205,7 @@ Go 约束：
 - `release-readiness-*.md`
 - 发布建议、阻塞项和回滚检查点。
 
-现有脚本生成 `release-readiness-*.json` / `release-readiness-*.md`；旧 `cutover-*` artifact 只作为历史 fallback 被 summary 脚本识别。
+现有脚本生成 `release-readiness-*.json` / `release-readiness-*.md`。如果 summary 脚本为了读取既有输出而识别早期 artifact 名称，这只能视为兼容读取逻辑，不能继续作为发布目标命名。
 
 ## 5. 推荐命令
 

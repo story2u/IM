@@ -19,6 +19,7 @@ Phase 1 skeleton 已具备 Go API、worker、Next.js、Docker compose、inventor
 - [docs/product-roadmap.md](docs/product-roadmap.md)
 - [docs/architecture.md](docs/architecture.md)
 - [docs/milestones.md](docs/milestones.md)
+- [docs/standalone-cleanup.md](docs/standalone-cleanup.md)
 - [docs/harness-architecture.md](docs/harness-architecture.md)
 - [docs/release-readiness.md](docs/release-readiness.md)
 - [docs/nextjs-harness-architecture.md](docs/nextjs-harness-architecture.md)
@@ -87,6 +88,8 @@ docker build -t im-next-web .
 - 高风险能力先通过内部连接器、fake provider、shadow 运行和发布就绪 profile 证明，再进入生产流量。
 
 ## 需要逐步清理的过渡资产
+
+清理原则和执行顺序见 [docs/standalone-cleanup.md](docs/standalone-cleanup.md)。
 
 - 仍以 `phase1`、`candidate` 命名的脚本、artifact 和开关。
 - 与单一供应商绑定的路由、env、compose 服务和 worker 装配。

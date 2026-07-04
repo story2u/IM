@@ -10,11 +10,13 @@
 - 明确 Go + Next.js 是项目的目标运行面。
 - 建立 connector/provider 中立原则。
 - 标记需要清理的过渡资产。
+- 建立能力保留、隔离、降级和删除的判断清单。
 
 退出标准：
 
 - README 和 docs 不再把其他代码库作为目标参照。
 - 新增产品路线、架构、里程碑和发布就绪文档。
+- `docs/standalone-cleanup.md` 成为后续删功能和拆 connector/provider 的依据。
 - 后续 PR 以独立 IM 产品目标评审。
 
 ## 阶段 1：独立启动骨架
