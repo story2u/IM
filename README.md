@@ -12,7 +12,7 @@
 
 ## 当前状态
 
-Phase 1 skeleton 已具备 Go API、worker、Next.js、Docker compose、inventory、route metadata、golden fixture 和 readiness profile 等基础资产。仓库中仍保留部分过渡期命令、候选开关和命名，它们只服务于阶段性验证，不定义长期架构。
+Phase 1 skeleton 已具备 Go API、incoming worker、Next.js、Docker compose、inventory、route metadata 和 readiness profile 等基础资产。仓库中仍保留部分过渡期候选开关和命名，它们只服务于阶段性验证，不定义长期架构。
 
 新的开发方向见：
 
@@ -35,19 +35,12 @@ go test ./...
 go vet ./...
 ```
 
-Release gate 用于生成当前发布证据产物：
+发布就绪报告用于生成当前发布证据：
 
 ```bash
 cd go
-SKIP_NPM_CI=1 bash scripts/release_gate.sh
+go run ./cmd/release-readiness -all -format markdown
 ```
-
-`release_gate.sh` 默认写入 `tmp/release-gate`，并产出：
-
-- `web-routes.json` / `web-routes.md`：Next.js 路由清单与入口检查。
-- `web-unit-test.out` / `web-unit-test.json` / `web-unit-test.md`：前端单元测试摘要。
-- `web-build.out` / `web-build.json` / `web-build.md`：前端构建摘要。
-- `release-readiness-*.json` / `release-readiness-*.md`：发布就绪 profile 的机器产物。
 
 前端验证：
 
@@ -63,10 +56,7 @@ npm run build
 ```bash
 cd go
 docker build -t im-go-api --build-arg TARGET_CMD=api .
-docker build -t im-go-outbox-worker --build-arg TARGET_CMD=outbox-worker .
-docker build -t im-go-send-dispatcher --build-arg TARGET_CMD=send-dispatcher .
-docker build -t im-go-archive-media-worker --build-arg TARGET_CMD=archive-media-worker .
-docker build -t im-go-voice-transcription-worker --build-arg TARGET_CMD=voice-transcription-worker .
+docker build -t im-go-incoming-worker --build-arg TARGET_CMD=incoming-worker .
 
 cd web
 docker build -t im-next-web .
@@ -84,7 +74,7 @@ docker build -t im-next-web .
 
 清理原则和执行顺序见 [docs/standalone-cleanup.md](docs/standalone-cleanup.md)，现有能力归属见 [docs/capability-inventory.md](docs/capability-inventory.md)。
 
-- 仍以 `phase1`、`candidate` 命名的脚本、artifact 和开关。
+- 仍以 `phase1`、`candidate` 命名的 artifact 和开关。
 - 与单一供应商绑定的路由、env、compose 服务和 worker 装配。
 - 以通道专名或 RPA 供应商专名定义核心领域模型的代码。
 - 无法在本仓库独立验证的外部桥接路径。

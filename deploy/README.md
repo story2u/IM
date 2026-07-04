@@ -1,11 +1,11 @@
-# Standalone Cloud Compose
+# Standalone Deploy Compose
 
-This directory contains the minimal cloud compose baseline for validating message receive on the standalone Go + Next.js IM project.
+This directory contains the minimal Docker Compose baseline for validating message receive on the standalone Go + Next.js IM project.
 
 ## Usage
 
 ```bash
-cd go/deploy/cloud
+cd go/deploy
 cp .env.example .env
 docker compose --env-file .env config
 docker compose --env-file .env up -d --build \
@@ -31,7 +31,7 @@ The `Deploy to VPS` workflow deploys the GHCR images built by `Docker Build & Pu
 
 The SSH user must be able to write `VPS_DEPLOY_DIR` and run `docker compose`. On a fresh Ubuntu VPS, install Docker and add the deploy user to the `docker` group, or use a restricted root login dedicated to deployment.
 
-The workflow copies `deploy/cloud/docker-compose.yml` and `.env.example` to the VPS, preserves an existing `.env`, and overwrites `.env` only when `VPS_ENV_FILE` is set. It exports GHCR image names such as `ghcr.io/story2u/wework-api:main` at deploy time, so the compose file pulls release images instead of building locally.
+The workflow copies `deploy/docker-compose.yml` and `deploy/.env.example` to the VPS, preserves an existing `.env`, and overwrites `.env` only when `VPS_ENV_FILE` is set. It exports GHCR image names such as `ghcr.io/story2u/wework-api:main` at deploy time, so the compose file pulls release images instead of building locally.
 
 ## Release Readiness
 
@@ -43,7 +43,7 @@ go run ./cmd/release-readiness -profile session-access -format markdown
 go run ./cmd/release-readiness -profile incoming-ingest -format markdown
 ```
 
-The command checks route metadata, runtime flags, required settings, compose services, and fixture coverage. The release readiness model is documented in `docs/release-readiness.md`.
+The command checks route metadata, runtime flags, required settings, compose services, and optional fixture coverage. The release readiness model is documented in `docs/release-readiness.md`.
 
 Use `-strict` in a release gate so disabled flags or missing settings fail before traffic reaches a product surface.
 
@@ -84,7 +84,6 @@ Practical rules:
 cd go
 go test ./...
 go vet ./...
-SKIP_NPM_CI=1 bash scripts/release_gate.sh
 
 cd web
 npm run test

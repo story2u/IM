@@ -90,18 +90,18 @@
 1. 文档和 roadmap 已切换到 standalone 叙事，继续禁止新增外部项目对照文档。
 2. 将早期阶段、候选和发布切换命名从发布语义中剥离，先保留兼容命令，新增 release/readiness 中性入口。
 3. 把发送、接收、联系人、自动化和设备能力按 connector/provider 边界拆出 core 依赖。
-4. 默认 compose 只启动 API、Web、Redis、DB、outbox、incoming、send dispatcher 和 fake connector/provider。
+4. 默认 compose 只启动 API、Web、Redis、DB 和 incoming worker；发送、归档、联系人同步、provider sidecar 后续通过明确的 compose overlay 加入。
 5. 对低价值高耦合能力做删除 PR；保留能力必须有 contract、fixture、observability 和 rollback 证据。
 
 ## 验证命令
 
 ```bash
 cd go
-rg -n "<外部项目对照词>|<发布切换旧命名>|<单一供应商名>" README.md docs deploy/cloud/README.md
-rg -n "<供应商或设备核心命名>" internal cmd scripts deploy
+rg -n "<外部项目对照词>|<发布切换旧命名>|<单一供应商名>" README.md docs deploy/README.md
+rg -n "<供应商或设备核心命名>" internal cmd deploy
 go test ./...
 go vet ./...
-SKIP_NPM_CI=1 bash scripts/release_gate.sh
+go run ./cmd/release-readiness -all -format markdown
 ```
 
 搜索结果不是零才算失败；真正的失败是命中项仍把供应商、过渡命名或外部项目当成 core 约束。每次保留命中都要能解释为 connector/provider/integration、兼容入口或明确的下线项。

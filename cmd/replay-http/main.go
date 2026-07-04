@@ -16,22 +16,27 @@ import (
 )
 
 func main() {
-	suitePath := flag.String("cases", "testdata/replay/phase5-realtime-read-replay.json", "replay suite JSON path")
+	suitePath := flag.String("cases", "", "replay suite JSON path")
 	format := flag.String("format", "json", "output format: json or markdown")
 	pretty := flag.Bool("pretty", false, "indent JSON output")
 	validateOnly := flag.Bool("validate-only", false, "only validate and summarize the suite")
 	flag.Parse()
 
-	suite, err := loadSuite(*suitePath)
+	cases := strings.TrimSpace(*suitePath)
+	if cases == "" {
+		exitError("cases path is required")
+	}
+
+	suite, err := loadSuite(cases)
 	if err != nil {
 		exitError("replay suite failed: %v", err)
 	}
 
 	var report suiteReport
 	if *validateOnly {
-		report, err = validationReport(*suitePath, suite)
+		report, err = validationReport(cases, suite)
 	} else {
-		report, err = compareReport(*suitePath, suite)
+		report, err = compareReport(cases, suite)
 	}
 	if err != nil {
 		exitError("replay report failed: %v", err)

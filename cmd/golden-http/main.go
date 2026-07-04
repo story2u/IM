@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	casesPath := flag.String("cases", "testdata/golden/phase1-probes.json", "golden suite JSON path")
+	casesPath := flag.String("cases", "", "golden suite JSON path")
 	baselineURL := flag.String("baseline-url", strings.TrimSpace(os.Getenv("BASELINE_BASE_URL")), "baseline endpoint base URL")
 	goURL := flag.String("go-url", strings.TrimSpace(os.Getenv("GO_BASE_URL")), "Go candidate base URL")
 	format := flag.String("format", "json", "output format: json or markdown")
@@ -31,7 +31,12 @@ func main() {
 	flag.Var(&goHeaders, "go-header", "request header applied only to the Go endpoint, in Key=Value form; may be repeated")
 	flag.Parse()
 
-	suite, err := golden.LoadSuite(*casesPath)
+	cases := strings.TrimSpace(*casesPath)
+	if cases == "" {
+		exitError("cases path is required")
+	}
+
+	suite, err := golden.LoadSuite(cases)
 	if err != nil {
 		exitError("golden suite failed: %v", err)
 	}

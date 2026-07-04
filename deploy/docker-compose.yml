@@ -1,4 +1,4 @@
-name: im-go-cloud
+name: im-go
 
 x-go-env: &go-env
   SESSION_JWT_SECRET: "${SESSION_JWT_SECRET:-change-me-in-production}"
@@ -74,7 +74,7 @@ services:
   go-api:
     <<: *go-service
     build:
-      context: ../..
+      context: ..
       dockerfile: Dockerfile
       args:
         TARGET_CMD: api
@@ -88,7 +88,7 @@ services:
 
   go-web:
     build:
-      context: ../../web
+      context: ../web
       dockerfile: Dockerfile
     image: "${GO_WEB_IMAGE:-im-go-web:${GO_IMAGE_TAG:-latest}}"
     restart: unless-stopped
@@ -100,7 +100,7 @@ services:
   go-incoming-worker:
     <<: *go-service
     build:
-      context: ../..
+      context: ..
       dockerfile: Dockerfile
       args:
         TARGET_CMD: incoming-worker

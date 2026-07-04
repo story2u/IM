@@ -25,9 +25,9 @@ func main() {
 	profileName := flag.String("profile", "admin-observability", "release profile name")
 	profiles := flag.String("profiles", "", "comma-separated profile names")
 	allProfiles := flag.Bool("all", false, "evaluate all built-in profiles")
-	envPath := flag.String("env", "deploy/cloud/.env.example", "env file to inspect")
-	composePath := flag.String("compose", "deploy/cloud/docker-compose.yml", "compose file to inspect")
-	goldenRoot := flag.String("golden-root", "testdata/golden", "golden fixture directory")
+	envPath := flag.String("env", "deploy/.env.example", "env file to inspect")
+	composePath := flag.String("compose", "deploy/docker-compose.yml", "compose file to inspect")
+	goldenRoot := flag.String("golden-root", "", "optional golden fixture directory")
 	format := flag.String("format", "json", "output format: json, markdown, or runbook")
 	pretty := flag.Bool("pretty", false, "indent JSON output")
 	strict := flag.Bool("strict", false, "exit non-zero when any requested profile is not ready")
@@ -100,10 +100,10 @@ func main() {
 func markdownRunbook(profileNames []string) string {
 	var b strings.Builder
 	b.WriteString("# Release Readiness Profile Guides\n\n")
-	b.WriteString("These guides are generated from the release readiness profile catalog and define the minimum route, flag, env, service, and golden-fixture evidence expected before a profile can be released.\n\n")
+	b.WriteString("These guides are generated from the release readiness profile catalog and define the minimum route, flag, env, service, and optional fixture evidence expected before a profile can be released.\n\n")
 	b.WriteString("Common sequence:\n\n")
 	b.WriteString("1. Run `go run ./cmd/release-readiness -profile <profile> -format markdown` and inspect failures.\n")
-	b.WriteString("2. Fix route, golden, and compose-service failures first; these are repository issues.\n")
+	b.WriteString("2. Fix route, fixture, and compose-service failures first; these are repository issues.\n")
 	b.WriteString("3. Configure required env/secrets in the release environment.\n")
 	b.WriteString("4. Run the related golden/live/shadow gate, then enable the listed `GO_ENABLE_*` flags.\n")
 	b.WriteString("5. Re-run with `-strict` before canary or traffic movement.\n\n")
@@ -134,8 +134,8 @@ func writeProfileRunbook(b *strings.Builder, profile readiness.Profile) {
 	b.WriteString("```\n\n")
 	b.WriteString("Suggested order:\n\n")
 	b.WriteString("1. Ensure every route below is present in Go candidate metadata.\n")
-	b.WriteString("2. Confirm every golden fixture below exists and passes the relevant golden/live gate.\n")
-	b.WriteString("3. Ensure every compose service below is present in `go/deploy/cloud/docker-compose.yml`.\n")
+	b.WriteString("2. Confirm every fixture below exists when this profile uses a fixture-backed gate.\n")
+	b.WriteString("3. Ensure every compose service below is present in `go/deploy/docker-compose.yml`.\n")
 	b.WriteString("4. Populate required env/secrets.\n")
 	b.WriteString("5. Enable the listed `GO_ENABLE_*` flags only after the previous checks pass.\n\n")
 	writeRouteTable(b, profile.Routes)
@@ -303,6 +303,9 @@ func loadServices(path string) ([]string, error) {
 }
 
 func loadSuites(path string) ([]string, error) {
+	if strings.TrimSpace(path) == "" {
+		return nil, nil
+	}
 	return readiness.ListGoldenSuites(path)
 }
 

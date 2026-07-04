@@ -47,7 +47,7 @@
 | 能力 | 当前主要位置 | 目标动作 |
 | --- | --- | --- |
 | 设备 SDK 和控制 | `internal/devicesdk*`, `cmd/api` device routes | 降级为 automation provider，默认 compose 不启动 |
-| 设备桥接和屏幕/音频 | `internal/devicebridge*`, cloud `RPA_CALL_AUDIO_BRIDGE_*` env | 降级为可选 provider sidecar，补 owner、租约、权限、超时和删除条件 |
+| 设备桥接和屏幕/音频 | `internal/devicebridge*`, `RPA_CALL_AUDIO_BRIDGE_*` env | 降级为可选 provider sidecar，补 owner、租约、权限、超时和删除条件 |
 | 通话和 RTC | `internal/conversationcall*`, `internal/infra/devicertcstate` | 由 provider 执行，IM core 只记录请求、状态和结果 |
 | 媒体处理和对象存储 | `internal/sendmedia*`, `internal/archivemedia`, archive media workers | 作为 media provider，失败可重试、可补偿 |
 | 语音转写 | `internal/voicetranscription*`, `cmd/voice-transcription-worker` | 作为 media/AI provider，凭证和限流不进入 core |
@@ -71,14 +71,14 @@
 
 | 资产 | 当前位置 | 替代方向 |
 | --- | --- | --- |
-| `phase1` 脚本和 artifact 命名 | `scripts/phase1_gate.sh`, `tmp/phase1`, golden case names | 使用 `scripts/release_gate.sh` 作为推荐入口，旧脚本保留为内部执行和兼容入口 |
-| `GO_ENABLE_*_CANDIDATE` | `internal/config`, `cmd/api`, cloud compose | 改为 `GO_ENABLE_*` 或 release/readiness flag，保留 env alias 一段时间 |
+| `phase1` artifact 和阶段命名 | 早期 artifact 名称、readiness profile 中的历史 suite 名 | 使用 `cmd/release-readiness` 作为发布证据入口，旧阶段命名只保留为待收敛的 profile 元数据 |
+| `GO_ENABLE_*_CANDIDATE` | `internal/config`, `cmd/api`, compose env | 改为 `GO_ENABLE_*` 或 release/readiness flag，保留 env alias 一段时间 |
 | 供应商命名 connector 开关 | `GO_ENABLE_WEWORK_LOGIN_*_CANDIDATE`, `GO_ENABLE_WEWORK_USER_INFO_*_CANDIDATE`, `GO_ENABLE_WEWORK_NOTIFY_CALLBACK_CANDIDATE` | 新部署使用 `GO_ENABLE_CONNECTOR_*_CANDIDATE`，旧开关只作为兼容 alias |
 | 供应商字段兼容别名 | `wework_user_id`, `wework_logged_in`, `wework_status`, `GO_SEND_PROVIDER_BASE_URL` 等 | 新写路径使用 `channel_user_id`、`app_logged_in`、`app_status`、`connector_*`、`provider_*` |
 | 供应商命名 task type | `wework_login_*`, `wework_user_info`, `wework_logout` | 新创建任务和公共 contract 使用 `connector_login_*`、`connector_user_info`、`connector_logout`，旧 task type 保留为兼容输入 |
 | 执行模型命名通话 task type | `rpa_voice_call`, `rpa_video_call`, `rpa_hangup_call`, `rpa_prepare_call_audio_output` | 新创建任务和公共 contract 使用 `voice_call`、`video_call`、`hangup_call`、`prepare_call_audio_output`，旧 task type 保留为兼容输入 |
 | 以具体通道命名的 HTTP routes | `/api/v1/connectors/*`、`/api/v1/devices/{device_id}/apps/*` 主入口，`/wework/*` 和 device SDK open/stop 兼容入口，notify routes | 前端主调用使用 connector/app-control 路径和 `open_app`/`stop_app` 通用动作；旧 route/action 保留为 adapter-only 兼容入口并补下线条件 |
-| 阶段编号 golden fixtures | `testdata/golden/phase*` | 保留为证据集合，新增按产品能力命名的 manifest |
+| 阶段编号 fixture 命名 | readiness profile 和 harness case 名称 | 后续新增按产品能力命名的 manifest，删除不再使用的阶段编号样例 |
 
 ## Review
 
@@ -96,7 +96,7 @@
 
 1. Connector 边界收敛：把入站、出站、联系人同步中的 WeWork 字段继续收敛为 channel identity 和 connector metadata。
 2. Provider 边界收敛：把设备 SDK、RTC、音频桥接、浏览器/点击能力移出 core 路由语义。
-3. 默认 compose 瘦身：core 只启动 API、Web、Redis、DB、outbox、incoming、send dispatcher 和 fake connector/provider。
+3. 默认 compose 瘦身：core 只启动 API、Web、Redis、DB 和 incoming worker；发送、归档、联系人同步、provider sidecar 通过 overlay 或独立部署加入。
 4. Review 队列删除：对低价值高耦合能力逐项开 PR，删除或降级前补 readiness 影响说明。
 5. 过渡命名收尾：把 artifact manifest、summary 脚本和 CI job 名称逐步切到 release/readiness 语义。
 

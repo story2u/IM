@@ -61,11 +61,6 @@ go/
     replay/
     e2e/
     shadow/
-  testdata/
-    contracts/
-    golden/
-    replay/
-    fixtures/
 ```
 
 目录只在对应阶段需要时创建，不为“完整结构”空建大量占位文件。
@@ -114,7 +109,7 @@ Go 约束：
 
 - 使用 `context.WithTimeout` 控制阻塞路径。
 - 使用 fake clock，避免 `time.Sleep`。
-- 使用 `testdata/` 保存稳定 fixture。
+- 稳定 fixture 随 package 就近保存，跨包复用时放入 `internal/harness/fixtures` 或对应 `tests/fixtures`。
 - 对共享 fixture 做深拷贝，避免并行测试互相污染。
 
 适用阶段：所有新增 Go package。
@@ -200,7 +195,7 @@ Go 约束：
 - `release-readiness-*.md`
 - 发布建议、阻塞项和回滚检查点。
 
-现有脚本只生成并汇总 `release-readiness-*.json` / `release-readiness-*.md`；早期 artifact 名称不再作为发布就绪证据入口。
+当前默认入口是 `cmd/release-readiness`；早期 artifact 名称不再作为发布就绪证据入口。
 
 ## 5. 推荐命令
 
@@ -210,7 +205,7 @@ Go 约束：
 | Go vet | `go vet ./...` |
 | Frontend unit | `cd web && npm run test` |
 | Frontend build | `cd web && npm run build` |
-| Release gate | `SKIP_NPM_CI=1 bash scripts/release_gate.sh` |
+| Readiness report | `go run ./cmd/release-readiness -all -format markdown` |
 | API local run | `go run ./cmd/api` |
 | Readiness profile | `go run ./cmd/release-readiness -all -format markdown` |
 

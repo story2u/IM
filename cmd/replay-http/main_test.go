@@ -3,13 +3,12 @@ package main
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 )
 
 func TestResolveFixturePath(t *testing.T) {
-	got := resolveFixturePath("testdata/replay/suite.json", "events.json")
-	want := filepath.Join("testdata/replay", "events.json")
+	got := resolveFixturePath("fixtures/replay/suite.json", "events.json")
+	want := filepath.Join("fixtures/replay", "events.json")
 	if got != want {
 		t.Fatalf("resolveFixturePath() = %q, want %q", got, want)
 	}
@@ -21,12 +20,19 @@ func TestResolveFixturePath(t *testing.T) {
 	}
 }
 
-func TestValidationReportLoadErrors(t *testing.T) {
-	_, callerPath, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller() failed")
+func TestValidationReportLoadsFixtureFiles(t *testing.T) {
+	dir := t.TempDir()
+	mustWrite := func(name, content string) string {
+		path := filepath.Join(dir, name)
+		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+			t.Fatalf("write fixture %s: %v", name, err)
+		}
+		return path
 	}
-	suitePath := filepath.Join(filepath.Dir(callerPath), "..", "..", "testdata", "replay", "phase5-realtime-read-replay.json")
+	mustWrite("reference.json", `[{"event":"conversation.message","cursor":"1"}]`)
+	mustWrite("go.json", `[{"event":"conversation.message","cursor":"1"}]`)
+	suitePath := mustWrite("suite.json", `{"name":"fixture-load","cases":[{"name":"matching events","reference":"reference.json","go":"go.json"}]}`)
+
 	suite, err := loadSuite(suitePath)
 	if err != nil {
 		t.Fatalf("loadSuite() = %v", err)
@@ -41,6 +47,9 @@ func TestValidationReportLoadErrors(t *testing.T) {
 	}
 	if report.CaseCount != 1 {
 		t.Fatalf("case_count=%d, want 1", report.CaseCount)
+	}
+	if report.Cases[0].ReferenceCount != 1 || report.Cases[0].GoCount != 1 {
+		t.Fatalf("event counts = reference %d go %d, want 1/1", report.Cases[0].ReferenceCount, report.Cases[0].GoCount)
 	}
 }
 
