@@ -59,27 +59,13 @@ jobs:
           cache-to: type=gha,mode=max
 
   build-workers:
-    name: Build Worker Images
+    name: Build Incoming Worker Image
     runs-on: ubuntu-latest
     strategy:
       matrix:
         target:
-          - name: outbox-worker
-            image: wework-outbox-worker
-          - name: send-dispatcher
-            image: wework-send-dispatcher
-          - name: archive-media-worker
-            image: wework-archive-media-worker
-          - name: archive-sync-worker
-            image: wework-archive-sync-worker
-          - name: archive-ingest-worker
-            image: wework-archive-ingest-worker
-          - name: contact-sync-worker
-            image: wework-contact-sync-worker
           - name: incoming-worker
             image: wework-incoming-worker
-          - name: voice-transcription-worker
-            image: wework-voice-transcription-worker
     steps:
       - name: Checkout
         uses: actions/checkout@v4
