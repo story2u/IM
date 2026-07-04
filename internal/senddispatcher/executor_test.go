@@ -12,13 +12,17 @@ import (
 // TestBuildOutboundExecutionPayloadProtectsContract protects the executor input contract.
 func TestBuildOutboundExecutionPayloadProtectsContract(t *testing.T) {
 	traceID := "trace-outbound-1"
+	channelUserID := "channel-user-1"
+	weworkUserID := "wework-user-1"
 	record := tasks.Record{
-		TaskID:    "task-outbound-1",
-		Source:    "cloud-web",
-		Target:    tasks.Target{AgentID: "connector:p1-slot-18", DeviceID: "p1-slot-18"},
-		TaskType:  "send_text",
-		CreatedAt: time.Date(2026, 6, 30, 9, 2, 3, 123400000, time.UTC),
-		TraceID:   &traceID,
+		TaskID:        "task-outbound-1",
+		Source:        "cloud-web",
+		Target:        tasks.Target{AgentID: "connector:p1-slot-18", DeviceID: "p1-slot-18"},
+		TaskType:      "send_text",
+		CreatedAt:     time.Date(2026, 6, 30, 9, 2, 3, 123400000, time.UTC),
+		TraceID:       &traceID,
+		ChannelUserID: &channelUserID,
+		WeWorkUserID:  &weworkUserID,
 		Payload: map[string]any{
 			"receiver":        "Qiu",
 			"text":            "hi",
@@ -26,6 +30,7 @@ func TestBuildOutboundExecutionPayloadProtectsContract(t *testing.T) {
 			"task_id":         "payload-task",
 			"device_id":       "payload-device",
 			"target":          "payload-target",
+			"channel_user_id": "payload-channel",
 		},
 	}
 
@@ -36,6 +41,9 @@ func TestBuildOutboundExecutionPayloadProtectsContract(t *testing.T) {
 	}
 	if payload["created_at"] != "2026-06-30T09:02:03.123400+00:00" || payload["trace_id"] != "trace-outbound-1" {
 		t.Fatalf("time/trace payload fields = %#v", payload)
+	}
+	if payload["channel_user_id"] != "channel-user-1" || payload["wework_user_id"] != "wework-user-1" {
+		t.Fatalf("channel identity fields = %#v", payload)
 	}
 	if payload["device_id"] != "p1-slot-18" || payload["receiver"] != "Qiu" || payload["text"] != "hi" {
 		t.Fatalf("flat payload fields = %#v", payload)

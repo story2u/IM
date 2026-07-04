@@ -43,6 +43,7 @@ func OutboundMessageFromTask(record tasks.Record, options OutboundTaskOptions) (
 	receiver := firstNonBlank(payloadText(payload, "receiver"), payloadText(payload, "username"))
 	receiverName := firstNonBlank(payloadText(payload, "receiver_name"), receiver)
 	channel := firstNonBlank(options.Channel, ChannelInternalWebhook)
+	channelUserID := firstNonBlank(stringPointerValue(record.ChannelUserID), payloadText(payload, "channel_user_id"), payloadText(payload, "wework_user_id"), stringPointerValue(record.WeWorkUserID))
 	outbound := OutboundMessage{
 		MessageID:      messageID,
 		TraceID:        traceID,
@@ -51,6 +52,7 @@ func OutboundMessageFromTask(record tasks.Record, options OutboundTaskOptions) (
 		Channel:        channel,
 		TenantID:       firstNonBlank(options.TenantID, "default"),
 		AccountID:      strings.TrimSpace(options.AccountID),
+		ChannelUserID:  channelUserID,
 		EndpointID:     firstNonBlank(options.EndpointID, record.Target.DeviceID, record.Target.AgentID),
 		Target: ContactIdentity{
 			ExternalUserID: receiver,
@@ -78,6 +80,12 @@ func OutboundMessageFromTask(record tasks.Record, options OutboundTaskOptions) (
 	}
 	if senderID := payloadText(payload, "sender_id"); senderID != "" {
 		outbound.Metadata["sender_id"] = senderID
+	}
+	if channelUserID != "" {
+		outbound.Metadata["channel_user_id"] = channelUserID
+		if weworkUserID := firstNonBlank(payloadText(payload, "wework_user_id"), stringPointerValue(record.WeWorkUserID)); weworkUserID != "" {
+			outbound.Metadata["wework_user_id"] = weworkUserID
+		}
 	}
 	if messageType != MessageTypeText {
 		media := mediaFromTask(taskID, messageType, payload)

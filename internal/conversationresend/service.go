@@ -539,6 +539,7 @@ func (service Service) recordOutgoing(ctx context.Context, original messages.Rec
 		ConversationID:   request.ConversationID,
 		ConversationKey:  firstNonBlank(snapshot.ConversationKey, request.ConversationID),
 		AccountID:        text(snapshot.AccountID),
+		ChannelUserID:    conversationChannelUserID(snapshot),
 		WeWorkUserID:     text(snapshot.WeWorkUserID),
 		ExternalUserID:   firstNonBlank(snapshot.ExternalUserID, original.SenderID),
 		RoomID:           text(snapshot.RoomID),
@@ -602,7 +603,7 @@ func fallbackMessagePayload(original messages.Record, record tasks.Record, reque
 
 func messagePayloadFromIncoming(message incomingmodel.IncomingMessage, snapshot incomingmodel.ConversationSnapshot) map[string]any {
 	messageID := message.MessageID
-	return messages.SerializeRecord(messages.Record{
+	payload := messages.SerializeRecord(messages.Record{
 		MessageID:      &messageID,
 		TraceID:        message.TraceID,
 		TenantID:       firstNonBlank(snapshot.TenantID, message.TenantID),
@@ -622,6 +623,10 @@ func messagePayloadFromIncoming(message incomingmodel.IncomingMessage, snapshot 
 		Timestamp:      message.Timestamp,
 		CreatedAt:      message.Timestamp,
 	})
+	channelUserID := firstNonBlank(snapshot.ChannelUserID, message.ChannelUserID, snapshot.WeWorkUserID, message.WeWorkUserID)
+	payload["channel_user_id"] = channelUserID
+	payload["wework_user_id"] = firstNonBlank(snapshot.WeWorkUserID, message.WeWorkUserID, channelUserID)
+	return payload
 }
 
 func buildOutgoingEvent(message incomingmodel.IncomingMessage, snapshot incomingmodel.ConversationSnapshot, payload map[string]any, occurredAt time.Time) outbox.EventEnvelope {
@@ -785,6 +790,10 @@ func firstNonBlank(values ...string) string {
 		}
 	}
 	return ""
+}
+
+func conversationChannelUserID(snapshot incomingmodel.ConversationSnapshot) string {
+	return firstNonBlank(snapshot.ChannelUserID, snapshot.WeWorkUserID)
 }
 
 func cloneMap(input map[string]any) map[string]any {

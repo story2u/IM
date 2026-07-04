@@ -64,6 +64,7 @@ func TestResendRecordsOutgoingAndOutboxWhenSnapshotWritable(t *testing.T) {
 		ConversationKey:  "conv-key-1",
 		TenantID:         "ent-1",
 		AccountID:        "acct-1",
+		ChannelUserID:    "channel-user-1",
 		WeWorkUserID:     "wx-user-1",
 		ExternalUserID:   "external-1",
 		ConversationType: "single",
@@ -88,11 +89,21 @@ func TestResendRecordsOutgoingAndOutboxWhenSnapshotWritable(t *testing.T) {
 	if len(outgoing.messages) != 1 || outgoing.messages[0].MessageID != 2001 || outgoing.messages[0].TraceID != "trace-message-resend-fixed" {
 		t.Fatalf("unexpected outgoing messages: %+v", outgoing.messages)
 	}
+	if outgoing.messages[0].ChannelUserID != "channel-user-1" || outgoing.messages[0].WeWorkUserID != "wxuser1" {
+		t.Fatalf("unexpected outgoing channel identity: %+v", outgoing.messages[0])
+	}
 	if response.Message["message_id"] == nil || response.Message["send_status"] != "pending" {
 		t.Fatalf("unexpected response message: %+v", response.Message)
 	}
+	if response.Message["channel_user_id"] != "channel-user-1" || response.Message["wework_user_id"] != "wx-user-1" {
+		t.Fatalf("unexpected response channel identity: %+v", response.Message)
+	}
 	if len(outboxSink.events) != 1 || outboxSink.events[0].EventType != "conversation.message.outbound_recorded" || outboxSink.events[0].Payload["publish_event"] != "conversation.replied" {
 		t.Fatalf("unexpected outbox events: %+v", outboxSink.events)
+	}
+	payload, ok := outboxSink.events[0].Payload["message"].(map[string]any)
+	if !ok || payload["channel_user_id"] != "channel-user-1" || payload["wework_user_id"] != "wx-user-1" {
+		t.Fatalf("unexpected outbox message identity: %+v", outboxSink.events[0].Payload["message"])
 	}
 }
 

@@ -57,14 +57,16 @@ type OutboundExecutorAdapterOptions struct {
 type SDKExecutorAdapterOptions = OutboundExecutorAdapterOptions
 
 var outboundExecutionPayloadReservedKeys = map[string]struct{}{
-	"task_id":    {},
-	"source":     {},
-	"target":     {},
-	"task_type":  {},
-	"payload":    {},
-	"created_at": {},
-	"trace_id":   {},
-	"device_id":  {},
+	"task_id":         {},
+	"source":          {},
+	"target":          {},
+	"task_type":       {},
+	"payload":         {},
+	"created_at":      {},
+	"trace_id":        {},
+	"device_id":       {},
+	"channel_user_id": {},
+	"wework_user_id":  {},
 }
 
 // RecordToOutboundExecutionPayload builds the stable executor payload from a task record.
@@ -76,10 +78,12 @@ func RecordToOutboundExecutionPayload(record tasks.Record) OutboundExecutionPayl
 			"agent_id":  record.Target.AgentID,
 			"device_id": record.Target.DeviceID,
 		},
-		"task_type":  record.TaskType,
-		"payload":    cloneSDKPayloadMap(record.Payload),
-		"created_at": formatTaskTimestamp(record.CreatedAt),
-		"trace_id":   optionalStringValue(record.TraceID),
+		"task_type":       record.TaskType,
+		"payload":         cloneSDKPayloadMap(record.Payload),
+		"created_at":      formatTaskTimestamp(record.CreatedAt),
+		"trace_id":        optionalStringValue(record.TraceID),
+		"channel_user_id": optionalStringValue(record.ChannelUserID),
+		"wework_user_id":  optionalStringValue(record.WeWorkUserID),
 	}
 }
 

@@ -84,6 +84,7 @@ type OutboundMessage struct {
 	Channel        string              `json:"channel"`
 	TenantID       string              `json:"tenant_id"`
 	AccountID      string              `json:"account_id,omitempty"`
+	ChannelUserID  string              `json:"channel_user_id,omitempty"`
 	EndpointID     string              `json:"endpoint_id,omitempty"`
 	Target         ContactIdentity     `json:"target"`
 	Conversation   ConversationBinding `json:"conversation"`

@@ -22,6 +22,7 @@ func TestBuildRealtimeEventForConversationMessage(t *testing.T) {
 				"sender_remark":   "VIP Alice",
 				"content":         "hello",
 				"message_id":      "42",
+				"channel_user_id": "channel-user-1",
 				"timestamp":       "2026-06-30T10:00:00Z",
 				"publish_event":   "conversation.incoming",
 			},
@@ -37,6 +38,9 @@ func TestBuildRealtimeEventForConversationMessage(t *testing.T) {
 	}
 	if event.Payload["tenant_id"] != "tenant-fallback" || event.Payload["trace_id"] != "trace-fallback" {
 		t.Fatalf("payload identity = %#v", event.Payload)
+	}
+	if event.Payload["channel_user_id"] != "channel-user-1" || event.Payload["wework_user_id"] != "channel-user-1" {
+		t.Fatalf("payload channel identity = %#v", event.Payload)
 	}
 	if event.Payload["message_id"] != 42 || event.Payload["msg_type"] != "text" || event.Payload["direction"] != "incoming" {
 		t.Fatalf("payload defaults = %#v", event.Payload)

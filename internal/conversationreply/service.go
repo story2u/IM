@@ -185,6 +185,7 @@ type MessageEcho struct {
 	ConversationKey  string `json:"conversation_key,omitempty"`
 	TenantID         string `json:"tenant_id,omitempty"`
 	AccountID        string `json:"account_id,omitempty"`
+	ChannelUserID    string `json:"channel_user_id,omitempty"`
 	WeWorkUserID     string `json:"wework_user_id,omitempty"`
 	ExternalUserID   string `json:"external_userid,omitempty"`
 	RoomID           string `json:"room_id,omitempty"`
@@ -271,13 +272,15 @@ func (service Service) Reply(ctx context.Context, conversationID string, request
 		return Response{Success: true, Task: record, Message: message, ContactProfileUpdate: normalized.ContactProfileUpdate}, nil
 	}
 	taskRequest := tasks.CreateRequest{
-		TaskID:    service.newID("task-manual-reply-"),
-		Source:    normalized.Source,
-		Target:    tasks.Target{AgentID: normalized.AgentID, DeviceID: normalized.DeviceID},
-		TaskType:  "send_text",
-		Payload:   normalized.payload(),
-		CreatedAt: now,
-		TraceID:   &traceID,
+		TaskID:        service.newID("task-manual-reply-"),
+		Source:        normalized.Source,
+		Target:        tasks.Target{AgentID: normalized.AgentID, DeviceID: normalized.DeviceID},
+		TaskType:      "send_text",
+		Payload:       normalized.payload(),
+		CreatedAt:     now,
+		TraceID:       &traceID,
+		ChannelUserID: snapshotChannelUserIDPtr(snapshot, snapshotOK),
+		WeWorkUserID:  snapshotWeWorkUserIDPtr(snapshot, snapshotOK),
 	}
 	record, err := service.Tasks.Create(ctx, taskRequest)
 	if err != nil {
@@ -719,13 +722,15 @@ func (service Service) recordOutgoing(ctx context.Context, request normalizedReq
 		sendStatus = "success"
 		sendError = CustomerDeletedSendMarker
 	}
+	channelUserID := conversationChannelUserID(snapshot)
 	message := incomingmodel.IncomingMessage{
 		TenantID:         text(snapshot.TenantID),
 		MessageID:        service.nextMessageID(now),
 		ConversationID:   request.ConversationID,
 		ConversationKey:  firstNonBlank(snapshot.ConversationKey, request.ConversationID),
 		AccountID:        text(snapshot.AccountID),
-		WeWorkUserID:     text(snapshot.WeWorkUserID),
+		ChannelUserID:    channelUserID,
+		WeWorkUserID:     firstNonBlank(snapshot.WeWorkUserID, channelUserID),
 		ExternalUserID:   firstNonBlank(snapshot.ExternalUserID, snapshot.SenderID, request.SenderID),
 		RoomID:           text(snapshot.RoomID),
 		ConversationType: firstNonBlank(snapshot.ConversationType, incomingmodel.DefaultConversationType),
@@ -857,6 +862,7 @@ func outgoingPayload(message incomingmodel.IncomingMessage, snapshot incomingmod
 	conversationKey := firstNonBlank(snapshot.ConversationKey, message.ConversationKey, conversationID)
 	tenantID := firstNonBlank(snapshot.TenantID, message.TenantID)
 	senderName := firstNonBlank(message.SenderName, snapshot.SenderName)
+	channelUserID := firstNonBlank(snapshot.ChannelUserID, message.ChannelUserID, snapshot.WeWorkUserID, message.WeWorkUserID)
 	return map[string]any{
 		"message_id":        message.MessageID,
 		"trace_id":          text(message.TraceID),
@@ -865,7 +871,8 @@ func outgoingPayload(message incomingmodel.IncomingMessage, snapshot incomingmod
 		"conversation_key":  conversationKey,
 		"tenant_id":         tenantID,
 		"account_id":        firstNonBlank(snapshot.AccountID, message.AccountID),
-		"wework_user_id":    firstNonBlank(snapshot.WeWorkUserID, message.WeWorkUserID),
+		"channel_user_id":   channelUserID,
+		"wework_user_id":    firstNonBlank(snapshot.WeWorkUserID, message.WeWorkUserID, channelUserID),
 		"external_userid":   firstNonBlank(snapshot.ExternalUserID, message.ExternalUserID, message.SenderID),
 		"room_id":           firstNonBlank(snapshot.RoomID, message.RoomID),
 		"conversation_type": firstNonBlank(snapshot.ConversationType, message.ConversationType, incomingmodel.DefaultConversationType),
@@ -895,6 +902,7 @@ func messageEchoFromOutgoing(message incomingmodel.IncomingMessage, snapshot inc
 		ConversationKey:  stringValue(payload["conversation_key"]),
 		TenantID:         stringValue(payload["tenant_id"]),
 		AccountID:        stringValue(payload["account_id"]),
+		ChannelUserID:    stringValue(payload["channel_user_id"]),
 		WeWorkUserID:     stringValue(payload["wework_user_id"]),
 		ExternalUserID:   stringValue(payload["external_userid"]),
 		RoomID:           stringValue(payload["room_id"]),
@@ -1012,6 +1020,32 @@ func firstNonBlank(values ...string) string {
 		}
 	}
 	return ""
+}
+
+func conversationChannelUserID(snapshot incomingmodel.ConversationSnapshot) string {
+	return firstNonBlank(snapshot.ChannelUserID, snapshot.WeWorkUserID)
+}
+
+func snapshotChannelUserIDPtr(snapshot incomingmodel.ConversationSnapshot, ok bool) *string {
+	if !ok {
+		return nil
+	}
+	return stringPtrIfNotBlank(conversationChannelUserID(snapshot))
+}
+
+func snapshotWeWorkUserIDPtr(snapshot incomingmodel.ConversationSnapshot, ok bool) *string {
+	if !ok {
+		return nil
+	}
+	return stringPtrIfNotBlank(snapshot.WeWorkUserID)
+}
+
+func stringPtrIfNotBlank(value string) *string {
+	trimmed := text(value)
+	if trimmed == "" {
+		return nil
+	}
+	return &trimmed
 }
 
 func sameDisplayValue(left string, right string) bool {

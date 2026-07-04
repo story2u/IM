@@ -266,8 +266,11 @@ func TestReplyRecordsOutgoingPlaceholderOutboxAndAudit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Reply returned error: %v", err)
 	}
-	if result.Message.MessageID != 1001 || result.Message.TenantID != "ent-a" || result.Message.AccountID != "acc-1" || result.Message.WeWorkUserID != "dy1" || result.Message.ExternalUserID != "external-1" {
+	if result.Message.MessageID != 1001 || result.Message.TenantID != "ent-a" || result.Message.AccountID != "acc-1" || result.Message.ChannelUserID != "channel-dy-1" || result.Message.WeWorkUserID != "dy1" || result.Message.ExternalUserID != "external-1" {
 		t.Fatalf("message echo = %+v", result.Message)
+	}
+	if creator.request.ChannelUserID == nil || *creator.request.ChannelUserID != "channel-dy-1" {
+		t.Fatalf("task channel user id = %#v", creator.request.ChannelUserID)
 	}
 	if creator.request.Payload["receiver"] != "VIP Alice" || creator.request.Payload["username"] != "VIP Alice" || creator.request.Payload["receiver_name"] != "Alice" {
 		t.Fatalf("task payload target = %#v", creator.request.Payload)
@@ -276,7 +279,7 @@ func TestReplyRecordsOutgoingPlaceholderOutboxAndAudit(t *testing.T) {
 		t.Fatalf("outgoing messages = %d", len(outgoing.messages))
 	}
 	message := outgoing.messages[0]
-	if message.TenantID != "ent-a" || message.AccountID != "acc-1" || message.WeWorkUserID != "dy1" || message.ConversationKey != "ww:dy-1:external-1" {
+	if message.TenantID != "ent-a" || message.AccountID != "acc-1" || message.ChannelUserID != "channel-dy-1" || message.WeWorkUserID != "dy1" || message.ConversationKey != "ww:dy-1:external-1" {
 		t.Fatalf("outgoing identity = %+v", message)
 	}
 	if message.Direction != incomingmodel.DirectionOutgoing || message.MessageOrigin != "manual_reply" || message.TaskID != "task-manual-reply-fixed" || message.SendStatus != "pending" {
@@ -296,7 +299,7 @@ func TestReplyRecordsOutgoingPlaceholderOutboxAndAudit(t *testing.T) {
 		t.Fatalf("event = %#v", event)
 	}
 	payload, ok := event.Payload["message"].(map[string]any)
-	if !ok || payload["message_origin"] != "manual_reply" || payload["send_status"] != "pending" || payload["task_id"] != "task-manual-reply-fixed" {
+	if !ok || payload["message_origin"] != "manual_reply" || payload["send_status"] != "pending" || payload["task_id"] != "task-manual-reply-fixed" || payload["channel_user_id"] != "channel-dy-1" || payload["wework_user_id"] != "dy1" {
 		t.Fatalf("event message = %#v", event.Payload["message"])
 	}
 	if len(audit.entries) != 1 || audit.entries[0].ActionType != "send" || audit.entries[0].Operator != "cs-001" {
@@ -734,6 +737,7 @@ func (store *recordingOutgoingStore) AddIncomingMessage(ctx context.Context, mes
 			ConversationKey:  message.ConversationKey,
 			TenantID:         message.TenantID,
 			AccountID:        message.AccountID,
+			ChannelUserID:    message.ChannelUserID,
 			WeWorkUserID:     message.WeWorkUserID,
 			ExternalUserID:   message.ExternalUserID,
 			RoomID:           message.RoomID,
@@ -937,6 +941,7 @@ func fixedConversationStore() *recordingConversationStore {
 			ConversationKey:  "ww:dy-1:external-1",
 			TenantID:         "ent-a",
 			AccountID:        "acc-1",
+			ChannelUserID:    "channel-dy-1",
 			WeWorkUserID:     "dy-1",
 			ExternalUserID:   "external-1",
 			ConversationType: "single",

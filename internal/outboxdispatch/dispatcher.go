@@ -178,6 +178,7 @@ func conversationMessagePayload(record outbox.Record, payload map[string]any) ma
 	senderRemark := strings.TrimSpace(textValue(payload["sender_remark"]))
 	displayName := firstText(payload["sender_display_name"], senderRemark, senderName)
 	senderAvatar := firstText(payload["sender_avatar_display"], payload["sender_avatar"])
+	channelUserID := firstText(payload["channel_user_id"], payload["wework_user_id"])
 	return map[string]any{
 		"conversation_id":          conversationID,
 		"conversation_key":         conversationKey,
@@ -186,7 +187,8 @@ func conversationMessagePayload(record outbox.Record, payload map[string]any) ma
 		"message_id":               messageIDValue(payload["message_id"]),
 		"trace_id":                 defaultText(textValue(payload["trace_id"]), record.TraceID),
 		"archive_msgid":            strings.TrimSpace(textValue(payload["archive_msgid"])),
-		"wework_user_id":           strings.TrimSpace(textValue(payload["wework_user_id"])),
+		"channel_user_id":          channelUserID,
+		"wework_user_id":           firstText(payload["wework_user_id"], channelUserID),
 		"external_userid":          firstText(payload["external_userid"], payload["sender_id"]),
 		"room_id":                  strings.TrimSpace(textValue(payload["room_id"])),
 		"conversation_type":        strings.TrimSpace(textValue(payload["conversation_type"])),

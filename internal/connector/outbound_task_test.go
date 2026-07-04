@@ -10,14 +10,18 @@ import (
 
 func TestOutboundMessageFromTaskMapsSendText(t *testing.T) {
 	traceID := "trace-1"
+	channelUserID := "channel-user-1"
+	weworkUserID := "wework-user-1"
 	record := tasks.Record{
-		TaskID:    "task-1",
-		Source:    "cloud-web",
-		Target:    tasks.Target{AgentID: "sdk:device-1", DeviceID: "device-1"},
-		TaskType:  "send_text",
-		Status:    tasks.StatusAccepted,
-		CreatedAt: time.Date(2026, 7, 4, 9, 30, 0, 0, time.UTC),
-		TraceID:   &traceID,
+		TaskID:        "task-1",
+		Source:        "cloud-web",
+		Target:        tasks.Target{AgentID: "sdk:device-1", DeviceID: "device-1"},
+		TaskType:      "send_text",
+		Status:        tasks.StatusAccepted,
+		CreatedAt:     time.Date(2026, 7, 4, 9, 30, 0, 0, time.UTC),
+		TraceID:       &traceID,
+		ChannelUserID: &channelUserID,
+		WeWorkUserID:  &weworkUserID,
 		Payload: map[string]any{
 			"receiver":           "customer-1",
 			"receiver_name":      "Alice",
@@ -41,6 +45,9 @@ func TestOutboundMessageFromTaskMapsSendText(t *testing.T) {
 	}
 	if outbound.MessageID != "trace-1" || outbound.TenantID != "tenant-1" || outbound.IdempotencyKey != "batch-1:2" || outbound.MessageType != connector.MessageTypeText || outbound.Content != "hello" {
 		t.Fatalf("outbound = %+v", outbound)
+	}
+	if outbound.ChannelUserID != "channel-user-1" || outbound.Metadata["channel_user_id"] != "channel-user-1" || outbound.Metadata["wework_user_id"] != "wework-user-1" {
+		t.Fatalf("outbound channel identity = %+v metadata=%#v", outbound, outbound.Metadata)
 	}
 	if outbound.Target.ExternalUserID != "customer-1" || outbound.Target.DisplayName != "Alice" || outbound.Conversation.ConversationID != "conv-1" {
 		t.Fatalf("target/conversation = %+v %+v", outbound.Target, outbound.Conversation)
