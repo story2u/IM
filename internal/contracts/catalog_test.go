@@ -59,6 +59,27 @@ func TestTaskCreateSchemaSupportsConnectorLoginTaskTypes(t *testing.T) {
 	t.Fatal("task-create schema missing connector login verify payload rule")
 }
 
+func TestTaskCreateSchemaSupportsProviderNeutralCallTaskTypes(t *testing.T) {
+	schema := readSchemaMap(t, "task-create.schema.json")
+	taskTypeEnum := stringSet(t, schemaMap(t, schema, "properties", "task_type")["enum"])
+	for _, taskType := range []string{
+		"voice_call",
+		"video_call",
+		"hangup_call",
+		"prepare_call_audio_output",
+		"rpa_voice_call",
+		"wework_voice_call",
+	} {
+		if !taskTypeEnum[taskType] {
+			t.Fatalf("task_type enum missing %q", taskType)
+		}
+	}
+
+	assertTaskRequiredFields(t, schema, []string{"voice_call", "video_call"}, []string{"username", "receiver", "call_type"})
+	assertTaskRequiredFields(t, schema, []string{"hangup_call"}, []string{"username", "receiver"})
+	assertTaskRequiredFields(t, schema, []string{"prepare_call_audio_output"}, []string{"username"})
+}
+
 func projectContractRoot(t *testing.T) string {
 	t.Helper()
 	_, file, _, ok := runtime.Caller(0)
@@ -120,4 +141,34 @@ func stringSet(t *testing.T, value any) map[string]bool {
 		set[text] = true
 	}
 	return set
+}
+
+func assertTaskRequiredFields(t *testing.T, schema map[string]any, taskTypes []string, fields []string) {
+	t.Helper()
+	for _, rule := range schemaArray(t, schema["allOf"]) {
+		taskTypeRule := schemaMap(t, rule, "if", "properties", "task_type")
+		enumValue, ok := taskTypeRule["enum"]
+		if !ok {
+			continue
+		}
+		taskTypeSet := stringSet(t, enumValue)
+		matches := true
+		for _, taskType := range taskTypes {
+			if !taskTypeSet[taskType] {
+				matches = false
+				break
+			}
+		}
+		if !matches {
+			continue
+		}
+		required := stringSet(t, schemaMap(t, rule, "then", "properties", "payload")["required"])
+		for _, field := range fields {
+			if !required[field] {
+				t.Fatalf("%v required payload missing %q", taskTypes, field)
+			}
+		}
+		return
+	}
+	t.Fatalf("task-create schema missing payload rule for %v", taskTypes)
 }

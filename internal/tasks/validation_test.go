@@ -124,20 +124,22 @@ func TestValidateCreateJSONSupportsShareBundleSend(t *testing.T) {
 	}
 }
 
-func TestValidateCreateJSONSupportsRPACallTaskTypes(t *testing.T) {
+func TestValidateCreateJSONSupportsCallTaskTypes(t *testing.T) {
 	cases := []struct {
 		name    string
 		task    string
 		payload string
 	}{
-		{name: "voice", task: "rpa_voice_call", payload: `"username":"Qiu","receiver":"Alice","call_type":"voice"`},
-		{name: "video", task: "rpa_video_call", payload: `"username":"Qiu","receiver":"Alice","call_type":"video"`},
-		{name: "hangup", task: "rpa_hangup_call", payload: `"username":"Qiu","receiver":"Alice"`},
-		{name: "prepare-audio", task: "rpa_prepare_call_audio_output", payload: `"username":"__device__"`},
+		{name: "voice", task: "voice_call", payload: `"username":"Qiu","receiver":"Alice","call_type":"voice"`},
+		{name: "video", task: "video_call", payload: `"username":"Qiu","receiver":"Alice","call_type":"video"`},
+		{name: "hangup", task: "hangup_call", payload: `"username":"Qiu","receiver":"Alice"`},
+		{name: "prepare-audio", task: "prepare_call_audio_output", payload: `"username":"__device__"`},
+		{name: "legacy-rpa", task: "rpa_voice_call", payload: `"username":"Qiu","receiver":"Alice","call_type":"voice"`},
+		{name: "legacy-wework", task: "wework_voice_call", payload: `"username":"Qiu","receiver":"Alice","call_type":"voice"`},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
-			body := `{"task_id":"task-rpa-` + testCase.name + `","source":"cloud-web","target":{"agent_id":"sdk:zimo","device_id":"zimo"},"task_type":"` + testCase.task + `","payload":{` + testCase.payload + `},"created_at":"2026-06-29T09:00:00Z"}`
+			body := `{"task_id":"task-call-` + testCase.name + `","source":"cloud-web","target":{"agent_id":"sdk:zimo","device_id":"zimo"},"task_type":"` + testCase.task + `","payload":{` + testCase.payload + `},"created_at":"2026-06-29T09:00:00Z"}`
 			request, err := ValidateCreateJSON([]byte(body))
 			if err != nil {
 				t.Fatalf("ValidateCreateJSON returned error: %v", err)

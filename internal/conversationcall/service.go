@@ -1,4 +1,4 @@
-// Package conversationcall builds WeCom call SDK tasks from conversation snapshots.
+// Package conversationcall builds call control tasks from conversation snapshots.
 package conversationcall
 
 import (
@@ -122,9 +122,9 @@ func (service Service) Call(ctx context.Context, conversationID string, request 
 	if err != nil {
 		return nil, err
 	}
-	taskType := "rpa_voice_call"
+	taskType := "voice_call"
 	if normalized.CallType == "video" {
-		taskType = "rpa_video_call"
+		taskType = "video_call"
 	}
 	record, err := service.create(ctx, normalized, taskType)
 	if err != nil {
@@ -140,7 +140,7 @@ func (service Service) Hangup(ctx context.Context, conversationID string, reques
 	if err != nil {
 		return nil, err
 	}
-	record, err := service.create(ctx, normalized, "rpa_hangup_call")
+	record, err := service.create(ctx, normalized, "hangup_call")
 	if err != nil {
 		return nil, err
 	}
