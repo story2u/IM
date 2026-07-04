@@ -1,4 +1,4 @@
-// Command golden-http validates or runs reference-vs-Go HTTP golden suites.
+// Command golden-http validates or runs baseline-vs-Go HTTP golden suites.
 // Live comparison requires explicit endpoint URLs; validate-only mode keeps
 // CI free from shared services while still checking fixture quality.
 package main
@@ -18,16 +18,16 @@ import (
 
 func main() {
 	casesPath := flag.String("cases", "testdata/golden/phase1-probes.json", "golden suite JSON path")
-	referenceURL := flag.String("reference-url", strings.TrimSpace(os.Getenv("REFERENCE_BASE_URL")), "external reference base URL")
+	baselineURL := flag.String("baseline-url", strings.TrimSpace(os.Getenv("BASELINE_BASE_URL")), "baseline endpoint base URL")
 	goURL := flag.String("go-url", strings.TrimSpace(os.Getenv("GO_BASE_URL")), "Go candidate base URL")
 	format := flag.String("format", "json", "output format: json or markdown")
 	pretty := flag.Bool("pretty", false, "indent JSON output")
 	validateOnly := flag.Bool("validate-only", false, "only validate and summarize the suite")
 	var sharedHeaders headerFlags
-	var referenceHeaders headerFlags
+	var baselineHeaders headerFlags
 	var goHeaders headerFlags
 	flag.Var(&sharedHeaders, "header", "request header applied to both endpoints, in Key=Value form; may be repeated")
-	flag.Var(&referenceHeaders, "reference-header", "request header applied only to the reference endpoint, in Key=Value form; may be repeated")
+	flag.Var(&baselineHeaders, "baseline-header", "request header applied only to the baseline endpoint, in Key=Value form; may be repeated")
 	flag.Var(&goHeaders, "go-header", "request header applied only to the Go endpoint, in Key=Value form; may be repeated")
 	flag.Parse()
 
@@ -40,13 +40,13 @@ func main() {
 	if *validateOnly {
 		report = golden.ValidationReport(suite)
 	} else {
-		baseReferenceURL := strings.TrimSpace(*referenceURL)
-		if baseReferenceURL == "" || strings.TrimSpace(*goURL) == "" {
-			exitError("reference-url and go-url are required unless -validate-only is set")
+		baseBaselineURL := strings.TrimSpace(*baselineURL)
+		if baseBaselineURL == "" || strings.TrimSpace(*goURL) == "" {
+			exitError("baseline-url and go-url are required unless -validate-only is set")
 		}
-		referenceEndpointHeaders, err := mergeHeaders(sharedHeaders, referenceHeaders)
+		baselineEndpointHeaders, err := mergeHeaders(sharedHeaders, baselineHeaders)
 		if err != nil {
-			exitError("reference headers failed: %v", err)
+			exitError("baseline headers failed: %v", err)
 		}
 		goEndpointHeaders, err := mergeHeaders(sharedHeaders, goHeaders)
 		if err != nil {
@@ -54,9 +54,9 @@ func main() {
 		}
 		client := &http.Client{Timeout: 10 * time.Second}
 		report, err = golden.RunSuite(context.Background(), client, golden.Endpoint{
-			Name:    "reference",
-			BaseURL: baseReferenceURL,
-			Headers: referenceEndpointHeaders,
+			Name:    "baseline",
+			BaseURL: baseBaselineURL,
+			Headers: baselineEndpointHeaders,
 		}, golden.Endpoint{
 			Name:    "go",
 			BaseURL: *goURL,

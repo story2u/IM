@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// Suite is a deterministic set of HTTP requests for reference/Go comparison.
+// Suite is a deterministic set of HTTP requests for baseline/Go comparison.
 type Suite struct {
 	Name    string       `json:"name"`
 	Options SuiteOptions `json:"options,omitempty"`
@@ -113,7 +113,7 @@ func ValidationReport(suite Suite) SuiteReport {
 }
 
 // RunSuite replays every case against both endpoints and records all drift.
-func RunSuite(ctx context.Context, client *http.Client, reference Endpoint, goTarget Endpoint, suite Suite) (SuiteReport, error) {
+func RunSuite(ctx context.Context, client *http.Client, baseline Endpoint, goTarget Endpoint, suite Suite) (SuiteReport, error) {
 	if err := suite.Validate(); err != nil {
 		return SuiteReport{}, err
 	}
@@ -125,7 +125,7 @@ func RunSuite(ctx context.Context, client *http.Client, reference Endpoint, goTa
 		Cases:     suite.caseSummaries(),
 	}
 	for _, spec := range suite.Cases {
-		result, err := Compare(ctx, client, reference, goTarget, spec.toCase(), suite.optionsFor(spec))
+		result, err := Compare(ctx, client, baseline, goTarget, spec.toCase(), suite.optionsFor(spec))
 		if err != nil {
 			result = Result{
 				Case:  spec.Name,

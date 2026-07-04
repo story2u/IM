@@ -9,7 +9,7 @@ import (
 func MarkdownReport(report SuiteReport) string {
 	var builder strings.Builder
 	builder.WriteString("# Golden HTTP Report\n\n")
-	builder.WriteString("This report validates or compares deterministic HTTP cases against reference and Go endpoints.\n\n")
+	builder.WriteString("This report validates or compares deterministic HTTP cases against baseline and Go endpoints.\n\n")
 	builder.WriteString("## Summary\n\n")
 	builder.WriteString("| Field | Value |\n")
 	builder.WriteString("| --- | --- |\n")
@@ -42,14 +42,14 @@ func writeResultTable(builder *strings.Builder, results []Result) {
 		return
 	}
 	builder.WriteString("## Results\n\n")
-	builder.WriteString("| Case | Match | Reference Status | Go Status | Diffs |\n")
+	builder.WriteString("| Case | Match | Baseline Status | Go Status | Diffs |\n")
 	builder.WriteString("| --- | --- | ---: | ---: | --- |\n")
 	for _, result := range results {
 		builder.WriteString(fmt.Sprintf(
 			"| `%s` | `%t` | %d | %d | `%s` |\n",
 			escapeTable(result.Case),
 			result.Match,
-			result.Python.StatusCode,
+			result.Baseline.StatusCode,
 			result.Go.StatusCode,
 			escapeTable(strings.Join(result.Diffs, "; ")),
 		))

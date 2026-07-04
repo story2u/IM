@@ -15,7 +15,6 @@ type Config struct {
 	RuntimeRole                                  string
 	Version                                      string
 	DataRoot                                     string
-	PythonProjectRoot                            string
 	ContractRoot                                 string
 	DatabaseDSN                                  string
 	SystemLogDir                                 string
@@ -322,14 +321,9 @@ type Config struct {
 func Load() Config {
 	runtimeRole := envString("CLOUD_RUNTIME_ROLE", "api")
 	projectRoot := firstEnvDefault(".", "GO_PROJECT_ROOT", "IM_PROJECT_ROOT")
-	pythonRoot := envString("PYTHON_PROJECT_ROOT", "")
 	contractRoot := firstEnv("GO_CONTRACT_ROOT", "IM_CONTRACT_ROOT", "WEWORK_CONTRACT_ROOT")
 	if contractRoot == "" {
-		if pythonRoot != "" {
-			contractRoot = filepath.Join(pythonRoot, "contracts", "v1")
-		} else {
-			contractRoot = filepath.Join(projectRoot, "contracts", "v1")
-		}
+		contractRoot = filepath.Join(projectRoot, "contracts", "v1")
 	}
 	backendBaseURL := envString("CLOUD_BACKEND_BASE_URL", "")
 	archiveMediaBaseURL := firstEnv("ARCHIVE_MEDIA_BASE_URL", "CLOUD_BACKEND_BASE_URL")
@@ -373,7 +367,6 @@ func Load() Config {
 		RuntimeRole:                                  runtimeRole,
 		Version:                                      envString("GO_BACKEND_VERSION", "0.1.0-phase1"),
 		DataRoot:                                     dataDir,
-		PythonProjectRoot:                            pythonRoot,
 		ContractRoot:                                 contractRoot,
 		DatabaseDSN:                                  firstEnv("CLOUD_DB_DSN", "DATABASE_URL"),
 		SystemLogDir:                                 envString("SYSTEM_LOG_DIR", filepath.Join(dataDir, "logs")),

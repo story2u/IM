@@ -21,37 +21,7 @@ const display = (value) => {
   }
   return md(value);
 };
-const count = (value) => (Array.isArray(value) ? value.length : value ?? 0);
-const fieldValue = (report, key, fallbackKey) => {
-  if (!report) {
-    return undefined;
-  }
-  if (Object.prototype.hasOwnProperty.call(report, key)) {
-    return report[key];
-  }
-  if (fallbackKey && Object.prototype.hasOwnProperty.call(report, fallbackKey)) {
-    return report[fallbackKey];
-  }
-  return undefined;
-};
-const routeCount = (report, key, countKey, fallbackKey, fallbackCountKey) => {
-  if (!report) {
-    return "n/a";
-  }
-  const explicitCount = fieldValue(report, countKey, fallbackCountKey);
-  if (Number.isFinite(explicitCount)) {
-    return explicitCount;
-  }
-  return count(fieldValue(report, key, fallbackKey));
-};
-
 const manifest = readJSON("phase1_gate_manifest.json");
-const routeDefault = readJSON("route-diff.json");
-const routeCandidate = readJSON("route-diff-candidate.json");
-const schemaDrift = readJSON("route-schema-drift.json");
-const openAPIDrift = readJSON("route-openapi-drift.json");
-const openAPICandidate = readJSON("route-openapi-drift-candidate.json");
-const inventoryDiff = readJSON("inventory-diff.json");
 const webUnit = readJSON("web-unit-test.json");
 const webBuild = readJSON("web-build.json");
 const readiness = readReadinessSummary();
@@ -68,45 +38,10 @@ lines.push("");
 lines.push("| Key | Value |");
 lines.push("| --- | --- |");
 lines.push(`| generated_at_utc | ${display(manifest?.generated_at_utc)} |`);
-lines.push(`| inventory_diff_profile | ${display(manifest?.inventory_diff_profile)} |`);
-lines.push(`| inventory_diff_effective_profile | ${display(manifest?.inventory_diff_effective_profile)} |`);
-lines.push(`| inventory_diff_branch | ${display(manifest?.inventory_diff_branch)} |`);
-lines.push(`| inventory_baseline_source | ${display(manifest?.inventory_baseline_source)} |`);
-lines.push(`| run_reference_gates | ${display(manifest?.run_reference_gates)} |`);
-lines.push(`| reference_gates_reason | ${display(manifest?.reference_gates_reason)} |`);
-lines.push(`| schema_drift_threshold | ${display(manifest?.schema_drift_mismatch_threshold)} |`);
-lines.push(`| openapi_drift_threshold | ${display(manifest?.openapi_drift_mismatch_threshold)} |`);
-lines.push(`| route_diff_max_reference_only | ${display(manifest?.route_diff_max_reference_only ?? manifest?.route_diff_max_python_only)} |`);
-lines.push(`| route_diff_max_go_only | ${display(manifest?.route_diff_max_go_only)} |`);
-lines.push("");
-
-lines.push("## Route Coverage");
-lines.push("");
-lines.push("| Report | Reference routes | Go routes | Matching | Reference-only | Go-only |");
-lines.push("| --- | ---: | ---: | ---: | ---: | ---: |");
-for (const [label, report] of [
-  ["default", routeDefault],
-  ["candidate", routeCandidate],
-]) {
-  lines.push(
-    `| ${label} | ${display(fieldValue(report, "reference_route_count", "python_route_count"))} | ${display(report?.go_route_count)} | ${display(routeCount(report, "matching", "matching_count"))} | ${display(routeCount(report, "reference_only", "reference_only_count", "python_only", "python_only_count"))} | ${display(routeCount(report, "go_only", "go_only_count"))} |`
-  );
-}
-lines.push("");
-
-lines.push("## Drift Gates");
-lines.push("");
-lines.push("| Report | Comparable | Matches | Mismatches | Reference spec | Go spec | Top reasons |");
-lines.push("| --- | ---: | ---: | ---: | --- | --- | --- |");
-lines.push(
-  `| schema | ${display(schemaDrift?.schema_comparable_count)} | ${display(schemaDrift?.schema_match_count)} | ${display(schemaDrift?.schema_mismatch_count)} | n/a | n/a | ${display(formatReasons(schemaDrift?.top_drift_reasons))} |`
-);
-lines.push(
-  `| openapi default | ${display(openAPIDrift?.comparable_pairs)} | ${display(openAPIDrift?.match_count)} | ${display(openAPIDrift?.mismatch_count)} | ${display(fieldValue(openAPIDrift, "reference_openapi_source_status", "python_openapi_source_status"))} | ${display(openAPIDrift?.go_openapi_source_status)} | ${display(formatReasons(openAPIDrift?.top_drift_reasons))} |`
-);
-lines.push(
-  `| openapi candidate | ${display(openAPICandidate?.comparable_pairs)} | ${display(openAPICandidate?.match_count)} | ${display(openAPICandidate?.mismatch_count)} | ${display(fieldValue(openAPICandidate, "reference_openapi_source_status", "python_openapi_source_status"))} | ${display(openAPICandidate?.go_openapi_source_status)} | ${display(formatReasons(openAPICandidate?.top_drift_reasons))} |`
-);
+lines.push(`| required_next_routes | ${display(manifest?.required_next_routes)} |`);
+lines.push(`| skip_web_route_check | ${display(manifest?.skip_web_route_check)} |`);
+lines.push(`| skip_npm_ci | ${display(manifest?.skip_npm_ci)} |`);
+lines.push(`| run_web_e2e | ${display(manifest?.run_web_e2e)} |`);
 lines.push("");
 
 lines.push("## Release Readiness");
@@ -132,33 +67,6 @@ if (readiness?.profiles?.length > 0) {
 }
 lines.push("");
 
-lines.push("## Inventory Diff");
-lines.push("");
-if (inventoryDiff) {
-  lines.push("| Surface | Baseline | Current | Delta | Threshold |");
-  lines.push("| --- | ---: | ---: | ---: | ---: |");
-  for (const surface of [
-    "routes",
-    "contracts",
-    "feature_docs",
-    "compose_services",
-    "ws_events",
-    "redis_keys",
-    "db_tables",
-    "task_types",
-  ]) {
-    const threshold = inventoryDiff.thresholds?.[surface];
-    lines.push(
-      `| ${surface} | ${display(inventoryDiff.baseline?.[surface])} | ${display(inventoryDiff.current?.[surface])} | ${display(inventoryDiff.deltas?.[surface])} | ${threshold === undefined || threshold < 0 ? "disabled" : display(threshold)} |`
-    );
-  }
-  lines.push("");
-  lines.push(`Threshold violations: ${count(inventoryDiff.failures)}`);
-} else {
-  lines.push("Inventory diff was not generated.");
-}
-lines.push("");
-
 lines.push("## Web");
 lines.push("");
 lines.push("| Check | Status | Detail |");
@@ -168,16 +76,6 @@ lines.push(`| build | ${display(webBuild?.status)} | artifact=web-build.out |`);
 lines.push("");
 
 console.log(lines.join("\n"));
-
-function formatReasons(reasons) {
-  if (!Array.isArray(reasons) || reasons.length === 0) {
-    return "";
-  }
-  return reasons
-    .slice(0, 5)
-    .map((reason) => `${reason.reason ?? "unknown"}:${reason.count ?? 0}`)
-    .join(", ");
-}
 
 function readReadinessSummary() {
   const aggregate = readJSON("release-readiness-all.json");

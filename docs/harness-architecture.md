@@ -49,7 +49,6 @@ go/
     nextjs-harness-architecture.md
     release-readiness.md
   internal/harness/
-    inventory/       # 项目清单、diff、报告格式
     contracts/       # HTTP / WS / task / Redis / schema 契约加载和校验
     golden/          # 产品级 golden fixture、语义归一化
     replay/          # WS、Redis Stream、outbox、archive 样本重放
@@ -91,17 +90,13 @@ go/
 
 职责：
 
-- 用 inventory 扫描 Go 项目的 route、schema、Docker role、Redis key、WS event 和 task type。
+- 用本仓库的 route metadata、contract fixture、readiness profile 和 compose 定义约束当前产品面。
 - 对 Go 代码执行 `gofmt`、`go test ./...`、`go vet ./...`。
 - 对前端执行 unit test、route check 和 build。
-- 在显式配置 `RUN_REFERENCE_GATES=1` 时产出 external reference inventory、route diff 和 schema/OpenAPI drift；默认 standalone gate 不需要外部 reference root。
-- 在过渡期继续产出现有 golden/readiness artifact，但不把这些 artifact 作为长期架构命名。
+- 产出 release readiness、golden/replay、Next route、unit 和 build artifact，作为独立发布证据。
 
 输出：
 
-- `inventory-report.json`
-- `inventory-report.md`
-- `reference-gates.md`
 - `phase1_gate_manifest.json`
 - CI job summary
 - 基础 pass / fail

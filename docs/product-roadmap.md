@@ -26,7 +26,7 @@
 - 把某个消息平台当成唯一消息模型的代码和文档。
 - 把某个 RPA 供应商当成自动化默认前提的 API、env、worker 和数据模型。
 - 需要外部代码仓库才能解释、构建或测试的路径。
-- 只为过渡期存在的 route diff、candidate flag、sidecar 和历史发布命名。
+- 只为过渡期存在的 candidate flag、sidecar 和历史发布命名。
 - 未形成产品价值、又显著增加部署和运维复杂度的设备控制功能。
 
 ## Core 与 Adapter
