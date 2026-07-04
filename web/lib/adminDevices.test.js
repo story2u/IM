@@ -48,8 +48,10 @@ test("normalizeAdminDevices keeps device list fields", () => {
         agent_id: "sdk:slot-18",
         device_id: "slot-18",
         online: true,
-        wework_logged_in: true,
-        wework_status: "normal",
+        app_logged_in: true,
+        app_status: "normal",
+        wework_logged_in: false,
+        wework_status: "waiting",
         model: "设备位 18",
         version: "sdk-manager",
         sdk_route: true,
@@ -59,6 +61,7 @@ test("normalizeAdminDevices keeps device list fields", () => {
         p1_manager_port: 83,
         p1_slot: 18,
         login_account_name: "客服一",
+        login_channel_user_id: "channel1801",
         login_wework_user_id: "dy1801",
         login_organization_name: "黛伊",
         login_account_avatar: "https://example.com/avatar.png",
@@ -71,7 +74,10 @@ test("normalizeAdminDevices keeps device list fields", () => {
   assert.equal(devices[0].agentId, "sdk:slot-18");
   assert.equal(devices[0].deviceId, "slot-18");
   assert.equal(devices[0].onlineLabel, "在线");
+  assert.equal(devices[0].appLoggedInLabel, "已登录");
+  assert.equal(devices[0].appStatus, "normal");
   assert.equal(devices[0].weworkLoggedInLabel, "已登录");
+  assert.equal(devices[0].weworkStatus, "normal");
   assert.equal(devices[0].sdkRoute, true);
   assert.equal(devices[0].p1Host, "192.168.1.30");
   assert.equal(devices[0].p1ManagerHost, "100.64.0.18");
@@ -79,17 +85,19 @@ test("normalizeAdminDevices keeps device list fields", () => {
   assert.equal(devices[0].p1ManagerPort, 83);
   assert.equal(devices[0].p1Slot, "18");
   assert.equal(devices[0].loginAccountName, "客服一");
-  assert.equal(devices[0].loginWeWorkUserId, "dy1801");
+  assert.equal(devices[0].loginChannelUserId, "channel1801");
+  assert.equal(devices[0].loginWeWorkUserId, "channel1801");
   assert.equal(devices[0].loginOrganizationName, "黛伊");
   assert.equal(devices[0].loginAccountAvatar, "https://example.com/avatar.png");
 });
 
-test("buildManualDeviceUpsertMutation mirrors legacy manual payload", () => {
+test("buildManualDeviceUpsertMutation sends neutral app fields with compatibility aliases", () => {
   const mutation = buildManualDeviceUpsertMutation({
     agentId: " agent-1 ",
     deviceId: " device-1 ",
     online: false,
-    weworkLoggedIn: "true",
+    appLoggedIn: "true",
+    appStatus: " normal ",
     model: " Pixel ",
     androidVersion: " 14 ",
   });
@@ -101,7 +109,10 @@ test("buildManualDeviceUpsertMutation mirrors legacy manual payload", () => {
     agent_id: "agent-1",
     device_id: "device-1",
     online: false,
+    app_logged_in: true,
+    app_status: "normal",
     wework_logged_in: true,
+    wework_status: "normal",
     model: "Pixel",
     android_version: "14",
   });

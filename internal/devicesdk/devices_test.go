@@ -45,8 +45,11 @@ func TestServiceListDevicesBuildsManagerCacheRows(t *testing.T) {
 	if row["agent_id"] != "sdk:slot-18" || row["device_id"] != "slot-18" || row["online"] != true || row["sdk_route"] != true {
 		t.Fatalf("row basics = %#v", row)
 	}
-	if row["wework_logged_in"] != true || row["wework_status"] != "normal" || row["login_account_name"] != "客服一" {
+	if row["app_logged_in"] != true || row["app_status"] != "normal" || row["login_account_name"] != "客服一" {
 		t.Fatalf("login fields = %#v", row)
+	}
+	if row["wework_logged_in"] != true || row["wework_status"] != "normal" || row["login_channel_user_id"] != "wm-user" || row["login_wework_user_id"] != "wm-user" {
+		t.Fatalf("compatibility login fields = %#v", row)
 	}
 	if row["p1_host"] != "192.168.1.30" || stringValue(row["p1_slot"]) != "18" || row["p1_manager_host"] != "manager.local" || row["runtime_status_text"] != "running" {
 		t.Fatalf("p1 fields = %#v", row)
@@ -67,7 +70,7 @@ func TestServiceListDevicesDefaultsOfflineWithoutLoginStore(t *testing.T) {
 		t.Fatalf("ListDevices returned error: %v", err)
 	}
 	row := payload["devices"].([]map[string]any)[0]
-	if row["online"] != false || row["wework_logged_in"] != false || row["wework_status"] != "sdk_offline" {
+	if row["online"] != false || row["app_logged_in"] != false || row["app_status"] != "sdk_offline" || row["wework_logged_in"] != false || row["wework_status"] != "sdk_offline" {
 		t.Fatalf("offline row = %#v", row)
 	}
 }

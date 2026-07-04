@@ -18,8 +18,10 @@ func TestValidateAccountDeviceBindingsClearsConfirmedMismatch(t *testing.T) {
 		[]ProjectionRow{{
 			"device_id":             "device-old",
 			"online":                true,
-			"wework_logged_in":      true,
-			"wework_status":         "normal",
+			"app_logged_in":         true,
+			"app_status":            "normal",
+			"wework_logged_in":      false,
+			"wework_status":         "waiting",
 			"login_channel_user_id": "channel-other",
 			"login_wework_user_id":  "wx-other",
 			"login_account_name":    "其他账号",
@@ -46,8 +48,10 @@ func TestValidateAccountDeviceBindingsPreservesUnconfirmedDevice(t *testing.T) {
 		[]ProjectionRow{{
 			"device_id":             "device-old",
 			"online":                false,
-			"wework_logged_in":      nil,
-			"wework_status":         nil,
+			"app_logged_in":         false,
+			"app_status":            "offline",
+			"wework_logged_in":      true,
+			"wework_status":         "normal",
 			"login_channel_user_id": "channel-other",
 			"login_wework_user_id":  "wx-other",
 		}},
@@ -83,11 +87,11 @@ func TestBuildScopedDevicesPayloadOverlaysLoginSession(t *testing.T) {
 		t.Fatalf("devices = %+v", devices)
 	}
 	row := devices[0]
-	if row["wework_logged_in"] != true || rowText(row, "login_wework_user_id") != "wx-zimo" || rowText(row, "login_account_name") != "子墨" {
+	if row["app_logged_in"] != true || rowText(row, "login_channel_user_id") != "wx-zimo" || rowText(row, "login_account_name") != "子墨" {
 		t.Fatalf("unexpected device payload: %+v", row)
 	}
-	if rowText(row, "login_channel_user_id") != "wx-zimo" {
-		t.Fatalf("login_channel_user_id = %q", rowText(row, "login_channel_user_id"))
+	if row["wework_logged_in"] != true || rowText(row, "login_wework_user_id") != "wx-zimo" {
+		t.Fatalf("unexpected compatibility payload: %+v", row)
 	}
 }
 

@@ -43,7 +43,10 @@ func (handler Handler) UpsertHandler(w http.ResponseWriter, r *http.Request) {
 		DeviceID       string `json:"device_id"`
 		Model          string `json:"model"`
 		AndroidVersion string `json:"android_version"`
+		AppLoggedIn    *bool  `json:"app_logged_in"`
+		AppStatus      string `json:"app_status"`
 		WeWorkLoggedIn *bool  `json:"wework_logged_in"`
+		WeWorkStatus   string `json:"wework_status"`
 		Online         *bool  `json:"online"`
 	}
 	decoder := json.NewDecoder(r.Body)
@@ -56,11 +59,20 @@ func (handler Handler) UpsertHandler(w http.ResponseWriter, r *http.Request) {
 	if request.Online != nil {
 		online = *request.Online
 	}
+	appLoggedIn := request.AppLoggedIn
+	if appLoggedIn == nil {
+		appLoggedIn = request.WeWorkLoggedIn
+	}
+	appStatus := request.AppStatus
+	if appStatus == "" {
+		appStatus = request.WeWorkStatus
+	}
 	payload, err := handler.Service.UpsertManualDevice(r.Context(), devicesmanual.UpsertCommand{
 		AgentID:        request.AgentID,
 		DeviceID:       request.DeviceID,
 		Online:         online,
-		WeWorkLoggedIn: request.WeWorkLoggedIn,
+		AppLoggedIn:    appLoggedIn,
+		AppStatus:      appStatus,
 		Model:          request.Model,
 		AndroidVersion: request.AndroidVersion,
 	})

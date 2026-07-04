@@ -37,8 +37,17 @@
           "last_error": {
             "type": "string"
           },
+          "app_logged_in": {
+            "type": "boolean"
+          },
+          "app_status": {
+            "type": "string"
+          },
           "wework_logged_in": {
             "type": "boolean"
+          },
+          "wework_status": {
+            "type": "string"
           }
         }
       }

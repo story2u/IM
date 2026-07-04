@@ -43,7 +43,8 @@ export function normalizeAdminDevice(device = {}) {
   const agentId = cleanText(device?.agent_id || device?.agentId);
   if (!deviceId && !agentId) return null;
   const online = parseBool(device?.online, false);
-  const weworkLoggedIn = parseBool(device?.wework_logged_in || device?.weworkLoggedIn, false);
+  const appLoggedIn = parseBool(firstDefined(device?.app_logged_in, device?.appLoggedIn, device?.wework_logged_in, device?.weworkLoggedIn), false);
+  const appStatus = cleanText(firstDefined(device?.app_status, device?.appStatus, device?.wework_status, device?.weworkStatus));
   const sdkRoute = parseBool(device?.sdk_route || device?.sdkRoute, false);
   const p1Host = cleanText(device?.p1_host || device?.p1Host);
   const p1ManagerHost = cleanText(firstDefined(
@@ -58,6 +59,12 @@ export function normalizeAdminDevice(device = {}) {
     device?.device_ip,
     device?.deviceIP,
   ));
+  const loginChannelUserId = cleanText(firstDefined(
+    device?.login_channel_user_id,
+    device?.loginChannelUserId,
+    device?.login_wework_user_id,
+    device?.loginWeWorkUserId,
+  ));
   return {
     agentId,
     deviceId,
@@ -65,9 +72,12 @@ export function normalizeAdminDevice(device = {}) {
     androidVersion: cleanText(device?.android_version || device?.androidVersion),
     online,
     onlineLabel: online ? "在线" : "离线",
-    weworkLoggedIn,
-    weworkLoggedInLabel: weworkLoggedIn ? "已登录" : "未登录",
-    weworkStatus: cleanText(device?.wework_status || device?.weworkStatus),
+    appLoggedIn,
+    appLoggedInLabel: appLoggedIn ? "已登录" : "未登录",
+    appStatus,
+    weworkLoggedIn: appLoggedIn,
+    weworkLoggedInLabel: appLoggedIn ? "已登录" : "未登录",
+    weworkStatus: appStatus,
     version: cleanText(device?.version),
     timestamp: cleanText(device?.timestamp || device?.updated_at || device?.updatedAt),
     sdkRoute,
@@ -78,7 +88,8 @@ export function normalizeAdminDevice(device = {}) {
     p1Slot: cleanText(device?.p1_slot || device?.p1Slot),
     p1ManagerPort: normalizePositiveInt(firstDefined(device?.p1_manager_port, device?.p1ManagerPort, device?.manager_port, device?.managerPort)),
     loginAccountName: cleanText(device?.login_account_name || device?.loginAccountName),
-    loginWeWorkUserId: cleanText(device?.login_wework_user_id || device?.loginWeWorkUserId),
+    loginChannelUserId,
+    loginWeWorkUserId: loginChannelUserId,
     loginOrganizationName: cleanText(device?.login_organization_name || device?.loginOrganizationName),
     loginAccountAvatar: cleanText(device?.login_account_avatar || device?.loginAccountAvatar),
     raw: device,
@@ -99,8 +110,16 @@ export function buildManualDeviceUpsertMutation(options = {}) {
   if (model) body.model = model;
   const androidVersion = cleanText(options.androidVersion || options.android_version);
   if (androidVersion) body.android_version = androidVersion;
-  const weworkLoggedIn = parseOptionalBool(firstDefined(options.weworkLoggedIn, options.wework_logged_in));
-  if (weworkLoggedIn !== null) body.wework_logged_in = weworkLoggedIn;
+  const appLoggedIn = parseOptionalBool(firstDefined(options.appLoggedIn, options.app_logged_in, options.weworkLoggedIn, options.wework_logged_in));
+  if (appLoggedIn !== null) {
+    body.app_logged_in = appLoggedIn;
+    body.wework_logged_in = appLoggedIn;
+  }
+  const appStatus = cleanText(firstDefined(options.appStatus, options.app_status, options.weworkStatus, options.wework_status));
+  if (appStatus) {
+    body.app_status = appStatus;
+    body.wework_status = appStatus;
+  }
   return {
     ok: true,
     method: "POST",

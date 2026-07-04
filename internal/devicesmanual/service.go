@@ -41,7 +41,8 @@ type UpsertCommand struct {
 	AgentID        string
 	DeviceID       string
 	Online         bool
-	WeWorkLoggedIn *bool
+	AppLoggedIn    *bool
+	AppStatus      string
 	Model          string
 	AndroidVersion string
 }
@@ -84,7 +85,8 @@ func (service Service) UpsertManualDevice(ctx context.Context, command UpsertCom
 		AgentID:        agentID,
 		DeviceID:       deviceID,
 		Online:         command.Online,
-		WeWorkLoggedIn: command.WeWorkLoggedIn,
+		WeWorkLoggedIn: command.AppLoggedIn,
+		WeWorkStatus:   optionalText(command.AppStatus),
 		Model:          optionalText(command.Model),
 		AndroidVersion: optionalText(command.AndroidVersion),
 		Timestamp:      now,
@@ -140,6 +142,8 @@ func (record Record) Payload() map[string]any {
 		"agent_id":          record.AgentID,
 		"device_id":         record.DeviceID,
 		"online":            record.Online,
+		"app_logged_in":     optionalBoolValue(record.WeWorkLoggedIn),
+		"app_status":        optionalStringValue(record.WeWorkStatus),
 		"wework_logged_in":  optionalBoolValue(record.WeWorkLoggedIn),
 		"wework_status":     optionalStringValue(record.WeWorkStatus),
 		"model":             optionalStringValue(record.Model),

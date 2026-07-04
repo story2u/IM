@@ -74,7 +74,7 @@
 | `phase1` 脚本和 artifact 命名 | `scripts/phase1_gate.sh`, `tmp/phase1`, golden case names | 使用 `scripts/release_gate.sh` 作为推荐入口，旧脚本保留为内部执行和兼容入口 |
 | `GO_ENABLE_*_CANDIDATE` | `internal/config`, `cmd/api`, cloud compose | 改为 `GO_ENABLE_*` 或 release/readiness flag，保留 env alias 一段时间 |
 | 供应商命名 connector 开关 | `GO_ENABLE_WEWORK_LOGIN_*_CANDIDATE`, `GO_ENABLE_WEWORK_USER_INFO_*_CANDIDATE`, `GO_ENABLE_WEWORK_NOTIFY_CALLBACK_CANDIDATE` | 新部署使用 `GO_ENABLE_CONNECTOR_*_CANDIDATE`，旧开关只作为兼容 alias |
-| 供应商字段兼容别名 | `wework_user_id`, `GO_SEND_PROVIDER_BASE_URL` 等 | 新写路径使用 `channel_user_id`、`connector_*`、`provider_*` |
+| 供应商字段兼容别名 | `wework_user_id`, `wework_logged_in`, `wework_status`, `GO_SEND_PROVIDER_BASE_URL` 等 | 新写路径使用 `channel_user_id`、`app_logged_in`、`app_status`、`connector_*`、`provider_*` |
 | 供应商命名 task type | `wework_login_*`, `wework_user_info`, `wework_logout` | 新创建任务和公共 contract 使用 `connector_login_*`、`connector_user_info`、`connector_logout`，旧 task type 保留为兼容输入 |
 | 执行模型命名通话 task type | `rpa_voice_call`, `rpa_video_call`, `rpa_hangup_call`, `rpa_prepare_call_audio_output` | 新创建任务和公共 contract 使用 `voice_call`、`video_call`、`hangup_call`、`prepare_call_audio_output`，旧 task type 保留为兼容输入 |
 | 以具体通道命名的 HTTP routes | `/api/v1/connectors/*`、`/api/v1/devices/{device_id}/apps/*` 主入口，`/wework/*` 和 device SDK open/stop 兼容入口，notify routes | 前端主调用使用 connector/app-control 路径；旧 route 保留为 adapter-only 兼容入口并补下线条件 |

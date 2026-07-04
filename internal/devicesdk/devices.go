@@ -33,12 +33,17 @@ func (service Service) ListDevices(ctx context.Context) (map[string]any, error) 
 			return nil, err
 		}
 		online := boolFromAny(managerDevice["p1_manager_online"])
+		appLoggedIn := sdkWeWorkLoggedInFromSession(login, online)
+		appStatus := sdkWeWorkStatusFromSession(login, online)
+		loginChannelUserID := nullableText(login.WeWorkUserID)
 		row := map[string]any{
 			"agent_id":                 "sdk:" + deviceID,
 			"device_id":                deviceID,
 			"online":                   online,
-			"wework_logged_in":         sdkWeWorkLoggedInFromSession(login, online),
-			"wework_status":            sdkWeWorkStatusFromSession(login, online),
+			"app_logged_in":            appLoggedIn,
+			"app_status":               appStatus,
+			"wework_logged_in":         appLoggedIn,
+			"wework_status":            appStatus,
 			"model":                    "设备位 " + strings.TrimSpace(stringValue(slot["slot"])),
 			"android_version":          nil,
 			"last_error":               nil,
@@ -46,7 +51,8 @@ func (service Service) ListDevices(ctx context.Context) (map[string]any, error) 
 			"version":                  "sdk-manager",
 			"trace_id":                 nil,
 			"login_account_name":       nullableText(login.AccountName),
-			"login_wework_user_id":     nullableText(login.WeWorkUserID),
+			"login_channel_user_id":    loginChannelUserID,
+			"login_wework_user_id":     loginChannelUserID,
 			"login_organization_name":  nullableText(login.OrganizationName),
 			"login_account_avatar":     nil,
 			"sdk_route":                true,
@@ -220,15 +226,37 @@ func sdkWeWorkStatusFromSession(session LoginSession, online bool) any {
 }
 
 func normalizeSDKWeWorkState(payload map[string]any) map[string]any {
-	status := strings.ToLower(strings.TrimSpace(stringValue(payload["wework_status"])))
+	status := strings.ToLower(strings.TrimSpace(firstStringValue(payload["app_status"], payload["wework_status"])))
 	switch {
 	case onlineSDKWeWorkState(status):
+		payload["app_logged_in"] = true
 		payload["wework_logged_in"] = true
 	case ambiguousSDKWeWorkState(status):
 	case offlineSDKWeWorkState(status):
+		payload["app_logged_in"] = false
 		payload["wework_logged_in"] = false
 	}
+	if _, ok := payload["app_logged_in"].(bool); !ok {
+		if value, hasLegacy := payload["wework_logged_in"].(bool); hasLegacy {
+			payload["app_logged_in"] = value
+		} else if _, exists := payload["app_logged_in"]; !exists {
+			payload["app_logged_in"] = payload["wework_logged_in"]
+		}
+	}
+	if strings.TrimSpace(stringValue(payload["app_status"])) == "" {
+		payload["app_status"] = payload["wework_status"]
+	}
 	return payload
+}
+
+func firstStringValue(values ...any) string {
+	for _, value := range values {
+		text := strings.TrimSpace(stringValue(value))
+		if text != "" {
+			return text
+		}
+	}
+	return ""
 }
 
 func onlineSDKWeWorkState(status string) bool {

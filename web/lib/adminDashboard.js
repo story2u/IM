@@ -14,7 +14,7 @@ export const adminGroups = [
         key: "devices",
         label: "设备",
         path: "/devices",
-        columns: ["device_id", "agent_id", "online", "wework_logged_in", "model", "version"],
+        columns: ["device_id", "agent_id", "online", "app_logged_in", "model", "version"],
       },
       {
         key: "workloads",

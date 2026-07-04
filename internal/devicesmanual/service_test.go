@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func TestServiceUpsertManualDeviceStoresLegacyPayloadAndPublishes(t *testing.T) {
+func TestServiceUpsertManualDeviceStoresNeutralPayloadAndPublishes(t *testing.T) {
 	loggedIn := true
 	store := &fakeStore{}
 	events := &fakeEvents{}
@@ -24,7 +24,8 @@ func TestServiceUpsertManualDeviceStoresLegacyPayloadAndPublishes(t *testing.T) 
 		AgentID:        " agent-1 ",
 		DeviceID:       " device-1 ",
 		Online:         true,
-		WeWorkLoggedIn: &loggedIn,
+		AppLoggedIn:    &loggedIn,
+		AppStatus:      " normal ",
 		Model:          " Pixel ",
 		AndroidVersion: " 14 ",
 	})
@@ -38,10 +39,13 @@ func TestServiceUpsertManualDeviceStoresLegacyPayloadAndPublishes(t *testing.T) 
 	if device["agent_id"] != "agent-1" || device["device_id"] != "device-1" || device["online"] != true || device["version"] != "manual" || device["trace_id"] != "manual-1782987072" {
 		t.Fatalf("unexpected device payload: %#v", device)
 	}
-	if device["wework_logged_in"] != true || device["model"] != "Pixel" || device["android_version"] != "14" {
+	if device["app_logged_in"] != true || device["app_status"] != "normal" || device["model"] != "Pixel" || device["android_version"] != "14" {
 		t.Fatalf("manual device optional fields not preserved: %#v", device)
 	}
-	if device["wework_status"] != nil || device["last_error"] != nil || device["cpu_usage"] != nil || device["app_in_foreground"] != nil {
+	if device["wework_logged_in"] != true || device["wework_status"] != "normal" {
+		t.Fatalf("manual device compatibility fields not preserved: %#v", device)
+	}
+	if device["last_error"] != nil || device["cpu_usage"] != nil || device["app_in_foreground"] != nil {
 		t.Fatalf("manual device nullable fields not nil: %#v", device)
 	}
 	if store.upsert.AgentID != "agent-1" || store.upsert.DeviceID != "device-1" || store.upsert.TraceID != "manual-1782987072" {

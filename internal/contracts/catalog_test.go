@@ -80,6 +80,21 @@ func TestTaskCreateSchemaSupportsProviderNeutralCallTaskTypes(t *testing.T) {
 	assertTaskRequiredFields(t, schema, []string{"prepare_call_audio_output"}, []string{"username"})
 }
 
+func TestAgentHeartbeatSchemaSupportsNeutralDeviceAppState(t *testing.T) {
+	schema := readSchemaMap(t, "agent-heartbeat.schema.json")
+	deviceProperties := schemaMap(t, schema, "properties", "devices", "items", "properties")
+	for _, field := range []string{
+		"app_logged_in",
+		"app_status",
+		"wework_logged_in",
+		"wework_status",
+	} {
+		if _, ok := deviceProperties[field]; !ok {
+			t.Fatalf("agent heartbeat device properties missing %q", field)
+		}
+	}
+}
+
 func projectContractRoot(t *testing.T) string {
 	t.Helper()
 	_, file, _, ok := runtime.Caller(0)

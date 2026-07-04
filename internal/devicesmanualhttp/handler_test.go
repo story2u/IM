@@ -44,7 +44,7 @@ func TestUpsertHandlerDefaultsOnlineAndSerializesPayload(t *testing.T) {
 	service := &fakeManualService{upsertPayload: map[string]any{"success": true, "device": map[string]any{"device_id": "device-1"}}}
 	handler := New(guard, service)
 	response := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodPost, "/api/v1/devices/manual", strings.NewReader(`{"agent_id":" agent-1 ","device_id":" device-1 ","model":" Pixel ","android_version":"14","wework_logged_in":true}`))
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/devices/manual", strings.NewReader(`{"agent_id":" agent-1 ","device_id":" device-1 ","model":" Pixel ","android_version":"14","app_logged_in":true,"app_status":"normal"}`))
 	request.Header.Set("Authorization", "Bearer "+token)
 
 	handler.UpsertHandler(response, request)
@@ -55,8 +55,11 @@ func TestUpsertHandlerDefaultsOnlineAndSerializesPayload(t *testing.T) {
 	if service.upsert.AgentID != " agent-1 " || service.upsert.DeviceID != " device-1 " || !service.upsert.Online {
 		t.Fatalf("upsert command = %+v", service.upsert)
 	}
-	if service.upsert.WeWorkLoggedIn == nil || !*service.upsert.WeWorkLoggedIn {
-		t.Fatalf("wework_logged_in = %#v", service.upsert.WeWorkLoggedIn)
+	if service.upsert.AppLoggedIn == nil || !*service.upsert.AppLoggedIn {
+		t.Fatalf("app_logged_in = %#v", service.upsert.AppLoggedIn)
+	}
+	if service.upsert.AppStatus != "normal" {
+		t.Fatalf("app_status = %q", service.upsert.AppStatus)
 	}
 }
 

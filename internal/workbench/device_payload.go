@@ -137,9 +137,7 @@ func ValidateAccountDeviceBindings(accounts []ProjectionRow, devices []Projectio
 	}
 	confirmedDeviceByUserID := make(map[string]ProjectionRow)
 	for deviceID, device := range deviceByID {
-		deviceStatus := strings.ToLower(rowText(device, "wework_status"))
-		confirmed := device["wework_logged_in"] == true || onlineWeWorkStates[deviceStatus]
-		if !confirmed {
+		if !confirmedDeviceLogin(device) {
 			continue
 		}
 		userID := NormalizeIDHint(firstNonBlank(rowText(device, "login_channel_user_id"), rowText(device, "login_wework_user_id")))
@@ -172,9 +170,7 @@ func ValidateAccountDeviceBindings(accounts []ProjectionRow, devices []Projectio
 			normalized = append(normalized, row)
 			continue
 		}
-		deviceStatus := strings.ToLower(rowText(device, "wework_status"))
-		deviceLoginConfirmed := device["wework_logged_in"] == true || onlineWeWorkStates[deviceStatus]
-		if !deviceLoginConfirmed {
+		if !confirmedDeviceLogin(device) {
 			normalized = append(normalized, row)
 			continue
 		}
@@ -207,6 +203,8 @@ func deviceRecordPayload(device DeviceRecord) ProjectionRow {
 		"agent_id":           strings.TrimSpace(device.AgentID),
 		"device_id":          strings.TrimSpace(device.DeviceID),
 		"online":             device.Online,
+		"app_logged_in":      boolPointerValue(device.WeWorkLoggedIn),
+		"app_status":         strings.TrimSpace(device.WeWorkStatus),
 		"wework_logged_in":   boolPointerValue(device.WeWorkLoggedIn),
 		"wework_status":      strings.TrimSpace(device.WeWorkStatus),
 		"model":              strings.TrimSpace(device.Model),
@@ -235,21 +233,29 @@ func deviceRecordPayload(device DeviceRecord) ProjectionRow {
 // applyLoginSessionOverlay applies persisted login-session facts to a device row.
 func applyLoginSessionOverlay(row ProjectionRow, session LoginSessionRecord) {
 	status := strings.ToLower(strings.TrimSpace(session.Status))
-	currentLogged, loggedIsBool := row["wework_logged_in"].(bool)
-	currentStatus := strings.ToLower(rowText(row, "wework_status"))
+	currentLogged, loggedIsBool := firstDeviceLoginBool(row)
+	currentStatus := strings.ToLower(firstNonBlank(rowText(row, "app_status"), rowText(row, "wework_status")))
 	hasExplicitOffline := (loggedIsBool && !currentLogged) || offlineWeWorkStates[currentStatus]
 	hasExplicitOnline := (loggedIsBool && currentLogged) || onlineWeWorkStates[currentStatus]
 	if rowBool(row, "online") && visibleLoginFlowStates[status] {
+		row["app_logged_in"] = false
+		row["app_status"] = status
 		row["wework_logged_in"] = false
 		row["wework_status"] = status
 	} else if rowBool(row, "online") && status == "success" {
 		if !hasExplicitOffline && !hasExplicitOnline {
+			row["app_logged_in"] = true
 			row["wework_logged_in"] = true
+			if rowText(row, "app_status") == "" {
+				row["app_status"] = "normal"
+			}
 			if rowText(row, "wework_status") == "" {
 				row["wework_status"] = "normal"
 			}
 		}
 	} else if rowBool(row, "online") && offlineWeWorkStates[status] && !hasExplicitOnline && sessionHasDisplayableLoginObservation(session) {
+		row["app_logged_in"] = false
+		row["app_status"] = status
 		row["wework_logged_in"] = false
 		row["wework_status"] = status
 	}
@@ -270,22 +276,70 @@ func applyLoginSessionOverlay(row ProjectionRow, session LoginSessionRecord) {
 
 // normalizeWeWorkState applies the shared workbench and device-list state rule.
 func normalizeWeWorkState(row ProjectionRow) ProjectionRow {
-	status := strings.ToLower(rowText(row, "wework_status"))
+	status := strings.ToLower(firstNonBlank(rowText(row, "app_status"), rowText(row, "wework_status")))
 	if onlineWeWorkStates[status] {
+		row["app_logged_in"] = true
 		row["wework_logged_in"] = true
+		syncDeviceAppCompatibilityFields(row)
 		return row
 	}
 	if ambiguousWeWorkStates[status] {
+		syncDeviceAppCompatibilityFields(row)
 		return row
 	}
 	if offlineWeWorkStates[status] {
+		row["app_logged_in"] = false
 		row["wework_logged_in"] = false
+		syncDeviceAppCompatibilityFields(row)
+		return row
+	}
+	if _, ok := row["app_logged_in"].(bool); ok {
+		syncDeviceAppCompatibilityFields(row)
 		return row
 	}
 	if _, ok := row["wework_logged_in"].(bool); ok {
+		syncDeviceAppCompatibilityFields(row)
 		return row
 	}
+	syncDeviceAppCompatibilityFields(row)
 	return row
+}
+
+func firstDeviceLoginBool(row ProjectionRow) (bool, bool) {
+	if value, ok := row["app_logged_in"].(bool); ok {
+		return value, true
+	}
+	value, ok := row["wework_logged_in"].(bool)
+	return value, ok
+}
+
+func confirmedDeviceLogin(row ProjectionRow) bool {
+	logged, loggedIsBool := firstDeviceLoginBool(row)
+	status := strings.ToLower(firstNonBlank(rowText(row, "app_status"), rowText(row, "wework_status")))
+	return (loggedIsBool && logged) || onlineWeWorkStates[status]
+}
+
+func syncDeviceAppCompatibilityFields(row ProjectionRow) {
+	if _, ok := row["app_logged_in"].(bool); !ok {
+		if value, hasLegacy := row["wework_logged_in"].(bool); hasLegacy {
+			row["app_logged_in"] = value
+		} else if _, exists := row["app_logged_in"]; !exists {
+			row["app_logged_in"] = row["wework_logged_in"]
+		}
+	}
+	if _, ok := row["wework_logged_in"].(bool); !ok {
+		if value, hasNeutral := row["app_logged_in"].(bool); hasNeutral {
+			row["wework_logged_in"] = value
+		} else if _, exists := row["wework_logged_in"]; !exists {
+			row["wework_logged_in"] = row["app_logged_in"]
+		}
+	}
+	if rowText(row, "app_status") == "" {
+		row["app_status"] = rowText(row, "wework_status")
+	}
+	if rowText(row, "wework_status") == "" {
+		row["wework_status"] = rowText(row, "app_status")
+	}
 }
 
 // sessionHasDisplayableLoginObservation keeps login overlays conservative.
