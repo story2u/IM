@@ -77,7 +77,7 @@
 | 供应商字段兼容别名 | `wework_user_id`, `wework_logged_in`, `wework_status`, `GO_SEND_PROVIDER_BASE_URL` 等 | 新写路径使用 `channel_user_id`、`app_logged_in`、`app_status`、`connector_*`、`provider_*` |
 | 供应商命名 task type | `wework_login_*`, `wework_user_info`, `wework_logout` | 新创建任务和公共 contract 使用 `connector_login_*`、`connector_user_info`、`connector_logout`，旧 task type 保留为兼容输入 |
 | 执行模型命名通话 task type | `rpa_voice_call`, `rpa_video_call`, `rpa_hangup_call`, `rpa_prepare_call_audio_output` | 新创建任务和公共 contract 使用 `voice_call`、`video_call`、`hangup_call`、`prepare_call_audio_output`，旧 task type 保留为兼容输入 |
-| 以具体通道命名的 HTTP routes | `/api/v1/connectors/*`、`/api/v1/devices/{device_id}/apps/*` 主入口，`/wework/*` 和 device SDK open/stop 兼容入口，notify routes | 前端主调用使用 connector/app-control 路径；旧 route 保留为 adapter-only 兼容入口并补下线条件 |
+| 以具体通道命名的 HTTP routes | `/api/v1/connectors/*`、`/api/v1/devices/{device_id}/apps/*` 主入口，`/wework/*` 和 device SDK open/stop 兼容入口，notify routes | 前端主调用使用 connector/app-control 路径和 `open_app`/`stop_app` 通用动作；旧 route/action 保留为 adapter-only 兼容入口并补下线条件 |
 | 阶段编号 golden fixtures | `testdata/golden/phase*` | 保留为证据集合，新增按产品能力命名的 manifest |
 
 ## Review

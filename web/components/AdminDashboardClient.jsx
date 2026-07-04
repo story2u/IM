@@ -4947,8 +4947,8 @@ function DevicesPanel({ snapshot, accountsSnapshot, workloadSnapshot, onRefresh 
   const handleControlAction = useCallback((action) => {
     const input = { ...controlForm, action };
     const actionLabels = {
-      open_wework: "已提交打开通道客户端任务",
-      stop_wework: "已提交停止通道客户端任务",
+      open_app: "已提交打开通道客户端任务",
+      stop_app: "已提交停止通道客户端任务",
       prepare_call_audio_output: "已提交音频准备任务",
     };
     void runDeviceMutation(
@@ -5519,6 +5519,26 @@ function DevicesPanel({ snapshot, accountsSnapshot, workloadSnapshot, onRefresh 
             麦克风
           </label>
         </div>
+        <div className="grid gap-3 md:grid-cols-[minmax(130px,1fr)_minmax(180px,2fr)] md:items-end">
+          <label className="grid gap-1">
+            <span className="text-xs font-medium text-[#697386]">应用 ID</span>
+            <input
+              className="h-9 border border-[#cfd6e3] px-3 text-sm outline-none focus:border-[#2f6fed]"
+              value={controlForm.appId}
+              onChange={(event) => setControlForm((current) => ({ ...current, appId: event.target.value }))}
+              placeholder="connector-client"
+            />
+          </label>
+          <label className="grid gap-1">
+            <span className="text-xs font-medium text-[#697386]">应用包名</span>
+            <input
+              className="h-9 border border-[#cfd6e3] px-3 text-sm outline-none focus:border-[#2f6fed]"
+              value={controlForm.packageName}
+              onChange={(event) => setControlForm((current) => ({ ...current, packageName: event.target.value }))}
+              placeholder="com.example.connector"
+            />
+          </label>
+        </div>
         <div className="grid gap-3 md:grid-cols-[minmax(160px,1fr)_auto_auto_auto_auto_auto] md:items-end">
           <label className="grid gap-1">
             <span className="text-xs font-medium text-[#697386]">控制输入</span>
@@ -5580,10 +5600,10 @@ function DevicesPanel({ snapshot, accountsSnapshot, workloadSnapshot, onRefresh 
           <button className="h-8 border border-[#cfd6e3] bg-white px-3 text-xs font-medium text-[#172033] disabled:border-[#c4cad6] disabled:bg-[#f4f6fa] disabled:text-[#697386]" type="button" disabled={Boolean(busyKey)} onClick={handleLogout}>
             退出通道
           </button>
-          <button className="h-8 border border-[#cfd6e3] bg-white px-3 text-xs font-medium text-[#172033] disabled:border-[#c4cad6] disabled:bg-[#f4f6fa] disabled:text-[#697386]" type="button" disabled={Boolean(busyKey)} onClick={() => handleControlAction("open_wework")}>
+          <button className="h-8 border border-[#cfd6e3] bg-white px-3 text-xs font-medium text-[#172033] disabled:border-[#c4cad6] disabled:bg-[#f4f6fa] disabled:text-[#697386]" type="button" disabled={Boolean(busyKey)} onClick={() => handleControlAction("open_app")}>
             打开通道
           </button>
-          <button className="h-8 border border-[#cfd6e3] bg-white px-3 text-xs font-medium text-[#172033] disabled:border-[#c4cad6] disabled:bg-[#f4f6fa] disabled:text-[#697386]" type="button" disabled={Boolean(busyKey)} onClick={() => handleControlAction("stop_wework")}>
+          <button className="h-8 border border-[#cfd6e3] bg-white px-3 text-xs font-medium text-[#172033] disabled:border-[#c4cad6] disabled:bg-[#f4f6fa] disabled:text-[#697386]" type="button" disabled={Boolean(busyKey)} onClick={() => handleControlAction("stop_app")}>
             停止通道
           </button>
           <button className="h-8 border border-[#cfd6e3] bg-white px-3 text-xs font-medium text-[#172033] disabled:border-[#c4cad6] disabled:bg-[#f4f6fa] disabled:text-[#697386]" type="button" disabled={Boolean(busyKey)} onClick={() => handleControlAction("prepare_call_audio_output")}>
@@ -5928,6 +5948,8 @@ function defaultDeviceControlForm() {
   return {
     deviceId: "",
     agentId: "",
+    appId: "",
+    packageName: "",
     verifyCode: "",
     callType: "voice",
     participantIdentity: "admin-dashboard",
@@ -5972,6 +5994,7 @@ function deviceMutationErrorMessage(error) {
     control_input_text_required: "请输入控制文本",
     device_id_required: "请输入设备 ID",
     participant_identity_required: "请输入 RTC 参与者",
+    app_id_required: "请输入应用 ID",
     quality_invalid: "画质必须是 0 或 1",
     rtc_mode_invalid: "RTC 模式必须是 auto、provider 或 livekit",
     unknown_device_action: "未知设备动作",

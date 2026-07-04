@@ -7,6 +7,8 @@ import {
   CONNECTOR_LOGIN_VERIFY_PATH,
   CONNECTOR_LOGOUT_PATH,
   CONNECTOR_USER_INFO_REQUEST_PATH,
+  DEVICE_SDK_ACTIONS,
+  LEGACY_DEVICE_SDK_ACTION_ALIASES,
   DEVICES_DISCOVERY_PROBE_PATH,
   DEVICES_DISCOVERY_REFRESH_PATH,
   DEVICES_MANUAL_PATH,
@@ -265,31 +267,37 @@ test("connector login mutations use neutral API routes", () => {
 });
 
 test("device sdk control mutations encode device paths", () => {
-  const open = buildDeviceSDKControlMutation({ deviceId: "slot/18", action: "open_wework" });
+  assert.deepEqual([...DEVICE_SDK_ACTIONS].sort(), ["open_app", "prepare_call_audio_output", "stop_app"]);
+  assert.deepEqual([...LEGACY_DEVICE_SDK_ACTION_ALIASES].sort(), ["open_wework", "stop_wework"]);
+
+  const open = buildDeviceSDKControlMutation({ deviceId: "slot/18", action: "open_app", appId: "connector-client", packageName: "com.example.connector" });
   assert.equal(open.ok, true);
   assert.equal(open.method, "POST");
   assert.equal(open.path, "/devices/slot%2F18/apps/open");
   assert.deepEqual(open.body, {
-    app_id: "wework",
-    package_name: "com.tencent.wework",
+    app_id: "connector-client",
+    package_name: "com.example.connector",
     username: "__device__",
   });
 
-  const stop = buildDeviceSDKControlMutation({ deviceId: "slot 18", action: "stop_wework" });
+  const stop = buildDeviceSDKControlMutation({ deviceId: "slot 18", action: "stop_app", appId: "connector-client", packageName: "com.example.connector" });
   assert.equal(stop.path, "/devices/slot%2018/apps/stop");
   assert.deepEqual(stop.body, {
+    app_id: "connector-client",
+    package_name: "com.example.connector",
+    username: "__device__",
+  });
+
+  const legacyOpen = buildDeviceSDKControlMutation({ deviceId: "slot-18", action: "open_wework" });
+  assert.equal(legacyOpen.path, "/devices/slot-18/apps/open");
+  assert.deepEqual(legacyOpen.body, {
     app_id: "wework",
     package_name: "com.tencent.wework",
     username: "__device__",
   });
 
-  const openApp = buildDeviceSDKControlMutation({ deviceId: "slot-18", action: "open_app", appId: "browser", packageName: "com.android.browser" });
-  assert.equal(openApp.path, "/devices/slot-18/apps/open");
-  assert.deepEqual(openApp.body, {
-    app_id: "browser",
-    package_name: "com.android.browser",
-    username: "__device__",
-  });
+  const legacyStop = buildDeviceSDKControlMutation({ deviceId: "slot-18", action: "stop_wework" });
+  assert.equal(legacyStop.path, "/devices/slot-18/apps/stop");
 
   const prepare = buildDeviceSDKControlMutation({ deviceId: "slot-18", action: "prepare_call_audio_output", callType: "video" });
   assert.equal(prepare.path, "/devices/slot-18/sdk/prepare-call-audio-output?call_type=video");

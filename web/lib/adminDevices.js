@@ -18,10 +18,9 @@ export const DEVICE_RTC_CONTROL_ACTIONS = new Set(["acquire", "release", "steal"
 export const DEVICE_SDK_ACTIONS = new Set([
   "open_app",
   "stop_app",
-  "open_wework",
-  "stop_wework",
   "prepare_call_audio_output",
 ]);
+export const LEGACY_DEVICE_SDK_ACTION_ALIASES = new Set(["open_wework", "stop_wework"]);
 
 function cleanText(value) {
   return String(value || "").trim();
@@ -248,7 +247,8 @@ export function buildDeviceSDKControlMutation(options = {}) {
   const deviceId = cleanText(options.deviceId || options.device_id);
   if (!deviceId) return { ok: false, error: "device_id_required" };
   const action = cleanText(options.action).toLowerCase();
-  if (!DEVICE_SDK_ACTIONS.has(action)) return { ok: false, error: "unknown_device_action" };
+  const legacyAppAction = LEGACY_DEVICE_SDK_ACTION_ALIASES.has(action);
+  if (!DEVICE_SDK_ACTIONS.has(action) && !legacyAppAction) return { ok: false, error: "unknown_device_action" };
   const encodedDeviceID = encodeURIComponent(deviceId);
   if (action === "prepare_call_audio_output") {
     const callType = cleanText(options.callType || options.call_type || "voice");
@@ -259,8 +259,8 @@ export function buildDeviceSDKControlMutation(options = {}) {
       path: `/devices/${encodedDeviceID}/sdk/prepare-call-audio-output?call_type=${encodeURIComponent(callType)}`,
     };
   }
-  const suffix = action === "open_wework" || action === "open_app" ? "open" : "stop";
-  const appID = cleanText(options.appId || options.app_id || (action.endsWith("_wework") ? "wework" : ""));
+  const suffix = action === "open_app" || action === "open_wework" ? "open" : "stop";
+  const appID = cleanText(options.appId || options.app_id || (legacyAppAction ? "wework" : ""));
   if (!appID) return { ok: false, error: "app_id_required" };
   const packageName = cleanText(options.packageName || options.package_name || (appID === "wework" ? "com.tencent.wework" : appID));
   return {
