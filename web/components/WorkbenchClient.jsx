@@ -1283,7 +1283,7 @@ export function WorkbenchClient() {
           <div className="min-h-0 overflow-y-auto">
             {(loading.bootstrap || loading.search) && <ConversationSkeleton />}
             {!loading.bootstrap && !loading.search && visibleConversations.length === 0 && (
-              <EmptyState label={token ? "暂无会话" : "等待会话 Token"} />
+              <EmptyState label={token ? "暂无会话" : "请先登录"} />
             )}
             {!loading.bootstrap && !loading.search && visibleConversations.map((conversation) => (
               <ConversationRow

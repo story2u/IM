@@ -377,7 +377,7 @@ export function AdminDashboardClient() {
     <div className="mx-auto grid max-w-7xl gap-4 px-4 py-4 lg:grid-rows-[auto_1fr] lg:px-6">
       <section className="grid gap-3 border border-[#d8dde8] bg-white p-3 md:grid-cols-[minmax(220px,1fr)_auto]">
         <div className="grid gap-1">
-          <span className="text-xs font-medium text-[#697386]">管理会话</span>
+          <span className="text-xs font-medium text-[#697386]">运营会话</span>
           <span className="h-9 truncate border border-[#e5e9f2] bg-[#f9fafc] px-2 py-2 text-sm text-[#172033]">
             {username.trim() || "已连接"}
           </span>
@@ -426,8 +426,8 @@ export function AdminDashboardClient() {
           <SectionHeader section={selectedSection} status={selectedStatus} snapshot={selectedSnapshot} />
           <div className="min-h-0 overflow-auto bg-[#f9fafc] p-4">
             {selectedStatus.state === "loading" && <LoadingRows />}
-            {selectedStatus.state === "error" && <ErrorPanel message={selectedStatus.message} path={selectedSection.path} />}
-            {!token && <EmptyPanel label="等待管理 Token" />}
+            {selectedStatus.state === "error" && <ErrorPanel message={selectedStatus.message} />}
+            {!token && <EmptyPanel label="等待登录" />}
             {token && selectedStatus.state !== "loading" && selectedStatus.state !== "error" && !selectedSnapshot && <EmptyPanel label="暂无数据" />}
             {selectedSnapshot && selectedStatus.state !== "loading" && selectedStatus.state !== "error" && (
               selectedSection.key === "accounts"
@@ -534,7 +534,7 @@ function SectionButton({ section, selected, snapshot, status, onSelect }) {
         <StatusDot state={state} />
       </span>
       <span className="flex items-center justify-between gap-2 text-xs text-[#697386]">
-        <span className="truncate">{section.path}</span>
+        <span>{statusTextForSection(state)}</span>
         <span>{snapshot ? summarizeSection(snapshot) : "-"}</span>
       </span>
     </button>
@@ -547,7 +547,6 @@ function SectionHeader({ section, status, snapshot }) {
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-base font-semibold text-[#172033]">{section.label}</h1>
-          <p className="mt-1 text-xs text-[#697386]">{section.path}</p>
         </div>
         <div className="flex items-center gap-2 text-xs text-[#697386]">
           <StatusLabel state={status.state} />
@@ -2444,7 +2443,7 @@ function SOPConfigPanel({ snapshot, onRefresh }) {
         >
           {policyLoading ? "加载中" : "刷新策略"}
         </button>
-        <div className="text-xs text-[#697386] md:text-right">{policyLoading ? "正在读取 /admin/sop/policies" : " "}</div>
+        <div className="text-xs text-[#697386] md:text-right">{policyLoading ? "正在读取 SOP 策略" : " "}</div>
       </div>
 
       <div className="overflow-x-auto border border-[#d8dde8] bg-white">
@@ -8498,14 +8497,24 @@ function EmptyPanel({ label }) {
   );
 }
 
-function ErrorPanel({ message, path }) {
+function ErrorPanel({ message }) {
   return (
     <div className="border border-[#f1c8c8] bg-[#fff8f6] p-4">
       <div className="text-sm font-semibold text-[#9f1d1d]">请求失败</div>
       <div className="mt-2 break-words text-sm text-[#5f2b2b]">{message}</div>
-      <div className="mt-3 text-xs text-[#8a5a5a]">{path}</div>
     </div>
   );
+}
+
+function statusTextForSection(state) {
+  const labels = {
+    ready: "可查看",
+    loading: "加载中",
+    error: "错误",
+    idle: "待加载",
+    empty: "暂无数据",
+  };
+  return labels[state] || "待加载";
 }
 
 function StatusDot({ state }) {

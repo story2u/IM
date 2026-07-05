@@ -69,6 +69,14 @@ test("assignments section is loaded by the specialized panel", () => {
   assert.equal(section.skipFetch, true);
 });
 
+test("admin sections do not auto-fetch optional VPS panels", () => {
+  const fetchOnSelectSections = adminGroups
+    .flatMap((group) => group.sections)
+    .filter((section) => !section.skipFetch);
+
+  assert.deepEqual(fetchOnSelectSections, []);
+});
+
 test("normalizeAdminPayload adds enabled metric for sensitive words", () => {
   const section = adminGroups[2].sections.find((item) => item.key === "sensitive_words");
   const snapshot = normalizeAdminPayload(section, {

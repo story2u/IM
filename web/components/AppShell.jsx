@@ -7,7 +7,7 @@ import { buildVersionLabel, getAppVersionInfo } from "../lib/appVersion.js";
 
 const navItems = [
   { key: "cs", label: "消息端", href: "/" },
-  { key: "admin", label: "管理", href: "/admin" },
+  { key: "admin", label: "运营端", href: "/admin" },
 ];
 
 export function AppShell({ active, children }) {
