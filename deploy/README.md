@@ -107,6 +107,6 @@ npm run build
 For staging deployments, also verify:
 
 - API `/healthz`, `/readyz`, and `/metrics`.
-- Web `/version.txt`.
+- Web `/`.
 - Worker logs and queue lag.
 - Connector/provider health endpoints for any enabled integration.

@@ -4,7 +4,6 @@
  * covered by backend release readiness checks.
  */
 import { buildVersionLabel, getAppVersionInfo } from "../lib/appVersion.js";
-import { VersionReloadNotice } from "./VersionReloadNotice.jsx";
 
 const navItems = [
   { key: "cs", label: "客服", href: "/" },
@@ -47,7 +46,6 @@ export function AppShell({ active, children }) {
           </div>
         </div>
       </header>
-      <VersionReloadNotice />
       {children}
     </main>
   );

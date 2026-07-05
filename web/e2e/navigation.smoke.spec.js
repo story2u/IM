@@ -20,10 +20,3 @@ for (const route of routeMatrix) {
     await expect(page).toHaveURL(new RegExp(`${route.path.replace("/", "\\/")}($|\\?)`));
   });
 }
-
-test("smoke version endpoint", async ({ request }) => {
-  const response = await request.get("/version.txt");
-  expect(response.ok()).toBeTruthy();
-  const text = (await response.text()).trim();
-  expect(text.length).toBeGreaterThan(0);
-});
