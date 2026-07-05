@@ -2,7 +2,7 @@ const loginPageConfigs = {
   admin: {
     mode: "admin",
     kind: "admin",
-    title: "管理中心登录",
+    title: "运营端登录",
     identifierLabel: "用户名",
     identifierParam: "username",
     passwordLabel: "密码",
@@ -14,7 +14,7 @@ const loginPageConfigs = {
   cs: {
     mode: "cs",
     kind: "cs",
-    title: "客服工作台登录",
+    title: "消息端登录",
     identifierLabel: "客服 ID",
     identifierParam: "cs_id",
     passwordLabel: "密码",
@@ -32,7 +32,7 @@ const loginPageConfigs = {
     passwordLabel: "",
     requiresPassword: false,
     requiresConfirmation: false,
-    submitLabel: "进入工作台",
+    submitLabel: "进入消息端",
     defaultRedirect: "/",
   },
 };

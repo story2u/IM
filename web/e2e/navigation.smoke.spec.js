@@ -5,8 +5,8 @@ const routeMatrix = [
   { path: "/", expectText: "客服", selector: "nav" },
   { path: "/admin", expectText: "管理", selector: "nav" },
   { path: "/login", expectText: "客服免密登录", selector: "h1" },
-  { path: "/cs-login", expectText: "客服工作台登录", selector: "h1" },
-  { path: "/admin-login", expectText: "管理中心登录", selector: "h1" },
+  { path: "/cs-login", expectText: "消息端登录", selector: "h1" },
+  { path: "/admin-login", expectText: "运营端登录", selector: "h1" },
 ];
 
 for (const route of routeMatrix) {

@@ -486,7 +486,7 @@ function AdminLoginPanel({ username, password, loading, error, onUsernameChange,
       <section className="grid min-h-[640px] items-center border border-[#d8dde8] bg-white p-4 md:p-8">
         <form className="mx-auto grid w-full max-w-sm gap-4" onSubmit={onSubmit}>
           <div>
-            <h1 className="text-lg font-semibold text-[#172033]">管理中心登录</h1>
+            <h1 className="text-lg font-semibold text-[#172033]">运营端登录</h1>
             <p className="mt-1 text-xs text-[#697386]">/api/v1/session/admin-login</p>
           </div>
           <label className="grid gap-1">
@@ -6442,7 +6442,7 @@ function CSUsersPanel({ snapshot, onRefresh }) {
                       disabled={Boolean(busyKey)}
                       onClick={() => void handleOpenWorkbench(user)}
                     >
-                      {busyKey === `workbench:${user.assigneeId}` ? "打开中" : "进入工作台"}
+                      {busyKey === `workbench:${user.assigneeId}` ? "打开中" : "进入消息端"}
                     </button>
                     <button
                       className="h-8 border border-[#f2b8b5] bg-white px-2 text-xs font-medium text-[#b42318] disabled:border-[#c4cad6] disabled:bg-[#f4f6fa] disabled:text-[#697386]"

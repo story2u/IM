@@ -1477,7 +1477,7 @@ function WorkbenchLoginPanel({ assigneeId, password, loading, error, onAssigneeI
       <section className="grid min-h-[620px] items-center border border-[#d8dde8] bg-white p-4 md:p-8">
         <form className="mx-auto grid w-full max-w-sm gap-4" onSubmit={onSubmit}>
           <div>
-            <h1 className="text-lg font-semibold text-[#172033]">客服工作台登录</h1>
+            <h1 className="text-lg font-semibold text-[#172033]">消息端登录</h1>
             <p className="mt-1 text-xs text-[#697386]">/api/v1/session/cs-login</p>
           </div>
           <label className="grid gap-1">
