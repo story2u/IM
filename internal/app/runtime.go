@@ -185,6 +185,7 @@ func NewRuntime(ctx context.Context, cfg config.Config, options Options) (*Runti
 			DBDialect:             runtime.Dialect,
 			RequireProfileStore:   options.RequireSessionStores,
 			RequireBlacklistStore: options.RequireSessionStores,
+			InitializeBlacklist:   sessionCandidateEnabled(cfg),
 			InitializeAdminUsers:  cfg.SessionAdminLoginCandidate,
 			InitializeAuditLogs:   cfg.SessionAdminLoginCandidate,
 			Context:               ctx,
@@ -1092,6 +1093,16 @@ func (runtime *Runtime) NewVoiceTranscriptionNotifyWaiter() *outboxnotify.Waiter
 		return nil
 	}
 	return outboxnotify.NewRedisWaiter(cacheClient, channel)
+}
+
+func sessionCandidateEnabled(cfg config.Config) bool {
+	return cfg.SessionAdminLoginCandidate ||
+		cfg.SessionLoginCandidate ||
+		cfg.SessionCSLoginCandidate ||
+		cfg.SessionGenerateCSTokenCandidate ||
+		cfg.SessionMeCandidate ||
+		cfg.SessionRefreshCandidate ||
+		cfg.SessionLogoutCandidate
 }
 
 // Close releases runtime-owned DB and Redis handles.

@@ -39,6 +39,7 @@ type Options struct {
 	LastSeenThrottle      time.Duration
 	RequireProfileStore   bool
 	RequireBlacklistStore bool
+	InitializeBlacklist   bool
 	InitializeAdminUsers  bool
 	InitializeAuditLogs   bool
 	Context               context.Context
@@ -60,6 +61,7 @@ func New(options Options) (Module, error) {
 	if err != nil {
 		return Module{}, err
 	}
+	initCtx := initContext(options.Context)
 	var blacklistRepository *sessionblacklist.Repository
 	blacklist := options.Blacklist
 	if blacklist == nil && options.DB != nil {
@@ -69,6 +71,11 @@ func New(options Options) (Module, error) {
 		}
 		blacklistRepository = sessionblacklist.NewSQLRepository(options.DB, dialect)
 		blacklistRepository.Now = options.Now
+		if options.InitializeBlacklist {
+			if err := blacklistRepository.EnsureSchema(initCtx); err != nil {
+				return Module{}, err
+			}
+		}
 		blacklist = blacklistRepository
 	}
 	if blacklist == nil && options.RequireBlacklistStore {
@@ -88,10 +95,6 @@ func New(options Options) (Module, error) {
 		}
 	}
 
-	initCtx := options.Context
-	if initCtx == nil {
-		initCtx = context.Background()
-	}
 	var adminUserRepository *adminusers.Repository
 	if options.DB != nil && options.InitializeAdminUsers {
 		dialect := options.DBDialect
@@ -164,6 +167,13 @@ func New(options Options) (Module, error) {
 		AuditLogRepository:  auditLogRepository,
 		AdminUserRepository: adminUserRepository,
 	}, nil
+}
+
+func initContext(ctx context.Context) context.Context {
+	if ctx == nil {
+		return context.Background()
+	}
+	return ctx
 }
 
 type sessionAuditLogWriter struct {

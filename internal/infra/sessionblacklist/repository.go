@@ -53,6 +53,15 @@ func NewSQLRepository(db *sql.DB, dialect string) *Repository {
 	return &Repository{DB: sqlQueryer{db: db}, Dialect: dialect}
 }
 
+// EnsureSchema creates the revocation table required by JWT verification.
+func (repository *Repository) EnsureSchema(ctx context.Context) error {
+	if repository.DB == nil {
+		return fmt.Errorf("session blacklist database is not configured")
+	}
+	_, err := repository.DB.ExecContext(ctx, repository.createTableSQL())
+	return err
+}
+
 // Contains reports whether jti has been revoked and prunes expired rows first.
 func (repository *Repository) Contains(ctx context.Context, jti string) (bool, error) {
 	if repository.DB == nil {
@@ -156,6 +165,21 @@ func (repository *Repository) upsertSQL() string {
 		return `INSERT INTO session_blacklist (jti, expires_at, revoked_at) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE expires_at=VALUES(expires_at), revoked_at=VALUES(revoked_at)`
 	}
 	return `INSERT INTO session_blacklist (jti, expires_at, revoked_at) VALUES ($1, $2, $3) ON CONFLICT(jti) DO UPDATE SET expires_at=excluded.expires_at, revoked_at=excluded.revoked_at`
+}
+
+func (repository *Repository) createTableSQL() string {
+	if strings.EqualFold(repository.Dialect, DialectPostgres) {
+		return `CREATE TABLE IF NOT EXISTS session_blacklist (
+    jti TEXT PRIMARY KEY,
+    expires_at TIMESTAMPTZ NOT NULL,
+    revoked_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+)`
+	}
+	return `CREATE TABLE IF NOT EXISTS session_blacklist (
+    jti VARCHAR(191) PRIMARY KEY,
+    expires_at DATETIME NOT NULL,
+    revoked_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+)`
 }
 
 func (repository *Repository) selectByJTISQL() string {

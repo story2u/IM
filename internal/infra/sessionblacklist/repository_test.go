@@ -12,6 +12,21 @@ import (
 	"time"
 )
 
+func TestEnsureSchemaCreatesPostgresBlacklistTable(t *testing.T) {
+	db := &fakeDB{}
+	repository := &Repository{DB: db, Dialect: DialectPostgres}
+
+	if err := repository.EnsureSchema(context.Background()); err != nil {
+		t.Fatalf("EnsureSchema returned error: %v", err)
+	}
+	if len(db.execs) != 1 || !strings.Contains(db.execs[0], "CREATE TABLE IF NOT EXISTS session_blacklist") {
+		t.Fatalf("unexpected schema SQL: %v", db.execs)
+	}
+	if !strings.Contains(db.execs[0], "TIMESTAMPTZ") {
+		t.Fatalf("postgres schema should use TIMESTAMPTZ: %s", db.execs[0])
+	}
+}
+
 // TestContainsPrunesExpiredRowsAndFindsJTI verifies the read path SQL contract.
 func TestContainsPrunesExpiredRowsAndFindsJTI(t *testing.T) {
 	db := &fakeDB{row: fakeRow{value: "jwt-test"}}
@@ -175,6 +190,7 @@ type fakeDB struct {
 	query     string
 	queryArgs []any
 	exec      string
+	execs     []string
 	execArgs  []any
 	execErr   error
 	execCount int
@@ -188,6 +204,7 @@ func (db *fakeDB) QueryRowContext(ctx context.Context, query string, args ...any
 
 func (db *fakeDB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	db.exec = query
+	db.execs = append(db.execs, query)
 	db.execArgs = args
 	db.execCount++
 	if db.execErr != nil {
