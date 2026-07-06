@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -16,31 +17,57 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { apiGet, apiPatch } from "@/lib/api";
+import type { PlatformSettings as PlatformSettingsPayload } from "@/lib/types";
 
 const platformSchema = z.object({
   workspaceName: z.string().min(2, "Workspace name is too short"),
   timezone: z.string().min(1),
   defaultLanguage: z.string().min(1),
+  environment: z.string().min(1),
+  region: z.string().min(1),
 });
 type PlatformForm = z.infer<typeof platformSchema>;
 
-function PlatformSettings() {
+async function fetchSettings() {
+  const payload = await apiGet<{ settings: PlatformSettingsPayload }>("/api/v1/settings");
+  return payload.settings;
+}
+
+function PlatformSettingsCard() {
+  const { data, isLoading } = useQuery({ queryKey: ["settings"], queryFn: fetchSettings });
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<PlatformForm>({
     resolver: zodResolver(platformSchema),
     defaultValues: {
-      workspaceName: "Acme Growth Ops",
-      timezone: "Asia/Singapore",
+      workspaceName: "",
+      timezone: "UTC",
       defaultLanguage: "en",
+      environment: "development",
+      region: "local",
     },
   });
 
+  React.useEffect(() => {
+    if (!data) return;
+    reset({
+      workspaceName: data.workspaceName,
+      timezone: data.timezone,
+      defaultLanguage: data.defaultLanguage,
+      environment: data.environment,
+      region: data.region,
+    });
+  }, [data, reset]);
+
   function onSubmit(values: PlatformForm) {
-    return new Promise((r) => setTimeout(r, 600)).then(() => {
-      toast.success("Platform settings saved");
+    return toast.promise(apiPatch("/api/v1/settings", values), {
+      loading: "Saving platform settings…",
+      success: "Platform settings saved",
+      error: "Save failed",
     });
   }
 
@@ -54,17 +81,25 @@ function PlatformSettings() {
         <CardContent className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="workspaceName">Workspace name</Label>
-            <Input id="workspaceName" {...register("workspaceName")} />
+            <Input id="workspaceName" disabled={isLoading} {...register("workspaceName")} />
             {errors.workspaceName && <p className="text-xs text-destructive">{errors.workspaceName.message}</p>}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="timezone">Timezone</Label>
-              <Input id="timezone" {...register("timezone")} />
+              <Input id="timezone" disabled={isLoading} {...register("timezone")} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="defaultLanguage">Default language</Label>
-              <Input id="defaultLanguage" {...register("defaultLanguage")} />
+              <Input id="defaultLanguage" disabled={isLoading} {...register("defaultLanguage")} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="environment">Environment</Label>
+              <Input id="environment" disabled={isLoading} {...register("environment")} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="region">Region</Label>
+              <Input id="region" disabled={isLoading} {...register("region")} />
             </div>
           </div>
         </CardContent>
@@ -228,7 +263,7 @@ export default function SettingsPage() {
           <TabsTrigger value="retention">Retention</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="platform"><PlatformSettings /></TabsContent>
+        <TabsContent value="platform"><PlatformSettingsCard /></TabsContent>
 
         <TabsContent value="channels">
           <SimpleGroup

@@ -2,7 +2,10 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,7 +13,7 @@ import (
 )
 
 func TestIntegrationAPIOverview(t *testing.T) {
-	handler := buildHandler(time.Date(2026, 7, 6, 9, 0, 0, 0, time.UTC))
+	handler := testHandler(t)
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/overview", nil)
@@ -45,7 +48,7 @@ func TestIntegrationAPIOverview(t *testing.T) {
 }
 
 func TestIntegrationAPIChannelActions(t *testing.T) {
-	handler := buildHandler(time.Date(2026, 7, 6, 9, 0, 0, 0, time.UTC))
+	handler := testHandler(t)
 
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/channels/ch_wecom/test", nil)
@@ -72,7 +75,7 @@ func TestIntegrationAPIChannelActions(t *testing.T) {
 }
 
 func TestIntegrationAPIMessageFlowFilter(t *testing.T) {
-	handler := buildHandler(time.Date(2026, 7, 6, 9, 0, 0, 0, time.UTC))
+	handler := testHandler(t)
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/message-flow?channel=wecom&status=success", nil)
 	handler.ServeHTTP(response, request)
@@ -97,7 +100,7 @@ func TestIntegrationAPIMessageFlowFilter(t *testing.T) {
 }
 
 func TestIntegrationAPIConversationSendCreatesOutboxItem(t *testing.T) {
-	handler := buildHandler(time.Date(2026, 7, 6, 9, 0, 0, 0, time.UTC))
+	handler := testHandler(t)
 	payload := bytes.NewBufferString(`{"content":"Please review the quote.","sender":"Sarah Chen"}`)
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/conversations/conv_101/messages", payload)
@@ -118,7 +121,7 @@ func TestIntegrationAPIConversationSendCreatesOutboxItem(t *testing.T) {
 }
 
 func TestIntegrationAPIOutboxActions(t *testing.T) {
-	handler := buildHandler(time.Date(2026, 7, 6, 9, 0, 0, 0, time.UTC))
+	handler := testHandler(t)
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/outbox/out_2/retry", nil)
 	handler.ServeHTTP(response, request)
@@ -135,6 +138,21 @@ func TestIntegrationAPIOutboxActions(t *testing.T) {
 	if body.OutboxItem.Status != "sending" || body.OutboxItem.RetryCount != 4 {
 		t.Fatalf("outbox item = %+v, want sending retry=4", body.OutboxItem)
 	}
+}
+
+func testHandler(t *testing.T) http.Handler {
+	t.Helper()
+	handler, cleanup, err := buildHandler(
+		context.Background(),
+		serverConfig{Addr: ":0"},
+		time.Date(2026, 7, 6, 9, 0, 0, 0, time.UTC),
+		slog.New(slog.NewTextHandler(io.Discard, nil)),
+	)
+	if err != nil {
+		t.Fatalf("build handler: %v", err)
+	}
+	t.Cleanup(cleanup)
+	return handler
 }
 
 func decodeJSON(t *testing.T, data []byte, out any) {

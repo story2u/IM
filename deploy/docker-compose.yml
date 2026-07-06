@@ -3,6 +3,9 @@ name: im-go
 x-go-env: &go-env
   SESSION_JWT_SECRET: "${SESSION_JWT_SECRET:-change-me-in-production}"
   SESSION_JWT_ISSUER: "${SESSION_JWT_ISSUER:-im-cloud}"
+  IM_DATABASE_URL: "${IM_DATABASE_URL:-postgres://im:im-dev-password@go-postgres:5432/im?sslmode=disable}"
+  IM_AUTO_MIGRATE: "${IM_AUTO_MIGRATE:-true}"
+  IM_SEED_DATA: "${IM_SEED_DATA:-true}"
   CLOUD_DB_DSN: "${CLOUD_DB_DSN:-postgres://im:im-dev-password@go-postgres:5432/im?sslmode=disable}"
   CLOUD_WS_REDIS_URL: "${CLOUD_WS_REDIS_URL:-redis://go-redis:6379/0}"
   CLOUD_LOCK_REDIS_URL: "${CLOUD_LOCK_REDIS_URL:-redis://go-redis:6379/1}"

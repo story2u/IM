@@ -31,7 +31,7 @@ Runtime
   - Scheduler
 
 Infrastructure
-  - MySQL
+  - PostgreSQL
   - Redis Streams / PubSub / Cache
   - Object Storage
   - Metrics / Logs / Traces
@@ -171,3 +171,15 @@ Realtime gateway 只发布产品级事件：
 - 所有只为过渡期存在的桥接 sidecar。
 
 这些能力可作为 integration 保留，但必须通过 connector/provider contract 接入。
+
+## 9. Integration Hub 后端基础
+
+新版控制台的 `/api/v1/*` 由 `internal/integrationhub` 分层提供：
+
+- `domain` 定义通道中立的 Channel、ChannelAccount、Connector、Conversation、Message、InboundEvent、OutboundCommand、SOPWorkflow、AIPolicy、AuditLog 和观测模型。
+- `httpapi` 只处理 HTTP 路由、请求解码、错误映射和响应 shape。
+- `service` 负责校验、ID 生成、状态流转、审计和消息发送编排。
+- `store` 使用 PostgreSQL 作为主库，启动时可执行内嵌 migration，并在空库时写入本地开发 seed 数据。
+- `connectors` 放置具体 IM adapter。企微回调 payload 只在 `connectors.WeComAdapter` 内解析，核心只接收标准 `InboundEvent`。
+
+PostgreSQL schema 以 `internal/integrationhub/store/migrations/*.sql` 为准。核心写路径不直接调用外部 IM 平台；发送动作先生成 message 与 outbound command，再由后续 worker/connector 处理投递。

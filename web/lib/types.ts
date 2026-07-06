@@ -177,3 +177,14 @@ export interface TrafficPoint {
   inbound: number;
   outbound: number;
 }
+
+export interface PlatformSettings {
+  workspaceName: string;
+  timezone: string;
+  defaultLanguage: string;
+  environment: string;
+  region: string;
+  retentionDays: number;
+  webhookUrl: string;
+  enabledProviders: string[];
+}

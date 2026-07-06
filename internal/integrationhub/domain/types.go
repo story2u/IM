@@ -1,4 +1,4 @@
-package integrationhub
+package domain
 
 import "time"
 
@@ -37,6 +37,27 @@ const (
 	SendManualApproval SendCapability = "manual_approval"
 )
 
+type Connector struct {
+	ID        string         `json:"id"`
+	Kind      ChannelKind    `json:"kind"`
+	Name      string         `json:"name"`
+	Status    ChannelStatus  `json:"status"`
+	Config    map[string]any `json:"config,omitempty"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+}
+
+type ChannelAccount struct {
+	ID                string         `json:"id"`
+	ChannelID         string         `json:"channelId"`
+	DisplayName       string         `json:"displayName"`
+	ExternalAccountID string         `json:"externalAccountId"`
+	Status            ChannelStatus  `json:"status"`
+	Config            map[string]any `json:"config,omitempty"`
+	CreatedAt         time.Time      `json:"createdAt"`
+	UpdatedAt         time.Time      `json:"updatedAt"`
+}
+
 type Channel struct {
 	ID                  string              `json:"id"`
 	Kind                ChannelKind         `json:"kind"`
@@ -48,6 +69,9 @@ type Channel struct {
 	ErrorCount24h       int                 `json:"errorCount24h"`
 	MessagesToday       int                 `json:"messagesToday"`
 	ActiveConversations int                 `json:"activeConversations"`
+	ConnectorID         *string             `json:"connectorId,omitempty"`
+	CreatedAt           time.Time           `json:"createdAt,omitempty"`
+	UpdatedAt           time.Time           `json:"updatedAt,omitempty"`
 }
 
 type PipelineStage string
@@ -120,6 +144,7 @@ const (
 
 type Conversation struct {
 	ID                 string      `json:"id"`
+	ChannelID          string      `json:"channelId,omitempty"`
 	Channel            ChannelKind `json:"channel"`
 	ContactName        string      `json:"contactName"`
 	ContactHandle      string      `json:"contactHandle"`
@@ -128,20 +153,40 @@ type Conversation struct {
 	AssignedOperator   *string     `json:"assignedOperator"`
 	AIStatus           AIStatus    `json:"aiStatus"`
 	SOPStage           SOPStage    `json:"sopStage"`
+	SOPWorkflowID      *string     `json:"sopWorkflowId,omitempty"`
 	SOPWorkflowName    *string     `json:"sopWorkflowName"`
 	Unread             int         `json:"unread"`
 	Tags               []string    `json:"tags"`
+	CreatedAt          time.Time   `json:"createdAt,omitempty"`
+	UpdatedAt          time.Time   `json:"updatedAt,omitempty"`
 }
 
 type ConversationMessage struct {
-	ID             string           `json:"id"`
-	ConversationID string           `json:"conversationId"`
-	Channel        ChannelKind      `json:"channel"`
-	Direction      MessageDirection `json:"direction"`
-	Author         string           `json:"author"`
-	Content        string           `json:"content"`
-	Time           time.Time        `json:"time"`
-	IsAIGenerated  bool             `json:"isAiGenerated,omitempty"`
+	ID                string           `json:"id"`
+	ConversationID    string           `json:"conversationId"`
+	ChannelID         string           `json:"channelId,omitempty"`
+	Channel           ChannelKind      `json:"channel"`
+	Direction         MessageDirection `json:"direction"`
+	Author            string           `json:"author"`
+	Content           string           `json:"content"`
+	Time              time.Time        `json:"time"`
+	MessageType       string           `json:"messageType,omitempty"`
+	IsAIGenerated     bool             `json:"isAiGenerated,omitempty"`
+	ExternalMessageID *string          `json:"externalMessageId,omitempty"`
+}
+
+type InboundEvent struct {
+	ID              string             `json:"id"`
+	ChannelID       string             `json:"channelId,omitempty"`
+	ConnectorKind   ChannelKind        `json:"connectorKind"`
+	EventType       string             `json:"eventType"`
+	ExternalEventID string             `json:"externalEventId,omitempty"`
+	ReceivedAt      time.Time          `json:"receivedAt"`
+	Normalized      map[string]any     `json:"normalizedPayload,omitempty"`
+	AdapterPayload  map[string]any     `json:"adapterPayload,omitempty"`
+	TraceID         string             `json:"traceId"`
+	Status          MessageEventStatus `json:"status"`
+	Error           *string            `json:"error,omitempty"`
 }
 
 type AIPolicyKind string
@@ -166,6 +211,8 @@ type AIPolicy struct {
 	FallbackStrategy string       `json:"fallbackStrategy"`
 	SuccessRate7d    float64      `json:"successRate7d"`
 	Invocations24h   int          `json:"invocations24h"`
+	CreatedAt        time.Time    `json:"createdAt,omitempty"`
+	UpdatedAt        time.Time    `json:"updatedAt,omitempty"`
 }
 
 type WorkflowStatus string
@@ -184,6 +231,7 @@ type WorkflowStep struct {
 	HumanAction    *string `json:"humanAction"`
 	TimeoutMinutes int     `json:"timeoutMinutes"`
 	Fallback       string  `json:"fallback"`
+	Position       int     `json:"position,omitempty"`
 }
 
 type SOPWorkflow struct {
@@ -196,6 +244,8 @@ type SOPWorkflow struct {
 	SLAMinutes          int            `json:"slaMinutes"`
 	Status              WorkflowStatus `json:"status"`
 	Steps               []WorkflowStep `json:"steps"`
+	CreatedAt           time.Time      `json:"createdAt,omitempty"`
+	UpdatedAt           time.Time      `json:"updatedAt,omitempty"`
 }
 
 type OutboxStatus string
@@ -212,16 +262,23 @@ const (
 type OutboxItem struct {
 	ID                string         `json:"id"`
 	CreatedAt         time.Time      `json:"createdAt"`
+	ChannelID         string         `json:"channelId,omitempty"`
 	Channel           ChannelKind    `json:"channel"`
 	ConversationID    string         `json:"conversationId"`
 	ConversationLabel string         `json:"conversationLabel"`
+	MessageID         *string        `json:"messageId,omitempty"`
 	MessageType       string         `json:"messageType"`
 	Sender            string         `json:"sender"`
 	DeliveryMethod    SendCapability `json:"deliveryMethod"`
 	Status            OutboxStatus   `json:"status"`
 	RetryCount        int            `json:"retryCount"`
 	LastError         *string        `json:"lastError"`
+	Payload           map[string]any `json:"payload,omitempty"`
+	IdempotencyKey    string         `json:"idempotencyKey,omitempty"`
+	UpdatedAt         time.Time      `json:"updatedAt,omitempty"`
 }
+
+type OutboundCommand = OutboxItem
 
 type AuditActorType string
 
@@ -248,6 +305,7 @@ type AuditLogEntry struct {
 	Channel   *ChannelKind   `json:"channel"`
 	Result    AuditResult    `json:"result"`
 	IP        *string        `json:"ip"`
+	TraceID   string         `json:"traceId,omitempty"`
 }
 
 type IncidentSeverity string
@@ -283,9 +341,44 @@ type OverviewStats struct {
 }
 
 type PlatformSettings struct {
+	WorkspaceName    string   `json:"workspaceName"`
+	Timezone         string   `json:"timezone"`
+	DefaultLanguage  string   `json:"defaultLanguage"`
 	Environment      string   `json:"environment"`
 	Region           string   `json:"region"`
 	RetentionDays    int      `json:"retentionDays"`
 	WebhookURL       string   `json:"webhookUrl"`
 	EnabledProviders []string `json:"enabledProviders"`
+}
+
+type Snapshot struct {
+	Connectors      []Connector           `json:"connectors"`
+	ChannelAccounts []ChannelAccount      `json:"channelAccounts"`
+	Channels        []Channel             `json:"channels"`
+	PipelineStats   []PipelineStageStats  `json:"pipelineStats"`
+	MessageEvents   []MessageEvent        `json:"messageEvents"`
+	Conversations   []Conversation        `json:"conversations"`
+	Messages        []ConversationMessage `json:"messages"`
+	InboundEvents   []InboundEvent        `json:"inboundEvents"`
+	AIPolicies      []AIPolicy            `json:"aiPolicies"`
+	SOPWorkflows    []SOPWorkflow         `json:"sopWorkflows"`
+	OutboxItems     []OutboxItem          `json:"outboxItems"`
+	AuditLog        []AuditLogEntry       `json:"auditLog"`
+	Incidents       []RecentIncident      `json:"recentIncidents"`
+	TrafficSeries   []TrafficPoint        `json:"trafficSeries"`
+	Settings        PlatformSettings      `json:"settings"`
+}
+
+type OverviewData struct {
+	Stats     OverviewStats
+	Channels  []Channel
+	Incidents []RecentIncident
+	Traffic   []TrafficPoint
+}
+
+type ObservabilityData struct {
+	Channels      []Channel
+	MessageEvents []MessageEvent
+	Traffic       []TrafficPoint
+	Stats         OverviewStats
 }
