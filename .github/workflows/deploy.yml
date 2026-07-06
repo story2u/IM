@@ -4,21 +4,21 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Deployment environment'
+        description: Deployment environment
         required: true
-        default: 'production'
+        default: production
         type: choice
         options:
           - production
           - staging
       version:
-        description: 'Version to deploy (branch, tag, or SHA)'
+        description: Version to deploy, such as main, v1.0.0, or a SHA image tag
         required: false
-        default: ''
+        default: ""
   workflow_run:
-    workflows: ['Docker Build & Push']
+    workflows: ["Build Images"]
     types: [completed]
-    branches: [main, master]
+    branches: [main]
 
 permissions:
   contents: read
@@ -26,12 +26,17 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ${{ github.repository_owner }}
+  IMAGE_NAMESPACE: ${{ github.repository_owner }}
+
+concurrency:
+  group: deploy-vps-${{ inputs.environment || 'production' }}
+  cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy to VPS
+    name: Deploy
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
@@ -40,7 +45,7 @@ jobs:
       VPS_HOST: ${{ vars.VPS_HOST || secrets.VPS_HOST }}
       VPS_USER: ${{ vars.VPS_USER || secrets.VPS_USER }}
       VPS_PORT: ${{ vars.VPS_PORT || secrets.VPS_PORT || '22' }}
-      VPS_DEPLOY_DIR: ${{ vars.VPS_DEPLOY_DIR || secrets.VPS_DEPLOY_DIR || '/opt/wework' }}
+      VPS_DEPLOY_DIR: ${{ vars.VPS_DEPLOY_DIR || secrets.VPS_DEPLOY_DIR || '/opt/im' }}
       VPS_COMPOSE_SERVICES: ${{ vars.VPS_COMPOSE_SERVICES || 'go-postgres go-redis go-cache-redis go-api go-web go-incoming-worker cloudflared' }}
       DEPLOY_VERSION: ${{ inputs.version || github.event.workflow_run.head_branch || github.ref_name || 'main' }}
       DEPLOY_ENVIRONMENT: ${{ inputs.environment || 'production' }}
@@ -51,34 +56,36 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate VPS configuration
+      - name: Validate deploy configuration
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
           set -euo pipefail
           test -n "$VPS_HOST" || { echo "VPS_HOST is required"; exit 1; }
           test -n "$VPS_USER" || { echo "VPS_USER is required"; exit 1; }
-          test -n "${VPS_SSH_KEY:-}" || { echo "VPS_SSH_KEY secret is required"; exit 1; }
+          test -n "$VPS_SSH_KEY" || { echo "VPS_SSH_KEY secret is required"; exit 1; }
           case " $VPS_COMPOSE_SERVICES " in
             *" cloudflared "*)
-              test -n "${CLOUDFLARE_TUNNEL_TOKEN:-}" || { echo "CLOUDFLARE_TUNNEL_TOKEN secret is required when deploying cloudflared"; exit 1; }
+              test -n "$CLOUDFLARE_TUNNEL_TOKEN" || { echo "CLOUDFLARE_TUNNEL_TOKEN secret is required when deploying cloudflared"; exit 1; }
               ;;
           esac
           case "$VPS_DEPLOY_DIR" in
             *"'"*) echo "VPS_DEPLOY_DIR must not contain single quotes"; exit 1 ;;
           esac
-        env:
-          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
 
       - name: Prepare SSH key
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
           set -euo pipefail
           install -m 700 -d ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/vps_deploy_key
           chmod 600 ~/.ssh/vps_deploy_key
           ssh-keyscan -p "$VPS_PORT" "$VPS_HOST" >> ~/.ssh/known_hosts
-        env:
-          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
 
       - name: Sync compose files
+        env:
+          VPS_ENV_FILE: ${{ secrets.VPS_ENV_FILE }}
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/vps_deploy_key -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "mkdir -p '$VPS_DEPLOY_DIR'"
@@ -86,16 +93,14 @@ jobs:
             deploy/docker-compose.yml \
             deploy/.env.example \
             "$VPS_USER@$VPS_HOST:$VPS_DEPLOY_DIR/"
-          if [ -n "${VPS_ENV_FILE:-}" ]; then
+          if [ -n "$VPS_ENV_FILE" ]; then
             env_file="$(mktemp)"
             printf '%s\n' "$VPS_ENV_FILE" > "$env_file"
             scp -i ~/.ssh/vps_deploy_key -P "$VPS_PORT" "$env_file" "$VPS_USER@$VPS_HOST:$VPS_DEPLOY_DIR/.env"
             rm -f "$env_file"
           fi
-        env:
-          VPS_ENV_FILE: ${{ secrets.VPS_ENV_FILE }}
 
-      - name: Deploy Docker services
+      - name: Deploy services
         run: |
           set -euo pipefail
           quote() {
@@ -106,7 +111,7 @@ jobs:
             "VERSION=$(quote "$DEPLOY_VERSION")"
             "ENVIRONMENT=$(quote "$DEPLOY_ENVIRONMENT")"
             "REGISTRY=$(quote "$REGISTRY")"
-            "IMAGE_PREFIX=$(quote "$IMAGE_PREFIX")"
+            "IMAGE_NAMESPACE=$(quote "$IMAGE_NAMESPACE")"
             "GHCR_USERNAME=$(quote "$GHCR_USERNAME")"
             "GHCR_TOKEN=$(quote "$GHCR_TOKEN")"
             "COMPOSE_SERVICES=$(quote "$VPS_COMPOSE_SERVICES")"
@@ -115,12 +120,12 @@ jobs:
           ssh -i ~/.ssh/vps_deploy_key -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "${remote_env[*]} bash -s" <<'REMOTE'
           set -euo pipefail
 
-          echo "Deploying version ${VERSION} to ${ENVIRONMENT}..."
+          echo "Deploying ${VERSION} to ${ENVIRONMENT}..."
           cd "$DEPLOY_DIR"
 
           if [ ! -f .env ]; then
             cp .env.example .env
-            echo "Created $DEPLOY_DIR/.env from .env.example. Update it with production secrets before exposing traffic."
+            echo "Created $DEPLOY_DIR/.env from .env.example. Replace change-me values before exposing traffic."
           fi
 
           if ! docker compose version >/dev/null 2>&1; then
@@ -133,9 +138,11 @@ jobs:
           fi
 
           export GO_IMAGE_TAG="$VERSION"
-          export GO_API_IMAGE="$REGISTRY/$IMAGE_PREFIX/wework-api:$VERSION"
-          export GO_WEB_IMAGE="$REGISTRY/$IMAGE_PREFIX/wework-web:$VERSION"
-          export GO_INCOMING_WORKER_IMAGE="$REGISTRY/$IMAGE_PREFIX/wework-incoming-worker:$VERSION"
+          export GO_API_IMAGE="$REGISTRY/$IMAGE_NAMESPACE/im-api:$VERSION"
+          export GO_WEB_IMAGE="$REGISTRY/$IMAGE_NAMESPACE/im-web:$VERSION"
+          export GO_INCOMING_WORKER_IMAGE="$REGISTRY/$IMAGE_NAMESPACE/im-incoming-worker:$VERSION"
+
+          docker compose --env-file .env config >/dev/null
 
           echo "Pulling images for: $COMPOSE_SERVICES"
           docker compose --env-file .env pull $COMPOSE_SERVICES
@@ -148,7 +155,7 @@ jobs:
           echo "Starting services..."
           docker compose --env-file .env up -d --remove-orphans $COMPOSE_SERVICES
 
-          echo "Cleaning up old images..."
+          echo "Cleaning up dangling images..."
           docker image prune -f
 
           echo "Deployment complete."
@@ -159,6 +166,7 @@ jobs:
     name: Health Check
     runs-on: ubuntu-latest
     needs: deploy
+    timeout-minutes: 5
     env:
       VPS_API_URL: ${{ vars.VPS_API_URL || secrets.VPS_API_URL }}
       VPS_WEB_URL: ${{ vars.VPS_WEB_URL || secrets.VPS_WEB_URL }}
@@ -168,18 +176,20 @@ jobs:
 
       - name: Check API health
         run: |
+          set -euo pipefail
           if [ -z "$VPS_API_URL" ]; then
             echo "VPS_API_URL is not set; skipping API health check"
             exit 0
           fi
-          curl -f "$VPS_API_URL/healthz"
+          curl -fsS "$VPS_API_URL/healthz"
           echo "API health check passed"
 
       - name: Check Web health
         run: |
+          set -euo pipefail
           if [ -z "$VPS_WEB_URL" ]; then
             echo "VPS_WEB_URL is not set; skipping Web health check"
             exit 0
           fi
-          curl -f "$VPS_WEB_URL"
+          curl -fsS "$VPS_WEB_URL"
           echo "Web health check passed"

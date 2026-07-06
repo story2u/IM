@@ -22,7 +22,7 @@ The compose file intentionally includes only Postgres, Redis, API, Web, the inco
 
 ## GitHub Actions VPS Deploy
 
-The `Deploy to VPS` workflow deploys the GHCR images built by `Docker Build & Push`. Configure these repository or environment values before running it:
+The `Deploy to VPS` workflow deploys the GHCR images built by `Build Images`. Configure these repository or environment values before running it:
 
 - Variables or secrets: `VPS_HOST`, `VPS_USER`, optional `VPS_PORT`, optional `VPS_DEPLOY_DIR`, optional `VPS_API_URL`, optional `VPS_WEB_URL`.
 - Secret: `VPS_SSH_KEY`, the private key used by the workflow to SSH into the VPS.
@@ -33,7 +33,7 @@ The `Deploy to VPS` workflow deploys the GHCR images built by `Docker Build & Pu
 
 The SSH user must be able to write `VPS_DEPLOY_DIR` and run `docker compose`. On a fresh Ubuntu VPS, install Docker and add the deploy user to the `docker` group, or use a restricted root login dedicated to deployment.
 
-The workflow copies `deploy/docker-compose.yml` and `deploy/.env.example` to the VPS, preserves an existing `.env`, and overwrites `.env` only when `VPS_ENV_FILE` is set. It exports GHCR image names such as `ghcr.io/story2u/wework-api:main` at deploy time, so the compose file pulls release images instead of building locally.
+The workflow copies `deploy/docker-compose.yml` and `deploy/.env.example` to the VPS, preserves an existing `.env`, and overwrites `.env` only when `VPS_ENV_FILE` is set. It exports GHCR image names such as `ghcr.io/story2u/im-api:main`, `ghcr.io/story2u/im-web:main`, and `ghcr.io/story2u/im-incoming-worker:main` at deploy time, so the compose file pulls release images instead of building locally.
 
 ## Cloudflare Tunnel Routes
 
@@ -106,7 +106,7 @@ npm run build
 
 For staging deployments, also verify:
 
-- API `/healthz`, `/readyz`, and `/metrics`.
+- API `/healthz`.
 - Web `/`.
 - Worker logs and queue lag.
 - Connector/provider health endpoints for any enabled integration.

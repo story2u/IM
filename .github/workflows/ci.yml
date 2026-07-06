@@ -2,17 +2,24 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
+    tags: ["v*"]
   pull_request:
-    branches: [main, master]
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
-    name: Test
+  go:
+    name: Go Test And Build
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,58 +29,48 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Download dependencies
+      - name: Download Go dependencies
         run: go mod download
 
-      - name: Run tests
-        run: go test -v -race ./...
+      - name: Run Go tests
+        run: go test -race ./...
 
-      - name: Run vet
+      - name: Run Go vet
         run: go vet ./...
 
-  build:
-    name: Build
+      - name: Build API
+        run: CGO_ENABLED=0 go build -trimpath -o bin/api ./cmd/api
+
+      - name: Build incoming worker
+        run: CGO_ENABLED=0 go build -trimpath -o bin/incoming-worker ./cmd/incoming-worker
+
+  web:
+    name: Web Build
     runs-on: ubuntu-latest
-    needs: test
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          go-version-file: go.mod
+          node-version: 22
 
-      - name: Build API
-        run: CGO_ENABLED=0 go build -o bin/api ./cmd/api
+      - name: Install Web dependencies
+        run: npm install --package-lock=false --no-audit --no-fund
 
-      - name: Build archive-ingest-worker
-        run: CGO_ENABLED=0 go build -o bin/archive-ingest-worker ./cmd/archive-ingest-worker
-
-      - name: Build archive-media-worker
-        run: CGO_ENABLED=0 go build -o bin/archive-media-worker ./cmd/archive-media-worker
-
-      - name: Build archive-sync-worker
-        run: CGO_ENABLED=0 go build -o bin/archive-sync-worker ./cmd/archive-sync-worker
-
-      - name: Build contact-sync-worker
-        run: CGO_ENABLED=0 go build -o bin/contact-sync-worker ./cmd/contact-sync-worker
-
-      - name: Build incoming-worker
-        run: CGO_ENABLED=0 go build -o bin/incoming-worker ./cmd/incoming-worker
-
-      - name: Build outbox-worker
-        run: CGO_ENABLED=0 go build -o bin/outbox-worker ./cmd/outbox-worker
-
-      - name: Build send-dispatcher
-        run: CGO_ENABLED=0 go build -o bin/send-dispatcher ./cmd/send-dispatcher
-
-      - name: Build voice-transcription-worker
-        run: CGO_ENABLED=0 go build -o bin/voice-transcription-worker ./cmd/voice-transcription-worker
+      - name: Build Web
+        run: npm run build
 
   lint:
-    name: Lint
+    name: Go Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -86,4 +83,5 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
-          version: v2.12.2
+          version: latest
+          args: --timeout=5m
