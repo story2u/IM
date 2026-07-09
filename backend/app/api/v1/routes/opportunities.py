@@ -1,0 +1,124 @@
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+
+from app.api.deps import (
+    get_adapter_registry,
+    get_message_repo,
+    get_opportunity_or_404,
+    get_opportunity_repo,
+    get_reply_generator,
+    require_admin,
+)
+from app.application.dto import (
+    AIDraftResponse,
+    ManualReplyRequest,
+    OpportunityDetailRead,
+    OpportunityRead,
+    OpportunityStatusUpdate,
+)
+from app.application.mappers import to_opportunity_detail, to_opportunity_read
+from app.application.use_cases.ai_reply import AIDraftUseCase
+from app.application.use_cases.manual_reply import ManualReplyUseCase
+from app.domain.enums import FrontendOpportunityStatus, IMChannel
+from app.domain.services.opportunity_state import InvalidOpportunityTransition, ensure_transition_allowed
+from app.infrastructure.ai.litellm_client import LiteLLMReplyGenerator
+from app.infrastructure.db.models import Opportunity
+from app.infrastructure.db.repositories import MessageRepository, OpportunityRepository
+from app.infrastructure.im.base import AdapterRegistry
+
+router = APIRouter()
+
+
+@router.get("", response_model=list[OpportunityRead])
+async def list_opportunities(
+    status_filter: FrontendOpportunityStatus | None = Query(default=None, alias="status"),
+    platform: IMChannel | None = None,
+    limit: int = Query(default=100, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    repo: OpportunityRepository = Depends(get_opportunity_repo),
+) -> list[OpportunityRead]:
+    opportunities = await repo.list(
+        frontend_status=status_filter,
+        channel=platform,
+        limit=limit,
+        offset=offset,
+    )
+    return [to_opportunity_read(opportunity) for opportunity in opportunities]
+
+
+@router.get("/{opportunity_id}", response_model=OpportunityDetailRead)
+async def get_opportunity(
+    opportunity: Opportunity = Depends(get_opportunity_or_404),
+) -> OpportunityDetailRead:
+    return to_opportunity_detail(opportunity)
+
+
+@router.post("/{opportunity_id}/manual-reply", response_model=OpportunityDetailRead)
+async def manual_reply(
+    payload: ManualReplyRequest,
+    _: None = Depends(require_admin),
+    opportunity: Opportunity = Depends(get_opportunity_or_404),
+    opportunity_repo: OpportunityRepository = Depends(get_opportunity_repo),
+    message_repo: MessageRepository = Depends(get_message_repo),
+    adapters: AdapterRegistry = Depends(get_adapter_registry),
+) -> OpportunityDetailRead:
+    use_case = ManualReplyUseCase(
+        opportunity_repo=opportunity_repo,
+        message_repo=message_repo,
+        adapters=adapters,
+    )
+    try:
+        updated = await use_case.execute(
+            opportunity=opportunity,
+            text=payload.text,
+            operator_id=payload.operator_id,
+            mark_following=payload.mark_following,
+        )
+    except InvalidOpportunityTransition as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    return to_opportunity_detail(updated)
+
+
+@router.post("/{opportunity_id}/ai-draft", response_model=AIDraftResponse)
+async def generate_ai_draft(
+    _: None = Depends(require_admin),
+    opportunity: Opportunity = Depends(get_opportunity_or_404),
+    opportunity_repo: OpportunityRepository = Depends(get_opportunity_repo),
+    reply_generator: LiteLLMReplyGenerator = Depends(get_reply_generator),
+) -> AIDraftResponse:
+    use_case = AIDraftUseCase(
+        opportunity_repo=opportunity_repo,
+        reply_generator=reply_generator,
+    )
+    draft = await use_case.execute(opportunity)
+    return AIDraftResponse(opportunity_id=opportunity.id, draft=draft)
+
+
+@router.patch("/{opportunity_id}/status", response_model=OpportunityDetailRead)
+async def update_status(
+    payload: OpportunityStatusUpdate,
+    _: None = Depends(require_admin),
+    opportunity: Opportunity = Depends(get_opportunity_or_404),
+    repo: OpportunityRepository = Depends(get_opportunity_repo),
+) -> OpportunityDetailRead:
+    try:
+        ensure_transition_allowed(opportunity.status, payload.status)
+    except InvalidOpportunityTransition as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    updated = await repo.update_status(opportunity, payload.status)
+    return to_opportunity_detail(updated)
+
+
+@router.post("/{opportunity_id}/claim", response_model=OpportunityDetailRead)
+async def claim_opportunity(
+    opportunity_id: UUID,
+    operator_id: str = Query(min_length=1, max_length=128),
+    _: None = Depends(require_admin),
+    opportunity: Opportunity = Depends(get_opportunity_or_404),
+    repo: OpportunityRepository = Depends(get_opportunity_repo),
+) -> OpportunityDetailRead:
+    if opportunity.id != opportunity_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="id mismatch")
+    updated = await repo.update_status(opportunity, opportunity.status, assigned_to=operator_id)
+    return to_opportunity_detail(updated)

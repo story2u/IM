@@ -1,0 +1,73 @@
+export type Platform = 'telegram' | 'wecom'
+export type OpportunityStatus = 'pending' | 'replied' | 'ignored'
+export type Priority = 'low' | 'normal' | 'high' | 'urgent'
+export type MessageSource = 'human' | 'ai' | null
+
+export type SourceType = 'group' | 'private'
+export type GroupMemberRole = 'member' | 'unknown'
+export type LinkVerificationStatus = 'unverified' | 'verifying' | 'safe' | 'suspicious' | 'malicious'
+export type ContactExtractionSource = 'message_text' | 'link_content' | 'sop_manual' | null
+export type FriendRequestStatus = 'not_sent' | 'pending' | 'accepted' | 'rejected' | 'n/a'
+export type SopStage =
+  | 'detected'
+  | 'analyzing'
+  | 'verified'
+  | 'contact_extracted'
+  | 'friend_requested'
+  | 'ready_to_chat'
+  | 'chatting'
+  | 'closed'
+
+export interface LinkVerification {
+  status: LinkVerificationStatus
+  verifiedAt: string | null
+  riskReasons: string[]
+  resolvedInfo: string | null
+}
+
+export interface ExtractedContacts {
+  phone: string | null
+  email: string | null
+  telegramHandle: string | null
+  wecomId: string | null
+  extractionSource: ContactExtractionSource
+}
+
+export interface Opportunity {
+  id: string
+  platform: Platform
+  contactName: string
+  contactAvatar: string
+  summary: string
+  matchedKeywords: string[]
+  confidenceScore: number
+  status: OpportunityStatus
+  priority: Priority
+  lastMessagePreview: string
+  createdAt: string
+  sourceType: SourceType
+  groupName: string | null
+  groupMemberRole: GroupMemberRole
+  rawMessageLinks: string[]
+  linkVerification: LinkVerification
+  extractedContacts: ExtractedContacts
+  friendRequestStatus: FriendRequestStatus
+  sopStage: SopStage
+  trustScore: number
+}
+
+export interface ChatMessage {
+  id: string
+  senderName: string
+  content: string
+  isFromContact: boolean
+  sentAt: string
+  source: MessageSource
+}
+
+export interface ReplyTemplate {
+  id: string
+  title: string
+  content: string
+  category: string
+}
