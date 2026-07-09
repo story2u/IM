@@ -28,6 +28,15 @@ class OpportunityRead(BaseModel):
     lastMessagePreview: str
     createdAt: datetime
     updatedAt: datetime
+    sourceType: str = "private"
+    groupName: str | None = None
+    groupMemberRole: str = "member"
+    rawMessageLinks: list[str] = Field(default_factory=list)
+    linkVerification: dict = Field(default_factory=dict)
+    extractedContacts: dict = Field(default_factory=dict)
+    friendRequestStatus: str = "not_sent"
+    sopStage: str = "detected"
+    trustScore: int = 70
 
 
 class OpportunityDetailRead(OpportunityRead):

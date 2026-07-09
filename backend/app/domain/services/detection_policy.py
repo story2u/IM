@@ -23,6 +23,45 @@ HIGH_INTENT_WORDS = {
     "trial",
 }
 
+JOB_INTENT_WORDS = {
+    "招聘",
+    "招人",
+    "岗位",
+    "职位",
+    "内推",
+    "简历",
+    "投递",
+    "薪资",
+    "薪酬",
+    "远程",
+    "全职",
+    "兼职",
+    "实习",
+    "外包",
+    "工程师",
+    "开发",
+    "后端",
+    "前端",
+    "算法",
+    "产品经理",
+    "运营",
+    "设计师",
+    "hiring",
+    "recruiting",
+    "job",
+    "jobs",
+    "remote",
+    "full-time",
+    "part-time",
+    "resume",
+    "cv",
+}
+
+CONTACT_SIGNAL_RE = re.compile(
+    r"(@[A-Za-z0-9_]{4,}|[\w.+-]+@[\w-]+(?:\.[\w-]+)+|(?:微信|VX|vx|TG|Telegram|联系))"
+)
+SALARY_SIGNAL_RE = re.compile(r"(\d{1,3}\s*[kK]|[\d.]+\s*[万wW]|薪资|薪酬|预算|base)")
+
 
 class OpportunityDetector:
     def __init__(self, ai_classifier: OpportunityAIClassifier | None = None) -> None:
@@ -51,6 +90,14 @@ class OpportunityDetector:
             if word.lower() in normalized.lower() and word not in matched_keywords:
                 score = min(1.0, score + 0.12)
                 matched_keywords.append(word)
+
+        job_score, job_keywords = self._job_posting_score(normalized)
+        if job_score > 0:
+            score = min(1.0, score + job_score)
+            for keyword in job_keywords:
+                if keyword not in matched_keywords:
+                    matched_keywords.append(keyword)
+            reasons.append("recruiting_signal")
 
         if score >= 0.75:
             return self._build_positive_result(normalized, score, reasons, matched_keywords)
@@ -108,7 +155,7 @@ class OpportunityDetector:
         )
 
     def _priority(self, score: float, matched_keywords: list[str]) -> Priority:
-        urgent_words = {"报价", "采购", "合同", "urgent", "quote"}
+        urgent_words = {"报价", "采购", "合同", "urgent", "quote", "招聘", "hiring"}
         if score >= 0.92 or urgent_words.intersection({item.lower() for item in matched_keywords}):
             return Priority.URGENT
         if score >= 0.8:
@@ -119,3 +166,21 @@ class OpportunityDetector:
 
     def _title(self, text: str) -> str:
         return text[:42] + ("..." if len(text) > 42 else "")
+
+    def _job_posting_score(self, text: str) -> tuple[float, list[str]]:
+        lower_text = text.lower()
+        matched = [word for word in JOB_INTENT_WORDS if word.lower() in lower_text]
+        if not matched:
+            return 0.0, []
+
+        score = min(0.58, 0.18 + 0.1 * min(len(matched), 4))
+        if SALARY_SIGNAL_RE.search(text):
+            score += 0.12
+            matched.append("薪资")
+        if CONTACT_SIGNAL_RE.search(text):
+            score += 0.12
+            matched.append("联系方式")
+        if re.search(r"(python|java|golang|go|react|node|fastapi|ai|llm)", lower_text):
+            score += 0.08
+
+        return min(score, 0.78), matched[:8]

@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 import httpx
@@ -24,7 +25,12 @@ class TelegramAdapter:
         secret = headers.get("x-telegram-bot-api-secret-token", "")
         require_secret(secret, self.settings.telegram_webhook_secret, "invalid telegram secret")
 
-        message = payload.get("message") or payload.get("edited_message")
+        message = (
+            payload.get("message")
+            or payload.get("edited_message")
+            or payload.get("channel_post")
+            or payload.get("edited_channel_post")
+        )
         if not message:
             return None
 
@@ -34,14 +40,16 @@ class TelegramAdapter:
 
         chat = message.get("chat") or {}
         sender = message.get("from") or {}
-        external_message_id = str(message.get("message_id"))
         conversation_id = str(chat.get("id"))
+        external_message_id = f"{conversation_id}:{message.get('message_id')}"
+        chat_type = str(chat.get("type") or "private")
+        source_type = "private" if chat_type == "private" else "group"
 
         sender_name = " ".join(
             item
             for item in [sender.get("first_name"), sender.get("last_name")]
             if item
-        ) or sender.get("username")
+        ) or sender.get("username") or chat.get("title")
 
         return InboundMessage(
             channel=self.channel,
@@ -50,6 +58,9 @@ class TelegramAdapter:
             sender_external_id=str(sender.get("id")) if sender.get("id") else None,
             sender_display_name=sender_name,
             text=text,
+            source_type=source_type,
+            group_name=str(chat.get("title")) if source_type == "group" and chat.get("title") else None,
+            raw_message_links=self._extract_links(message, text),
             raw_payload=payload,
         )
 
@@ -72,3 +83,19 @@ class TelegramAdapter:
                 provider_message_id=str(message_id) if message_id else None,
                 raw_response=data,
             )
+
+    def _extract_links(self, message: dict[str, Any], text: str) -> list[str]:
+        links: list[str] = []
+        for entity in [*message.get("entities", []), *message.get("caption_entities", [])]:
+            entity_type = entity.get("type")
+            if entity_type == "text_link" and entity.get("url"):
+                links.append(str(entity["url"]))
+                continue
+            if entity_type == "url":
+                offset = int(entity.get("offset", 0))
+                length = int(entity.get("length", 0))
+                if length > 0:
+                    links.append(text[offset : offset + length])
+
+        links.extend(re.findall(r"https?://[^\s<>()\"']+", text))
+        return list(dict.fromkeys(links))

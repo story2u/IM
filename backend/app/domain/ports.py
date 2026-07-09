@@ -13,6 +13,9 @@ class InboundMessage(BaseModel):
     sender_external_id: str | None = None
     sender_display_name: str | None = None
     text: str | None = None
+    source_type: str = "private"
+    group_name: str | None = None
+    raw_message_links: list[str] = Field(default_factory=list)
     raw_payload: dict[str, Any] = Field(default_factory=dict)
 
 

@@ -35,3 +35,16 @@ async def test_detector_marks_high_intent_message_as_opportunity() -> None:
     assert result.is_opportunity
     assert result.confidence >= 0.75
     assert "报价" in result.matched_keywords
+
+
+@pytest.mark.asyncio
+async def test_detector_marks_recruiting_group_message_as_opportunity() -> None:
+    detector = OpportunityDetector()
+    result = await detector.detect(
+        "招聘 Python 后端工程师，远程全职，薪资 25k-35k，简历发 @hr_jobs",
+        [],
+    )
+
+    assert result.is_opportunity
+    assert result.confidence >= 0.75
+    assert "招聘" in result.matched_keywords

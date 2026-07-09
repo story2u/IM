@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAppStore } from '@/lib/app-store'
 import { applyFilters, defaultFilters, type DashboardFilters, type SortKey } from '@/lib/dashboard-filters'
-import { allKeywordTags } from '@/lib/mock-data'
 import type { OpportunityStatus, Platform } from '@/lib/types'
 
 const PAGE_SIZE = 12
@@ -28,6 +27,10 @@ export default function DashboardPage() {
   const [page, setPage] = useState(1)
 
   const filtered = useMemo(() => applyFilters(opportunities, filters), [opportunities, filters])
+  const keywordOptions = useMemo(
+    () => Array.from(new Set(opportunities.flatMap((o) => o.matchedKeywords))).sort(),
+    [opportunities],
+  )
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
@@ -78,7 +81,7 @@ export default function DashboardPage() {
             <SelectItem value="wecom">企业微信</SelectItem>
           </SelectContent>
         </Select>
-        <FilterPanel filters={filters} onChange={setFilters} keywordOptions={allKeywordTags} />
+        <FilterPanel filters={filters} onChange={setFilters} keywordOptions={keywordOptions} />
         <Select
           items={sortLabels}
           value={filters.sort}

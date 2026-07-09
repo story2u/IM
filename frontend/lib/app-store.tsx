@@ -1,7 +1,8 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { incomingOpportunity, mockMessages, mockOpportunities, mockTemplates } from './mock-data'
+import { fetchOpportunities, fetchReplyTemplates } from './api'
+import { mockMessages, mockOpportunities, mockTemplates } from './mock-data'
 import type {
   ChatMessage,
   ExtractedContacts,
@@ -39,33 +40,31 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const [templates, setTemplates] = useState<ReplyTemplate[]>(mockTemplates)
   const [workMode, setWorkMode] = useState<WorkMode>('work')
   const [newOpportunityId, setNewOpportunityId] = useState<string | null>(null)
-  const insertedRef = useRef(false)
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
 
-  // 模拟实时推送：8 秒后插入一条新商机
   useEffect(() => {
-    if (insertedRef.current) return
-    const timer = setTimeout(() => {
-      if (insertedRef.current) return
-      insertedRef.current = true
-      setOpportunities((prev) => [incomingOpportunity, ...prev])
-      setMessagesByOpportunity((prev) => ({
-        ...prev,
-        [incomingOpportunity.id]: [
-          {
-            id: 'm1',
-            senderName: incomingOpportunity.contactName,
-            content: incomingOpportunity.lastMessagePreview,
-            isFromContact: true,
-            sentAt: incomingOpportunity.createdAt,
-            source: null,
-          },
-        ],
-      }))
-      setNewOpportunityId(incomingOpportunity.id)
-      setTimeout(() => setNewOpportunityId(null), 3000)
-    }, 8000)
-    return () => clearTimeout(timer)
+    let cancelled = false
+    async function loadBackendData() {
+      try {
+        const [backendOpportunities, backendTemplates] = await Promise.all([
+          fetchOpportunities(),
+          fetchReplyTemplates(),
+        ])
+        if (cancelled) return
+        setOpportunities(backendOpportunities)
+        setTemplates(backendTemplates.length > 0 ? backendTemplates : mockTemplates)
+        setMessagesByOpportunity({})
+      } catch (error) {
+        console.warn('Failed to load backend data, using mock data.', error)
+      }
+    }
+
+    loadBackendData()
+    const interval = setInterval(loadBackendData, 30000)
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
   }, [])
 
   useEffect(() => {

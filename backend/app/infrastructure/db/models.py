@@ -40,11 +40,15 @@ class Opportunity(TimestampMixin, table=True):
     customer_external_id: str | None = Field(default=None, index=True)
     contact_name: str = Field(default="未知联系人")
     contact_avatar: str = Field(default="")
+    source_type: str = Field(default="private", index=True)
+    group_name: str | None = None
 
     source_message_id: UUID | None = Field(default=None, index=True)
     title: str
     summary: str | None = None
     matched_keywords: list[str] = Field(default_factory=list, sa_column=Column(JSONB, nullable=False))
+    raw_message_links: list[str] = Field(default_factory=list, sa_column=Column(JSONB, nullable=False))
+    trust_score: int = Field(default=70, ge=0, le=100)
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     priority: Priority = Field(
         default=Priority.NORMAL,

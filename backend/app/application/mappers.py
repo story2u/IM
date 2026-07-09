@@ -12,6 +12,25 @@ from app.domain.enums import (
 from app.infrastructure.db.models import Message, Opportunity, ReplyTemplate
 
 
+def default_link_verification(opportunity: Opportunity) -> dict:
+    return {
+        "status": "unverified",
+        "verifiedAt": None,
+        "riskReasons": [],
+        "resolvedInfo": None,
+    }
+
+
+def default_extracted_contacts(opportunity: Opportunity) -> dict:
+    return {
+        "phone": None,
+        "email": None,
+        "telegramHandle": None,
+        "wecomId": None,
+        "extractionSource": None,
+    }
+
+
 def frontend_status(status: OpportunityStatus) -> FrontendOpportunityStatus:
     if status in {OpportunityStatus.PENDING_HUMAN, OpportunityStatus.AI_AUTO_REPLY}:
         return FrontendOpportunityStatus.PENDING
@@ -35,6 +54,15 @@ def to_opportunity_read(opportunity: Opportunity) -> OpportunityRead:
         lastMessagePreview=opportunity.last_message_preview,
         createdAt=opportunity.created_at,
         updatedAt=opportunity.updated_at,
+        sourceType=opportunity.source_type,
+        groupName=opportunity.group_name,
+        groupMemberRole="member",
+        rawMessageLinks=opportunity.raw_message_links,
+        linkVerification=default_link_verification(opportunity),
+        extractedContacts=default_extracted_contacts(opportunity),
+        friendRequestStatus="not_sent" if opportunity.source_type == "group" else "n/a",
+        sopStage="detected",
+        trustScore=opportunity.trust_score,
     )
 
 
