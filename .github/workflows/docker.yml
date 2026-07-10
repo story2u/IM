@@ -1,15 +1,10 @@
 name: Build Images
 
 on:
-  push:
-    tags: ["v*"]
-  pull_request:
-    branches: [main]
   workflow_run:
     workflows: ["CI"]
     types: [completed]
-    branches: [main]
-  workflow_dispatch:
+    branches: ["release/v*.*.*"]
 
 permissions:
   contents: read
@@ -20,7 +15,7 @@ env:
   IMAGE_NAMESPACE: ${{ github.repository_owner }}
 
 concurrency:
-  group: build-images-${{ github.ref }}
+  group: build-images-${{ github.event.workflow_run.head_branch }}
   cancel-in-progress: true
 
 jobs:
@@ -28,7 +23,7 @@ jobs:
     name: Build ${{ matrix.image }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    if: github.event.workflow_run.conclusion == 'success'
     strategy:
       fail-fast: false
       matrix:
@@ -43,13 +38,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.event.pull_request.head.sha || github.ref }}
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Resolve release metadata
+        id: release
+        env:
+          RELEASE_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          version="${RELEASE_BRANCH#release/}"
+          if [[ ! "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release branch must match release/v<major>.<minor>.<patch>, got: $RELEASE_BRANCH"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${RELEASE_SHA:0:7}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
       - name: Log in to GHCR
-        if: github.event_name != 'pull_request'
         uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
@@ -62,18 +71,15 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.image }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=ref,event=tag
-            type=sha,prefix=sha-
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ steps.release.outputs.version }}
+            type=raw,value=sha-${{ steps.release.outputs.short_sha }}
 
       - name: Build and push image
         uses: docker/build-push-action@v7
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.file }}
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.image }}
