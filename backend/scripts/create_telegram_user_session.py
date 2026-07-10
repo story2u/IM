@@ -1,11 +1,10 @@
 import asyncio
 import getpass
+import os
 
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError
 from telethon.sessions import StringSession
-
-from app.core.config import get_settings
 
 
 async def prompt(message: str) -> str:
@@ -17,15 +16,13 @@ async def prompt_password(message: str) -> str:
 
 
 async def main() -> None:
-    settings = get_settings()
-    if not settings.telegram_user_api_id or not settings.telegram_user_api_hash:
-        raise SystemExit("Set TELEGRAM_USER_API_ID and TELEGRAM_USER_API_HASH first.")
-
+    api_id = int(os.getenv("TELEGRAM_API_ID") or await prompt("Telegram API ID: "))
+    api_hash = os.getenv("TELEGRAM_API_HASH") or await prompt("Telegram API hash: ")
     phone = await prompt("Telegram phone number, for example +8613800000000: ")
     client = TelegramClient(
         StringSession(),
-        settings.telegram_user_api_id,
-        settings.telegram_user_api_hash,
+        api_id,
+        api_hash,
     )
     await client.connect()
     if not await client.is_user_authorized():
@@ -37,7 +34,7 @@ async def main() -> None:
             password = await prompt_password("Two-step verification password, if enabled: ")
             await client.sign_in(password=password)
 
-    print("\nTELEGRAM_USER_SESSION=" + client.session.save())
+    print("\nTELEGRAM_SESSION_STRING=" + client.session.save())
     await client.disconnect()
 
 

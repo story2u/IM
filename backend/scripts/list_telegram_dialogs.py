@@ -1,17 +1,22 @@
 import asyncio
+import os
 
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 
-from app.core.config import get_settings
+
+async def prompt(message: str) -> str:
+    return (await asyncio.to_thread(input, message)).strip()
 
 
 async def main() -> None:
-    settings = get_settings()
+    api_id = int(os.getenv("TELEGRAM_API_ID") or await prompt("Telegram API ID: "))
+    api_hash = os.getenv("TELEGRAM_API_HASH") or await prompt("Telegram API hash: ")
+    session_string = os.getenv("TELEGRAM_SESSION_STRING") or await prompt("Telegram session string: ")
     client = TelegramClient(
-        StringSession(settings.telegram_user_session),
-        settings.telegram_user_api_id,
-        settings.telegram_user_api_hash,
+        StringSession(session_string),
+        api_id,
+        api_hash,
     )
     await client.start()
     async for dialog in client.iter_dialogs():

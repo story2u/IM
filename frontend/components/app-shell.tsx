@@ -1,12 +1,13 @@
 'use client'
 
-import { BookText, LayoutGrid, Moon, Radar, Settings, Sun } from 'lucide-react'
+import { BookText, LayoutGrid, LogOut, Moon, Radar, Settings, Sun, UserRound } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 import { ModeStatusBar } from '@/components/mode-status-bar'
 import { Button } from '@/components/ui/button'
+import { useAuth } from '@/lib/auth'
 import { cn } from '@/lib/utils'
 
 const navItems = [
@@ -35,6 +36,27 @@ function ThemeToggle() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
+  const { user, loading, logout } = useAuth()
+  const isLoginPage = pathname === '/login'
+
+  useEffect(() => {
+    if (!loading && !user && !isLoginPage) {
+      router.replace('/login')
+    }
+  }, [isLoginPage, loading, router, user])
+
+  if (isLoginPage) {
+    return <main className="min-h-svh bg-background">{children}</main>
+  }
+
+  if (loading || !user) {
+    return (
+      <main className="grid min-h-svh place-items-center bg-background text-sm text-muted-foreground">
+        正在校验登录状态
+      </main>
+    )
+  }
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -73,8 +95,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
           <div className="mt-auto flex items-center justify-between border-t px-4 py-3">
-            <span className="text-xs text-muted-foreground">外观</span>
-            <ThemeToggle />
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-sidebar-foreground">
+                <UserRound className="size-3.5" />
+                <span className="truncate">{user.displayName || user.email}</span>
+              </div>
+              <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{user.email}</p>
+            </div>
+            <div className="flex items-center gap-1">
+              <ThemeToggle />
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="退出登录"
+                onClick={() => {
+                  logout()
+                  router.replace('/login')
+                }}
+              >
+                <LogOut className="size-4" />
+              </Button>
+            </div>
           </div>
         </aside>
 

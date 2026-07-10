@@ -49,6 +49,7 @@ class IngestMessageUseCase:
 
         opportunity = await self.opportunity_repo.create(
             channel=message.channel,
+            owner_user_id=inbound.owner_user_id,
             conversation_id=message.conversation_id,
             customer_external_id=message.sender_external_id,
             contact_name=message.sender_display_name,

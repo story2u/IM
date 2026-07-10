@@ -7,7 +7,20 @@ x-app-env: &app-env
   CELERY_BROKER_URL: redis://redis:6379/1
   CELERY_RESULT_BACKEND: redis://redis:6379/2
   ADMIN_API_TOKEN: change-me
+  JWT_SECRET_KEY: change-me-with-a-long-random-string
+  ACCESS_TOKEN_EXPIRE_MINUTES: "10080"
+  FRONTEND_BASE_URL: http://localhost:3000
   CORS_ORIGINS: '["http://localhost:3000","http://127.0.0.1:3000"]'
+  GOOGLE_OAUTH_CLIENT_ID: ""
+  GOOGLE_OAUTH_CLIENT_SECRET: ""
+  GOOGLE_OAUTH_REDIRECT_URI: http://localhost:8000/api/v1/auth/oauth/google/callback
+  APPLE_OAUTH_CLIENT_ID: ""
+  APPLE_OAUTH_CLIENT_SECRET: ""
+  APPLE_OAUTH_REDIRECT_URI: http://localhost:8000/api/v1/auth/oauth/apple/callback
+  APPLE_OAUTH_TEAM_ID: ""
+  APPLE_OAUTH_KEY_ID: ""
+  APPLE_OAUTH_PRIVATE_KEY: ""
+  TELEGRAM_FREE_MONITOR_LIMIT: "1"
   DEFAULT_TIMEZONE: Asia/Shanghai
   DEFAULT_WORKDAYS: "[1,2,3,4,5]"
   DEFAULT_WORK_START: "09:00"
@@ -89,7 +102,17 @@ services:
 
   celery_beat:
     build: .
-    command: celery -A app.worker.celery_app:celery_app beat -l INFO
+    command: celery -A app.worker.celery_app:celery_app beat -l INFO --schedule=/tmp/celerybeat-schedule
+    environment: *app-env
+    volumes:
+      - .:/app
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  telegram_listener:
+    build: .
+    command: python -m app.worker.telegram_listener
     environment: *app-env
     volumes:
       - .:/app

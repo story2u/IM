@@ -7,6 +7,7 @@ from app.domain.enums import IMChannel, Priority, RuleType
 
 
 class InboundMessage(BaseModel):
+    owner_user_id: UUID | None = None
     channel: IMChannel
     external_message_id: str
     conversation_id: str

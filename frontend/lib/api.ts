@@ -1,11 +1,18 @@
 import type {
+  AuthUser,
   ExtractedContacts,
   LinkVerification,
+  OAuthAuthorizeResponse,
+  OAuthProvider,
   Opportunity,
   ReplyTemplate,
+  TelegramDialog,
+  TelegramUserConfig,
+  TelegramUserConfigUpdate,
 } from './types'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? ''
+const AUTH_TOKEN_KEY = 'im_assistant_access_token'
 
 interface ApiOpportunity {
   id: string
@@ -49,13 +56,46 @@ function apiUrl(path: string) {
   return `${API_BASE_URL}${path}`
 }
 
-async function fetchJson<T>(path: string): Promise<T> {
+export function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null
+  return window.localStorage.getItem(AUTH_TOKEN_KEY)
+}
+
+export function setAuthToken(token: string | null) {
+  if (typeof window === 'undefined') return
+  if (token) {
+    window.localStorage.setItem(AUTH_TOKEN_KEY, token)
+  } else {
+    window.localStorage.removeItem(AUTH_TOKEN_KEY)
+  }
+}
+
+async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getAuthToken()
+  const headers = new Headers(init?.headers)
+  headers.set('Accept', 'application/json')
+  if (init?.body && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`)
+  }
   const response = await fetch(apiUrl(path), {
-    headers: { Accept: 'application/json' },
+    ...init,
+    headers,
     cache: 'no-store',
   })
   if (!response.ok) {
-    throw new Error(`API ${path} failed with ${response.status}`)
+    let detail = `API ${path} failed with ${response.status}`
+    try {
+      const body = (await response.json()) as { detail?: unknown }
+      if (typeof body.detail === 'string') {
+        detail = body.detail
+      }
+    } catch {
+      // Keep the HTTP status fallback when the response is not JSON.
+    }
+    throw new Error(detail)
   }
   return response.json() as Promise<T>
 }
@@ -92,4 +132,47 @@ export async function fetchOpportunities(): Promise<Opportunity[]> {
 
 export async function fetchReplyTemplates(): Promise<ReplyTemplate[]> {
   return fetchJson<ReplyTemplate[]>('/api/v1/templates')
+}
+
+export async function fetchOAuthAuthorizeUrl(provider: OAuthProvider): Promise<string> {
+  const result = await fetchJson<OAuthAuthorizeResponse>(`/api/v1/auth/oauth/${provider}/authorize`)
+  return result.authorizationUrl
+}
+
+export async function fetchMe(): Promise<AuthUser> {
+  return fetchJson<AuthUser>('/api/v1/auth/me')
+}
+
+export async function fetchTelegramUserConfig(): Promise<TelegramUserConfig> {
+  return fetchJson<TelegramUserConfig>('/api/v1/integrations/telegram-user/config')
+}
+
+export async function updateTelegramUserConfig(
+  payload: TelegramUserConfigUpdate,
+): Promise<TelegramUserConfig> {
+  return fetchJson<TelegramUserConfig>('/api/v1/integrations/telegram-user/config', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function sendTelegramCode(apiId: number, apiHash: string, phone: string) {
+  return fetchJson<{ loginId: string; expiresInSeconds: number }>('/api/v1/integrations/telegram-user/send-code', {
+    method: 'POST',
+    body: JSON.stringify({ apiId, apiHash, phone }),
+  })
+}
+
+export async function verifyTelegramCode(loginId: string, code: string, password?: string) {
+  return fetchJson<{ status: string; config: TelegramUserConfig | null }>(
+    '/api/v1/integrations/telegram-user/verify-code',
+    {
+      method: 'POST',
+      body: JSON.stringify({ loginId, code, password: password || null }),
+    },
+  )
+}
+
+export async function fetchTelegramDialogs(): Promise<TelegramDialog[]> {
+  return fetchJson<TelegramDialog[]>('/api/v1/integrations/telegram-user/dialogs')
 }

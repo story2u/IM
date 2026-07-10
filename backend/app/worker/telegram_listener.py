@@ -1,33 +1,30 @@
 import asyncio
 import signal
+from contextlib import suppress
+from datetime import datetime
+from uuid import UUID
 
 import structlog
 
 from app.application.use_cases.ingest_message import IngestMessageUseCase
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
+from app.core.security import decrypt_secret
 from app.core.time_window import WorkTimeConfig, WorkTimeService
 from app.domain.services.detection_policy import OpportunityDetector
 from app.infrastructure.ai.litellm_client import LiteLLMOpportunityClassifier
-from app.infrastructure.db.repositories import ConfigRepository, MessageRepository, OpportunityRepository, RuleRepository
+from app.infrastructure.db.repositories import (
+    ConfigRepository,
+    MessageRepository,
+    OpportunityRepository,
+    RuleRepository,
+    TelegramUserConfigRepository,
+)
 from app.infrastructure.db.session import AsyncSessionLocal
-from app.infrastructure.im.telegram_user import TelegramUserClient
+from app.infrastructure.im.telegram_user import TelegramUserClient, TelegramUserClientConfig
 from app.worker.queue import CeleryTaskQueue
 
 logger = structlog.get_logger(__name__)
-
-
-def missing_telegram_user_settings() -> list[str]:
-    settings = get_settings()
-    missing = []
-    if not settings.telegram_user_api_id:
-        missing.append("TELEGRAM_USER_API_ID")
-    if not settings.telegram_user_api_hash or settings.telegram_user_api_hash == "change-me":
-        missing.append("TELEGRAM_USER_API_HASH")
-    if not settings.telegram_user_session:
-        missing.append("TELEGRAM_USER_SESSION")
-    if not settings.telegram_user_chats:
-        missing.append("TELEGRAM_USER_CHATS")
-    return missing
+POLL_SECONDS = 30
 
 
 async def ingest(inbound) -> None:
@@ -51,42 +48,125 @@ async def ingest(inbound) -> None:
         result = await use_case.execute(inbound)
         logger.info(
             "telegram_user.message_ingested",
+            owner_user_id=str(inbound.owner_user_id) if inbound.owner_user_id else None,
             external_message_id=inbound.external_message_id,
             result_type=result.__class__.__name__,
         )
 
 
-async def run_listener() -> None:
-    settings = get_settings()
-    if not settings.telegram_user_enabled:
-        logger.info("telegram_user.disabled")
-        await asyncio.Event().wait()
+async def record_monitor_error(monitor_id: UUID, error: str | None) -> None:
+    async with AsyncSessionLocal() as session:
+        await TelegramUserConfigRepository(session).record_monitor_error(monitor_id, error)
 
-    missing = missing_telegram_user_settings()
-    if missing:
-        raise RuntimeError(f"missing Telegram user settings: {', '.join(missing)}")
 
-    user_client = TelegramUserClient(settings)
-    await user_client.start()
+async def load_enabled_client_configs(
+    settings: Settings,
+) -> dict[UUID, tuple[datetime, TelegramUserClientConfig]]:
+    configs: dict[UUID, tuple[datetime, TelegramUserClientConfig]] = {}
+    async with AsyncSessionLocal() as session:
+        repo = TelegramUserConfigRepository(session)
+        for db_config, monitor in await repo.list_enabled_monitors():
+            if (
+                not db_config.api_id
+                or not db_config.api_hash_encrypted
+                or not db_config.session_encrypted
+                or not monitor.chat_id
+            ):
+                await repo.record_monitor_error(monitor.id, "enabled monitor config is incomplete")
+                continue
+            try:
+                configs[monitor.id] = (
+                    max(db_config.updated_at, monitor.updated_at),
+                    TelegramUserClientConfig(
+                        user_id=db_config.user_id,
+                        api_id=db_config.api_id,
+                        api_hash=decrypt_secret(db_config.api_hash_encrypted, settings),
+                        session_string=decrypt_secret(db_config.session_encrypted, settings),
+                        chats=[monitor.chat_id],
+                        backfill_limit=monitor.backfill_limit,
+                    ),
+                )
+            except ValueError as exc:
+                await repo.record_monitor_error(monitor.id, str(exc))
+    return configs
 
-    for signame in {"SIGINT", "SIGTERM"}:
-        asyncio.get_running_loop().add_signal_handler(
-            getattr(signal, signame),
-            lambda: asyncio.create_task(user_client.disconnect()),
+
+async def run_config_listener(monitor_id: UUID, client_config: TelegramUserClientConfig) -> None:
+    user_client = TelegramUserClient(client_config)
+    try:
+        await user_client.start()
+        await record_monitor_error(monitor_id, None)
+        logger.info(
+            "telegram_user.started",
+            monitor_id=str(monitor_id),
+            owner_user_id=str(client_config.user_id),
+            chats=user_client.normalized_chats(),
         )
 
-    logger.info("telegram_user.started", chats=user_client.normalized_chats())
-
-    async for inbound in user_client.iter_backfill_messages():
-        await ingest(inbound)
-
-    @user_client.client.on(user_client.new_message_event())
-    async def handle_new_message(event) -> None:
-        inbound = await user_client.to_inbound_message(event.message)
-        if inbound:
+        async for inbound in user_client.iter_backfill_messages():
             await ingest(inbound)
 
-    await user_client.client.run_until_disconnected()
+        @user_client.client.on(user_client.new_message_event())
+        async def handle_new_message(event) -> None:
+            inbound = await user_client.to_inbound_message(event.message)
+            if inbound:
+                await ingest(inbound)
+
+        await user_client.client.run_until_disconnected()
+    except asyncio.CancelledError:
+        raise
+    except Exception as exc:
+        logger.exception("telegram_user.listener_failed", monitor_id=str(monitor_id))
+        await record_monitor_error(monitor_id, str(exc))
+    finally:
+        with suppress(Exception):
+            await user_client.disconnect()
+
+
+async def supervise_listeners(stop_event: asyncio.Event) -> None:
+    settings = get_settings()
+    running: dict[UUID, tuple[datetime, asyncio.Task[None]]] = {}
+    while not stop_event.is_set():
+        desired = await load_enabled_client_configs(settings)
+        for monitor_id, (_, task) in list(running.items()):
+            if task.done():
+                running.pop(monitor_id, None)
+                continue
+            desired_item = desired.get(monitor_id)
+            if desired_item is None or desired_item[0] != running[monitor_id][0]:
+                task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await task
+                running.pop(monitor_id, None)
+
+        for monitor_id, (updated_at, client_config) in desired.items():
+            if monitor_id in running:
+                continue
+            running[monitor_id] = (
+                updated_at,
+                asyncio.create_task(run_config_listener(monitor_id, client_config)),
+            )
+
+        if not running:
+            logger.info("telegram_user.no_enabled_configs")
+
+        with suppress(asyncio.TimeoutError):
+            await asyncio.wait_for(stop_event.wait(), timeout=POLL_SECONDS)
+
+    for _, task in running.values():
+        task.cancel()
+    for _, task in running.values():
+        with suppress(asyncio.CancelledError):
+            await task
+
+
+async def run_listener() -> None:
+    stop_event = asyncio.Event()
+    loop = asyncio.get_running_loop()
+    for signame in {"SIGINT", "SIGTERM"}:
+        with suppress(NotImplementedError):
+            loop.add_signal_handler(getattr(signal, signame), stop_event.set)
+    await supervise_listeners(stop_event)
 
 
 def main() -> None:

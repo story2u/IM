@@ -23,7 +23,22 @@ class Settings(BaseSettings):
     celery_result_backend: str = "redis://redis:6379/2"
 
     admin_api_token: str
+    jwt_secret_key: str = ""
+    access_token_expire_minutes: int = 60 * 24 * 7
+    frontend_base_url: str = "http://localhost:3000"
     cors_origins: list[AnyHttpUrl | str] = Field(default_factory=list)
+
+    google_oauth_client_id: str = ""
+    google_oauth_client_secret: str = ""
+    google_oauth_redirect_uri: str = ""
+    apple_oauth_client_id: str = ""
+    apple_oauth_client_secret: str = ""
+    apple_oauth_redirect_uri: str = ""
+    apple_oauth_team_id: str = ""
+    apple_oauth_key_id: str = ""
+    apple_oauth_private_key: str = ""
+
+    telegram_free_monitor_limit: int = 1
 
     default_timezone: str = "Asia/Shanghai"
     default_workdays: list[int] = Field(default_factory=lambda: [1, 2, 3, 4, 5])
@@ -34,12 +49,6 @@ class Settings(BaseSettings):
     im_send_enabled: bool = False
     telegram_bot_token: str = ""
     telegram_webhook_secret: str = ""
-    telegram_user_enabled: bool = False
-    telegram_user_api_id: int = 0
-    telegram_user_api_hash: str = ""
-    telegram_user_session: str = ""
-    telegram_user_chats: list[str | int] = Field(default_factory=list)
-    telegram_user_backfill_limit: int = 30
 
     wecom_corp_id: str = ""
     wecom_agent_id: str = ""

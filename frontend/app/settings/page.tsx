@@ -45,16 +45,18 @@ export default function SettingsPage() {
             平台绑定
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Card className="flex-row items-center gap-3 rounded-xl p-4 shadow-sm">
-              <span className="flex size-10 items-center justify-center rounded-lg bg-sky-500/15 text-sky-600 dark:text-sky-400">
-                <Send className="size-5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">Telegram</p>
-                <p className="text-xs text-muted-foreground">@biz_radar_bot</p>
-              </div>
-              <Badge className="bg-success/15 text-success border-transparent">已连接</Badge>
-            </Card>
+            <Link href="/settings/telegram" className="block">
+              <Card className="flex-row items-center gap-3 rounded-xl p-4 shadow-sm transition-shadow hover:shadow-md">
+                <span className="flex size-10 items-center justify-center rounded-lg bg-sky-500/15 text-sky-600 dark:text-sky-400">
+                  <Send className="size-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">Telegram 普通账号</p>
+                  <p className="text-xs text-muted-foreground">按用户独立配置</p>
+                </div>
+                <ChevronRight className="size-4 text-muted-foreground" />
+              </Card>
+            </Link>
             <Card className="flex-row items-center gap-3 rounded-xl p-4 shadow-sm">
               <span className="flex size-10 items-center justify-center rounded-lg bg-success/15 text-success">
                 <MessageSquare className="size-5" />

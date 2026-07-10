@@ -8,7 +8,7 @@ from app.api.deps import (
     get_opportunity_or_404,
     get_opportunity_repo,
     get_reply_generator,
-    require_admin,
+    require_user,
 )
 from app.application.dto import (
     AIDraftResponse,
@@ -23,7 +23,7 @@ from app.application.use_cases.manual_reply import ManualReplyUseCase
 from app.domain.enums import FrontendOpportunityStatus, IMChannel
 from app.domain.services.opportunity_state import InvalidOpportunityTransition, ensure_transition_allowed
 from app.infrastructure.ai.litellm_client import LiteLLMReplyGenerator
-from app.infrastructure.db.models import Opportunity
+from app.infrastructure.db.models import Opportunity, User
 from app.infrastructure.db.repositories import MessageRepository, OpportunityRepository
 from app.infrastructure.im.base import AdapterRegistry
 
@@ -36,11 +36,13 @@ async def list_opportunities(
     platform: IMChannel | None = None,
     limit: int = Query(default=100, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
+    current_user: User = Depends(require_user),
     repo: OpportunityRepository = Depends(get_opportunity_repo),
 ) -> list[OpportunityRead]:
     opportunities = await repo.list(
         frontend_status=status_filter,
         channel=platform,
+        owner_user_id=current_user.id,
         limit=limit,
         offset=offset,
     )
@@ -57,7 +59,7 @@ async def get_opportunity(
 @router.post("/{opportunity_id}/manual-reply", response_model=OpportunityDetailRead)
 async def manual_reply(
     payload: ManualReplyRequest,
-    _: None = Depends(require_admin),
+    _: User = Depends(require_user),
     opportunity: Opportunity = Depends(get_opportunity_or_404),
     opportunity_repo: OpportunityRepository = Depends(get_opportunity_repo),
     message_repo: MessageRepository = Depends(get_message_repo),
@@ -82,7 +84,7 @@ async def manual_reply(
 
 @router.post("/{opportunity_id}/ai-draft", response_model=AIDraftResponse)
 async def generate_ai_draft(
-    _: None = Depends(require_admin),
+    _: User = Depends(require_user),
     opportunity: Opportunity = Depends(get_opportunity_or_404),
     opportunity_repo: OpportunityRepository = Depends(get_opportunity_repo),
     reply_generator: LiteLLMReplyGenerator = Depends(get_reply_generator),
@@ -98,7 +100,7 @@ async def generate_ai_draft(
 @router.patch("/{opportunity_id}/status", response_model=OpportunityDetailRead)
 async def update_status(
     payload: OpportunityStatusUpdate,
-    _: None = Depends(require_admin),
+    _: User = Depends(require_user),
     opportunity: Opportunity = Depends(get_opportunity_or_404),
     repo: OpportunityRepository = Depends(get_opportunity_repo),
 ) -> OpportunityDetailRead:
@@ -114,7 +116,7 @@ async def update_status(
 async def claim_opportunity(
     opportunity_id: UUID,
     operator_id: str = Query(min_length=1, max_length=128),
-    _: None = Depends(require_admin),
+    _: User = Depends(require_user),
     opportunity: Opportunity = Depends(get_opportunity_or_404),
     repo: OpportunityRepository = Depends(get_opportunity_repo),
 ) -> OpportunityDetailRead:

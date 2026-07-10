@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
+from sqlalchemy import func
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -15,7 +16,18 @@ from app.domain.enums import (
     Priority,
 )
 from app.domain.ports import DetectionRule, InboundMessage
-from app.infrastructure.db.models import AppConfig, Message, Opportunity, ReplyTemplate, Rule, utc_now
+from app.infrastructure.db.models import (
+    AppConfig,
+    AuthAccount,
+    Message,
+    Opportunity,
+    ReplyTemplate,
+    Rule,
+    TelegramMonitor,
+    TelegramUserConfig,
+    User,
+    utc_now,
+)
 
 
 FRONTEND_STATUS_MAP: dict[FrontendOpportunityStatus, set[OpportunityStatus]] = {
@@ -34,6 +46,111 @@ FRONTEND_STATUS_MAP: dict[FrontendOpportunityStatus, set[OpportunityStatus]] = {
 }
 
 
+class UserRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def count(self) -> int:
+        result = await self.session.exec(select(func.count()).select_from(User))
+        return int(result.one())
+
+    async def get(self, user_id: UUID) -> User | None:
+        return await self.session.get(User, user_id)
+
+    async def get_by_email(self, email: str) -> User | None:
+        statement = select(User).where(User.email == email.lower().strip())
+        result = await self.session.exec(statement)
+        return result.first()
+
+    async def get_by_auth_account(self, provider: str, provider_subject: str) -> User | None:
+        statement = (
+            select(User)
+            .join(AuthAccount)
+            .where(
+                AuthAccount.provider == provider,
+                AuthAccount.provider_subject == provider_subject,
+            )
+        )
+        result = await self.session.exec(statement)
+        return result.first()
+
+    async def list(self) -> list[User]:
+        result = await self.session.exec(select(User).order_by(col(User.created_at).asc()))
+        return list(result.all())
+
+    async def create_oauth_user(
+        self,
+        *,
+        email: str,
+        display_name: str,
+        avatar_url: str = "",
+    ) -> User:
+        user = User(
+            email=email.lower().strip(),
+            display_name=display_name.strip() or email.lower().strip(),
+            avatar_url=avatar_url,
+        )
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
+    async def link_auth_account(
+        self,
+        *,
+        user: User,
+        provider: str,
+        provider_subject: str,
+        email: str | None,
+    ) -> AuthAccount:
+        account = AuthAccount(
+            user_id=user.id,
+            provider=provider,
+            provider_subject=provider_subject,
+            email=email.lower().strip() if email else None,
+        )
+        self.session.add(account)
+        await self.session.commit()
+        await self.session.refresh(account)
+        return account
+
+    async def get_or_create_oauth_user(
+        self,
+        *,
+        provider: str,
+        provider_subject: str,
+        email: str,
+        display_name: str,
+        avatar_url: str = "",
+    ) -> User:
+        user = await self.get_by_auth_account(provider, provider_subject)
+        if user:
+            return await self.mark_login(user)
+
+        user = await self.get_by_email(email)
+        if not user:
+            user = await self.create_oauth_user(
+                email=email,
+                display_name=display_name,
+                avatar_url=avatar_url,
+            )
+        await self.link_auth_account(
+            user=user,
+            provider=provider,
+            provider_subject=provider_subject,
+            email=email,
+        )
+        return await self.mark_login(user)
+
+    async def mark_login(self, user: User) -> User:
+        user.last_login_at = utc_now()
+        user.updated_at = utc_now()
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
+
 class MessageRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
@@ -48,6 +165,7 @@ class MessageRepository:
 
     async def create_incoming(self, inbound: InboundMessage) -> Message:
         message = Message(
+            owner_user_id=inbound.owner_user_id,
             channel=inbound.channel,
             external_message_id=inbound.external_message_id,
             conversation_id=inbound.conversation_id,
@@ -72,8 +190,10 @@ class MessageRepository:
         opportunity_id: UUID,
         external_message_id: str,
         raw_payload: dict,
+        owner_user_id: UUID | None = None,
     ) -> Message:
         message = Message(
+            owner_user_id=owner_user_id,
             channel=channel,
             external_message_id=external_message_id,
             conversation_id=conversation_id,
@@ -141,6 +261,7 @@ class OpportunityRepository:
         self,
         *,
         channel: IMChannel,
+        owner_user_id: UUID | None,
         conversation_id: str,
         customer_external_id: str | None,
         contact_name: str | None,
@@ -158,6 +279,7 @@ class OpportunityRepository:
         last_message_preview: str,
     ) -> Opportunity:
         opportunity = Opportunity(
+            owner_user_id=owner_user_id,
             channel=channel,
             conversation_id=conversation_id,
             customer_external_id=customer_external_id,
@@ -189,6 +311,7 @@ class OpportunityRepository:
         *,
         frontend_status: FrontendOpportunityStatus | None = None,
         channel: IMChannel | None = None,
+        owner_user_id: UUID | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> list[Opportunity]:
@@ -197,6 +320,8 @@ class OpportunityRepository:
             statement = statement.where(Opportunity.status.in_(FRONTEND_STATUS_MAP[frontend_status]))
         if channel:
             statement = statement.where(Opportunity.channel == channel)
+        if owner_user_id:
+            statement = statement.where(Opportunity.owner_user_id == owner_user_id)
         statement = statement.order_by(col(Opportunity.last_message_at).desc()).offset(offset).limit(limit)
         result = await self.session.exec(statement)
         return list(result.all())
@@ -304,6 +429,109 @@ class ConfigRepository:
         await self.session.commit()
         await self.session.refresh(config)
         return config
+
+
+class TelegramUserConfigRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def get_by_user(self, user_id: UUID) -> TelegramUserConfig | None:
+        statement = select(TelegramUserConfig).where(TelegramUserConfig.user_id == user_id)
+        result = await self.session.exec(statement)
+        return result.first()
+
+    async def list_monitors_by_user(self, user_id: UUID) -> list[TelegramMonitor]:
+        statement = (
+            select(TelegramMonitor)
+            .where(TelegramMonitor.user_id == user_id)
+            .order_by(col(TelegramMonitor.created_at).asc())
+        )
+        result = await self.session.exec(statement)
+        return list(result.all())
+
+    async def list_enabled_monitors(self) -> list[tuple[TelegramUserConfig, TelegramMonitor]]:
+        statement = (
+            select(TelegramUserConfig, TelegramMonitor)
+            .join(TelegramMonitor, TelegramMonitor.telegram_config_id == TelegramUserConfig.id)
+            .where(TelegramMonitor.enabled.is_(True))
+            .order_by(col(TelegramMonitor.updated_at).asc())
+        )
+        result = await self.session.exec(statement)
+        return [(row[0], row[1]) for row in result.all()]
+
+    async def save_account_for_user(
+        self,
+        *,
+        user_id: UUID,
+        api_id: int | None,
+        api_hash_encrypted: str | None = None,
+        session_encrypted: str | None = None,
+    ) -> TelegramUserConfig:
+        config = await self.get_by_user(user_id)
+        if not config:
+            config = TelegramUserConfig(user_id=user_id)
+
+        config.api_id = api_id
+        if api_hash_encrypted is not None:
+            config.api_hash_encrypted = api_hash_encrypted
+        if session_encrypted is not None:
+            config.session_encrypted = session_encrypted
+        config.updated_at = utc_now()
+
+        self.session.add(config)
+        await self.session.commit()
+        await self.session.refresh(config)
+        return config
+
+    async def replace_monitors_for_user(
+        self,
+        *,
+        user_id: UUID,
+        telegram_config_id: UUID,
+        chats: list[str | int],
+        enabled: bool,
+        backfill_limit: int,
+    ) -> list[TelegramMonitor]:
+        existing = {monitor.chat_id: monitor for monitor in await self.list_monitors_by_user(user_id)}
+        desired_chat_ids = list(dict.fromkeys(str(chat) for chat in chats))
+        config = await self.session.get(TelegramUserConfig, telegram_config_id)
+        if config:
+            config.enabled = enabled
+            config.updated_at = utc_now()
+            self.session.add(config)
+
+        for chat_id, monitor in list(existing.items()):
+            if chat_id not in desired_chat_ids:
+                await self.session.delete(monitor)
+
+        monitors: list[TelegramMonitor] = []
+        for chat in desired_chat_ids:
+            monitor = existing.get(chat)
+            if not monitor:
+                monitor = TelegramMonitor(
+                    user_id=user_id,
+                    telegram_config_id=telegram_config_id,
+                    chat_id=chat,
+                )
+            monitor.enabled = enabled
+            monitor.backfill_limit = backfill_limit
+            monitor.updated_at = utc_now()
+            self.session.add(monitor)
+            monitors.append(monitor)
+
+        await self.session.commit()
+        for monitor in monitors:
+            await self.session.refresh(monitor)
+        return monitors
+
+    async def record_monitor_error(self, monitor_id: UUID, error: str | None) -> None:
+        monitor = await self.session.get(TelegramMonitor, monitor_id)
+        if not monitor:
+            return
+        monitor.last_error = error[:1000] if error else None
+        monitor.updated_at = utc_now()
+        self.session.add(monitor)
+        await self.session.commit()
 
 
 class ReplyTemplateRepository:

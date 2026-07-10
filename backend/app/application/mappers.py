@@ -1,15 +1,25 @@
 from app.application.dto import (
+    AuthUserRead,
     ChatMessageRead,
     OpportunityDetailRead,
     OpportunityRead,
     ReplyTemplateRead,
+    TelegramMonitorRead,
+    TelegramUserConfigRead,
 )
 from app.domain.enums import (
     FrontendOpportunityStatus,
     MessageDirection,
     OpportunityStatus,
 )
-from app.infrastructure.db.models import Message, Opportunity, ReplyTemplate
+from app.infrastructure.db.models import (
+    Message,
+    Opportunity,
+    ReplyTemplate,
+    TelegramMonitor,
+    TelegramUserConfig,
+    User,
+)
 
 
 def default_link_verification(opportunity: Opportunity) -> dict:
@@ -93,4 +103,50 @@ def to_reply_template_read(template: ReplyTemplate) -> ReplyTemplateRead:
         title=template.title,
         content=template.content,
         category=template.category,
+    )
+
+
+def to_auth_user_read(user: User) -> AuthUserRead:
+    return AuthUserRead(
+        id=user.id,
+        email=user.email,
+        displayName=user.display_name,
+        avatarUrl=user.avatar_url,
+        isAdmin=user.is_admin,
+    )
+
+
+def to_telegram_monitor_read(monitor: TelegramMonitor) -> TelegramMonitorRead:
+    return TelegramMonitorRead(
+        id=monitor.id,
+        enabled=monitor.enabled,
+        name=monitor.name,
+        chatId=monitor.chat_id,
+        chatTitle=monitor.chat_title,
+        backfillLimit=monitor.backfill_limit,
+        lastError=monitor.last_error,
+        updatedAt=monitor.updated_at,
+    )
+
+
+def to_telegram_user_config_read(
+    config: TelegramUserConfig | None,
+    monitors: list[TelegramMonitor] | None = None,
+    monitor_limit: int = 1,
+) -> TelegramUserConfigRead:
+    monitor_reads = [to_telegram_monitor_read(monitor) for monitor in monitors or []]
+    if not config:
+        return TelegramUserConfigRead(
+            monitors=monitor_reads,
+            monitorLimit=monitor_limit,
+            canCreateMore=len(monitor_reads) < monitor_limit,
+        )
+    return TelegramUserConfigRead(
+        apiId=config.api_id,
+        apiHashConfigured=bool(config.api_hash_encrypted),
+        sessionConfigured=bool(config.session_encrypted),
+        monitors=monitor_reads,
+        monitorLimit=monitor_limit,
+        canCreateMore=len(monitor_reads) < monitor_limit,
+        updatedAt=config.updated_at,
     )

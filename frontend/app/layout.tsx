@@ -1,13 +1,10 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
 import { AppShell } from '@/components/app-shell'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AppStoreProvider } from '@/lib/app-store'
+import { AuthProvider } from '@/lib/auth'
 import './globals.css'
-
-const _geistSans = Geist({ subsets: ['latin'] })
-const _geistMono = Geist_Mono({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: '商机雷达 - 企业级 IM 商机助手',
@@ -49,9 +46,11 @@ export default function RootLayout({
     <html lang="zh-CN" className="bg-background" suppressHydrationWarning>
       <body className="antialiased font-sans">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <AppStoreProvider>
-            <AppShell>{children}</AppShell>
-          </AppStoreProvider>
+          <AuthProvider>
+            <AppStoreProvider>
+              <AppShell>{children}</AppShell>
+            </AppStoreProvider>
+          </AuthProvider>
         </ThemeProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

@@ -1,24 +1,34 @@
 import re
+from dataclasses import dataclass
 from typing import Any
+from uuid import UUID
 
-from telethon import events
+from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 from telethon.tl.custom.message import Message
 from telethon.tl.types import Channel, Chat, MessageEntityTextUrl, MessageEntityUrl, User
-from telethon import TelegramClient
 
-from app.core.config import Settings
 from app.domain.enums import IMChannel
 from app.domain.ports import InboundMessage
 
 
+@dataclass(frozen=True)
+class TelegramUserClientConfig:
+    user_id: UUID
+    api_id: int
+    api_hash: str
+    session_string: str
+    chats: list[str | int]
+    backfill_limit: int = 30
+
+
 class TelegramUserClient:
-    def __init__(self, settings: Settings) -> None:
-        self.settings = settings
+    def __init__(self, config: TelegramUserClientConfig) -> None:
+        self.config = config
         self.client = TelegramClient(
-            StringSession(settings.telegram_user_session),
-            settings.telegram_user_api_id,
-            settings.telegram_user_api_hash,
+            StringSession(config.session_string),
+            config.api_id,
+            config.api_hash,
         )
 
     async def start(self) -> None:
@@ -35,7 +45,7 @@ class TelegramUserClient:
         for chat in self.normalized_chats():
             async for message in self.client.iter_messages(
                 chat,
-                limit=self.settings.telegram_user_backfill_limit,
+                limit=self.config.backfill_limit,
                 reverse=True,
             ):
                 inbound = await self.to_inbound_message(message)
@@ -57,8 +67,9 @@ class TelegramUserClient:
         group_name = self._chat_title(chat) if source_type == "group" else None
 
         return InboundMessage(
+            owner_user_id=self.config.user_id,
             channel=IMChannel.TELEGRAM,
-            external_message_id=f"{chat_id}:{message.id}",
+            external_message_id=f"user:{self.config.user_id}:{chat_id}:{message.id}",
             conversation_id=str(chat_id),
             sender_external_id=str(getattr(sender, "id", "")) if sender else None,
             sender_display_name=self._sender_name(sender),
@@ -68,6 +79,7 @@ class TelegramUserClient:
             raw_message_links=self._extract_links(text, message.entities or []),
             raw_payload={
                 "telegram_user_client": True,
+                "owner_user_id": str(self.config.user_id),
                 "chat_id": chat_id,
                 "message_id": message.id,
                 "group_name": group_name,
@@ -76,7 +88,7 @@ class TelegramUserClient:
 
     def normalized_chats(self) -> list[int | str]:
         chats: list[int | str] = []
-        for chat in self.settings.telegram_user_chats:
+        for chat in self.config.chats:
             if isinstance(chat, int):
                 chats.append(chat)
                 continue

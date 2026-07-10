@@ -1,6 +1,22 @@
+import base64
+import hashlib
 import hmac
+import json
+import os
+from datetime import datetime, timedelta, timezone
+from typing import Any
+from uuid import UUID
 
+from cryptography.exceptions import InvalidSignature
+from cryptography.fernet import Fernet, InvalidToken
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec, padding, rsa, utils
 from fastapi import HTTPException, status
+
+from app.core.config import Settings
+
+PASSWORD_SCHEME = "pbkdf2_sha256"
+PASSWORD_ITERATIONS = 390000
 
 
 def constant_time_equals(left: str, right: str) -> bool:
@@ -10,3 +26,215 @@ def constant_time_equals(left: str, right: str) -> bool:
 def require_secret(actual: str, expected: str, detail: str = "invalid signature") -> None:
     if not expected or not constant_time_equals(actual, expected):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=detail)
+
+
+def hash_password(password: str) -> str:
+    salt = os.urandom(16)
+    digest = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt,
+        PASSWORD_ITERATIONS,
+    )
+    return (
+        f"{PASSWORD_SCHEME}${PASSWORD_ITERATIONS}$"
+        f"{base64.b64encode(salt).decode()}${base64.b64encode(digest).decode()}"
+    )
+
+
+def verify_password(password: str, password_hash: str) -> bool:
+    try:
+        scheme, iterations, salt_b64, digest_b64 = password_hash.split("$", 3)
+        if scheme != PASSWORD_SCHEME:
+            return False
+        salt = base64.b64decode(salt_b64.encode())
+        expected = base64.b64decode(digest_b64.encode())
+        actual = hashlib.pbkdf2_hmac(
+            "sha256",
+            password.encode("utf-8"),
+            salt,
+            int(iterations),
+        )
+        return hmac.compare_digest(actual, expected)
+    except (ValueError, TypeError):
+        return False
+
+
+def _b64url_encode(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
+
+
+def _b64url_decode(data: str) -> bytes:
+    padding = "=" * (-len(data) % 4)
+    return base64.urlsafe_b64decode((data + padding).encode("ascii"))
+
+
+def _auth_secret(settings: Settings) -> str:
+    return settings.jwt_secret_key or settings.admin_api_token
+
+
+def create_signed_token(
+    payload: dict[str, Any],
+    *,
+    settings: Settings,
+    expires_delta: timedelta,
+) -> str:
+    now = datetime.now(timezone.utc)
+    body = {
+        **payload,
+        "iat": int(now.timestamp()),
+        "exp": int((now + expires_delta).timestamp()),
+    }
+    header = {"alg": "HS256", "typ": "JWT"}
+    signing_input = ".".join(
+        [
+            _b64url_encode(json.dumps(header, separators=(",", ":")).encode()),
+            _b64url_encode(json.dumps(body, separators=(",", ":")).encode()),
+        ]
+    )
+    signature = hmac.new(
+        _auth_secret(settings).encode("utf-8"),
+        signing_input.encode("ascii"),
+        hashlib.sha256,
+    ).digest()
+    return f"{signing_input}.{_b64url_encode(signature)}"
+
+
+def decode_signed_token(token: str, settings: Settings) -> dict[str, Any]:
+    try:
+        header_b64, payload_b64, signature_b64 = token.split(".", 2)
+        signing_input = f"{header_b64}.{payload_b64}"
+        expected = hmac.new(
+            _auth_secret(settings).encode("utf-8"),
+            signing_input.encode("ascii"),
+            hashlib.sha256,
+        ).digest()
+        actual = _b64url_decode(signature_b64)
+        if not hmac.compare_digest(actual, expected):
+            raise ValueError("invalid signature")
+        header = json.loads(_b64url_decode(header_b64))
+        if header.get("alg") != "HS256":
+            raise ValueError("invalid algorithm")
+        payload = json.loads(_b64url_decode(payload_b64))
+        if int(payload.get("exp", 0)) < int(datetime.now(timezone.utc).timestamp()):
+            raise ValueError("token expired")
+        return payload
+    except (ValueError, json.JSONDecodeError, TypeError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="invalid token",
+        ) from exc
+
+
+def create_access_token(
+    *,
+    subject: UUID,
+    settings: Settings,
+    expires_delta: timedelta | None = None,
+) -> str:
+    return create_signed_token(
+        {"sub": str(subject)},
+        settings=settings,
+        expires_delta=expires_delta or timedelta(minutes=settings.access_token_expire_minutes),
+    )
+
+
+def decode_access_token(token: str, settings: Settings) -> dict[str, Any]:
+    return decode_signed_token(token, settings)
+
+
+def _fernet(settings: Settings) -> Fernet:
+    digest = hashlib.sha256(_auth_secret(settings).encode("utf-8")).digest()
+    return Fernet(base64.urlsafe_b64encode(digest))
+
+
+def encrypt_secret(value: str, settings: Settings) -> str:
+    return _fernet(settings).encrypt(value.encode("utf-8")).decode("utf-8")
+
+
+def decrypt_secret(value: str, settings: Settings) -> str:
+    try:
+        return _fernet(settings).decrypt(value.encode("utf-8")).decode("utf-8")
+    except InvalidToken as exc:
+        raise ValueError("secret cannot be decrypted with current JWT_SECRET_KEY") from exc
+
+
+def decode_unverified_jwt(token: str) -> tuple[dict[str, Any], dict[str, Any], bytes, bytes]:
+    header_b64, payload_b64, signature_b64 = token.split(".", 2)
+    header = json.loads(_b64url_decode(header_b64))
+    payload = json.loads(_b64url_decode(payload_b64))
+    return header, payload, f"{header_b64}.{payload_b64}".encode("ascii"), _b64url_decode(signature_b64)
+
+
+def verify_rs256_jwt(
+    token: str,
+    *,
+    jwks: dict[str, Any],
+    issuer: str,
+    audience: str,
+) -> dict[str, Any]:
+    try:
+        header, payload, signing_input, signature = decode_unverified_jwt(token)
+    except (ValueError, json.JSONDecodeError, TypeError) as exc:
+        raise ValueError("invalid id token") from exc
+    if header.get("alg") != "RS256":
+        raise ValueError("unexpected id token algorithm")
+    key = next((item for item in jwks.get("keys", []) if item.get("kid") == header.get("kid")), None)
+    if not key:
+        raise ValueError("id token key not found")
+    public_key = rsa.RSAPublicNumbers(
+        e=int.from_bytes(_b64url_decode(key["e"]), "big"),
+        n=int.from_bytes(_b64url_decode(key["n"]), "big"),
+    ).public_key()
+    try:
+        public_key.verify(signature, signing_input, padding.PKCS1v15(), hashes.SHA256())
+    except InvalidSignature as exc:
+        raise ValueError("invalid id token signature") from exc
+    if payload.get("iss") != issuer:
+        raise ValueError("invalid id token issuer")
+    token_audience = payload.get("aud")
+    if isinstance(token_audience, list):
+        audience_valid = audience in token_audience
+    else:
+        audience_valid = token_audience == audience
+    if not audience_valid:
+        raise ValueError("invalid id token audience")
+    if int(payload.get("exp", 0)) < int(datetime.now(timezone.utc).timestamp()):
+        raise ValueError("id token expired")
+    return payload
+
+
+def create_apple_client_secret(settings: Settings) -> str:
+    if settings.apple_oauth_client_secret:
+        return settings.apple_oauth_client_secret
+    if not (
+        settings.apple_oauth_team_id
+        and settings.apple_oauth_key_id
+        and settings.apple_oauth_private_key
+        and settings.apple_oauth_client_id
+    ):
+        raise ValueError("Apple OAuth client secret or signing key settings are missing")
+
+    private_key_text = settings.apple_oauth_private_key.replace("\\n", "\n")
+    private_key = serialization.load_pem_private_key(private_key_text.encode("utf-8"), password=None)
+    if not isinstance(private_key, ec.EllipticCurvePrivateKey):
+        raise ValueError("Apple OAuth private key must be an EC private key")
+    now = datetime.now(timezone.utc)
+    header = {"alg": "ES256", "kid": settings.apple_oauth_key_id}
+    payload = {
+        "iss": settings.apple_oauth_team_id,
+        "iat": int(now.timestamp()),
+        "exp": int((now + timedelta(days=180)).timestamp()),
+        "aud": "https://appleid.apple.com",
+        "sub": settings.apple_oauth_client_id,
+    }
+    signing_input = ".".join(
+        [
+            _b64url_encode(json.dumps(header, separators=(",", ":")).encode()),
+            _b64url_encode(json.dumps(payload, separators=(",", ":")).encode()),
+        ]
+    )
+    der_signature = private_key.sign(signing_input.encode("ascii"), ec.ECDSA(hashes.SHA256()))
+    r, s = utils.decode_dss_signature(der_signature)
+    signature = r.to_bytes(32, "big") + s.to_bytes(32, "big")
+    return f"{signing_input}.{_b64url_encode(signature)}"

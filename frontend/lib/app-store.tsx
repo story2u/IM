@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { fetchOpportunities, fetchReplyTemplates } from './api'
+import { useAuth } from './auth'
 import { mockMessages, mockOpportunities, mockTemplates } from './mock-data'
 import type {
   ChatMessage,
@@ -35,6 +36,7 @@ interface AppStore {
 const AppStoreContext = createContext<AppStore | null>(null)
 
 export function AppStoreProvider({ children }: { children: React.ReactNode }) {
+  const { token } = useAuth()
   const [opportunities, setOpportunities] = useState<Opportunity[]>(mockOpportunities)
   const [messagesByOpportunity, setMessagesByOpportunity] = useState<Record<string, ChatMessage[]>>(mockMessages)
   const [templates, setTemplates] = useState<ReplyTemplate[]>(mockTemplates)
@@ -45,6 +47,11 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false
     async function loadBackendData() {
+      if (!token) {
+        setOpportunities([])
+        setMessagesByOpportunity({})
+        return
+      }
       try {
         const [backendOpportunities, backendTemplates] = await Promise.all([
           fetchOpportunities(),
@@ -65,7 +72,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       cancelled = true
       clearInterval(interval)
     }
-  }, [])
+  }, [token])
 
   useEffect(() => {
     const timers = timersRef.current

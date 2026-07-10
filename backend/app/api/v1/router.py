@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1.routes import (
+    auth,
     configs,
     health,
     messages,
@@ -8,12 +9,14 @@ from app.api.v1.routes import (
     rules,
     stats,
     templates,
+    telegram_user_configs,
     webhooks_telegram,
     webhooks_wecom,
 )
 
 api_router = APIRouter()
 api_router.include_router(health.router, tags=["health"])
+api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(webhooks_telegram.router, prefix="/webhooks/telegram", tags=["webhooks"])
 api_router.include_router(webhooks_wecom.router, prefix="/webhooks/wecom", tags=["webhooks"])
 api_router.include_router(opportunities.router, prefix="/opportunities", tags=["opportunities"])
@@ -22,3 +25,8 @@ api_router.include_router(rules.router, prefix="/rules", tags=["rules"])
 api_router.include_router(configs.router, prefix="/configs", tags=["configs"])
 api_router.include_router(templates.router, prefix="/templates", tags=["templates"])
 api_router.include_router(stats.router, prefix="/stats", tags=["stats"])
+api_router.include_router(
+    telegram_user_configs.router,
+    prefix="/integrations/telegram-user",
+    tags=["integrations"],
+)

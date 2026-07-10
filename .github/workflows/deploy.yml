@@ -52,6 +52,27 @@ jobs:
       GHCR_USERNAME: ${{ vars.GHCR_USERNAME || github.actor }}
       GHCR_TOKEN: ${{ secrets.GHCR_TOKEN || github.token }}
       CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
+      RUNTIME_APP_ENV: ${{ vars.APP_ENV || 'prod' }}
+      RUNTIME_DEBUG: ${{ vars.DEBUG || 'false' }}
+      RUNTIME_ADMIN_API_TOKEN: ${{ secrets.ADMIN_API_TOKEN }}
+      RUNTIME_ACCESS_TOKEN_EXPIRE_MINUTES: ${{ vars.ACCESS_TOKEN_EXPIRE_MINUTES }}
+      RUNTIME_GOOGLE_OAUTH_CLIENT_ID: ${{ vars.GOOGLE_OAUTH_CLIENT_ID }}
+      RUNTIME_GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+      RUNTIME_GOOGLE_OAUTH_REDIRECT_URI: ${{ vars.GOOGLE_OAUTH_REDIRECT_URI }}
+      RUNTIME_APPLE_OAUTH_CLIENT_ID: ${{ vars.APPLE_OAUTH_CLIENT_ID }}
+      RUNTIME_APPLE_OAUTH_CLIENT_SECRET: ${{ secrets.APPLE_OAUTH_CLIENT_SECRET }}
+      RUNTIME_APPLE_OAUTH_REDIRECT_URI: ${{ vars.APPLE_OAUTH_REDIRECT_URI }}
+      RUNTIME_APPLE_OAUTH_TEAM_ID: ${{ vars.APPLE_OAUTH_TEAM_ID }}
+      RUNTIME_APPLE_OAUTH_KEY_ID: ${{ vars.APPLE_OAUTH_KEY_ID }}
+      RUNTIME_APPLE_OAUTH_PRIVATE_KEY: ${{ secrets.APPLE_OAUTH_PRIVATE_KEY }}
+      RUNTIME_DEFAULT_TIMEZONE: ${{ vars.DEFAULT_TIMEZONE }}
+      RUNTIME_DEFAULT_WORKDAYS: ${{ vars.DEFAULT_WORKDAYS }}
+      RUNTIME_DEFAULT_WORK_START: ${{ vars.DEFAULT_WORK_START }}
+      RUNTIME_DEFAULT_WORK_END: ${{ vars.DEFAULT_WORK_END }}
+      RUNTIME_PENDING_HUMAN_SLA_MINUTES: ${{ vars.PENDING_HUMAN_SLA_MINUTES }}
+      RUNTIME_AI_ENABLED: ${{ vars.AI_ENABLED }}
+      RUNTIME_LITELLM_MODEL: ${{ vars.LITELLM_MODEL }}
+      RUNTIME_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -64,6 +85,26 @@ jobs:
           test -n "$VPS_HOST" || { echo "VPS_HOST is required"; exit 1; }
           test -n "$VPS_USER" || { echo "VPS_USER is required"; exit 1; }
           test -n "$VPS_SSH_KEY" || { echo "VPS_SSH_KEY secret is required"; exit 1; }
+          google_ready=false
+          apple_ready=false
+          if [ -n "$RUNTIME_GOOGLE_OAUTH_CLIENT_ID" ] || [ -n "$RUNTIME_GOOGLE_OAUTH_CLIENT_SECRET" ]; then
+            test -n "$RUNTIME_GOOGLE_OAUTH_CLIENT_ID" || { echo "GOOGLE_OAUTH_CLIENT_ID var is required when Google OAuth is configured"; exit 1; }
+            test -n "$RUNTIME_GOOGLE_OAUTH_CLIENT_SECRET" || { echo "GOOGLE_OAUTH_CLIENT_SECRET secret is required when Google OAuth is configured"; exit 1; }
+            google_ready=true
+          fi
+          if [ -n "$RUNTIME_APPLE_OAUTH_CLIENT_ID" ] || [ -n "$RUNTIME_APPLE_OAUTH_CLIENT_SECRET" ] || [ -n "$RUNTIME_APPLE_OAUTH_PRIVATE_KEY" ]; then
+            test -n "$RUNTIME_APPLE_OAUTH_CLIENT_ID" || { echo "APPLE_OAUTH_CLIENT_ID var is required when Apple OAuth is configured"; exit 1; }
+            if [ -z "$RUNTIME_APPLE_OAUTH_CLIENT_SECRET" ]; then
+              test -n "$RUNTIME_APPLE_OAUTH_TEAM_ID" || { echo "APPLE_OAUTH_TEAM_ID var is required when APPLE_OAUTH_CLIENT_SECRET is not set"; exit 1; }
+              test -n "$RUNTIME_APPLE_OAUTH_KEY_ID" || { echo "APPLE_OAUTH_KEY_ID var is required when APPLE_OAUTH_CLIENT_SECRET is not set"; exit 1; }
+              test -n "$RUNTIME_APPLE_OAUTH_PRIVATE_KEY" || { echo "APPLE_OAUTH_PRIVATE_KEY secret is required when APPLE_OAUTH_CLIENT_SECRET is not set"; exit 1; }
+            fi
+            apple_ready=true
+          fi
+          if [ "$google_ready" != "true" ] && [ "$apple_ready" != "true" ]; then
+            echo "Configure at least one OAuth provider through GitHub vars/secrets."
+            exit 1
+          fi
           case " $VPS_COMPOSE_SERVICES " in
             *" cloudflared "*)
               test -n "$CLOUDFLARE_TUNNEL_TOKEN" || { echo "CLOUDFLARE_TUNNEL_TOKEN secret is required when deploying cloudflared"; exit 1; }
@@ -83,24 +124,124 @@ jobs:
           chmod 600 ~/.ssh/vps_deploy_key
           ssh-keyscan -p "$VPS_PORT" "$VPS_HOST" >> ~/.ssh/known_hosts
 
-      - name: Sync compose files
-        env:
-          VPS_ENV_FILE: ${{ secrets.VPS_ENV_FILE }}
+      - name: Sync compose files and runtime env
         run: |
           set -euo pipefail
+          quote() {
+            printf "%q" "$1"
+          }
+          dotenv_quote() {
+            VALUE="$1" python3 - <<'PY'
+          import os
+
+          value = os.environ["VALUE"]
+          value = value.replace("\\", "\\\\").replace('"', '\\"').replace("\r", "\\r").replace("\n", "\\n")
+          print(f'"{value}"')
+          PY
+          }
+          append_env() {
+            key="$1"
+            value="$2"
+            if [ -n "$value" ]; then
+              printf '%s=%s\n' "$key" "$(dotenv_quote "$value")" >> "$env_updates"
+            fi
+          }
+
+          env_updates="$(mktemp)"
+
+          append_env APP_ENV "$RUNTIME_APP_ENV"
+          append_env DEBUG "$RUNTIME_DEBUG"
+          append_env ADMIN_API_TOKEN "$RUNTIME_ADMIN_API_TOKEN"
+          append_env ACCESS_TOKEN_EXPIRE_MINUTES "$RUNTIME_ACCESS_TOKEN_EXPIRE_MINUTES"
+          append_env FRONTEND_BASE_URL "https://im.story2u.xyz"
+          append_env CORS_ORIGINS '["https://im.story2u.xyz","http://localhost:3000"]'
+          append_env GOOGLE_OAUTH_CLIENT_ID "$RUNTIME_GOOGLE_OAUTH_CLIENT_ID"
+          append_env GOOGLE_OAUTH_CLIENT_SECRET "$RUNTIME_GOOGLE_OAUTH_CLIENT_SECRET"
+          append_env GOOGLE_OAUTH_REDIRECT_URI "$RUNTIME_GOOGLE_OAUTH_REDIRECT_URI"
+          append_env APPLE_OAUTH_CLIENT_ID "$RUNTIME_APPLE_OAUTH_CLIENT_ID"
+          append_env APPLE_OAUTH_CLIENT_SECRET "$RUNTIME_APPLE_OAUTH_CLIENT_SECRET"
+          append_env APPLE_OAUTH_REDIRECT_URI "$RUNTIME_APPLE_OAUTH_REDIRECT_URI"
+          append_env APPLE_OAUTH_TEAM_ID "$RUNTIME_APPLE_OAUTH_TEAM_ID"
+          append_env APPLE_OAUTH_KEY_ID "$RUNTIME_APPLE_OAUTH_KEY_ID"
+          append_env APPLE_OAUTH_PRIVATE_KEY "$RUNTIME_APPLE_OAUTH_PRIVATE_KEY"
+          append_env TELEGRAM_FREE_MONITOR_LIMIT "1"
+          append_env DEFAULT_TIMEZONE "$RUNTIME_DEFAULT_TIMEZONE"
+          append_env DEFAULT_WORKDAYS "$RUNTIME_DEFAULT_WORKDAYS"
+          append_env DEFAULT_WORK_START "$RUNTIME_DEFAULT_WORK_START"
+          append_env DEFAULT_WORK_END "$RUNTIME_DEFAULT_WORK_END"
+          append_env PENDING_HUMAN_SLA_MINUTES "$RUNTIME_PENDING_HUMAN_SLA_MINUTES"
+          append_env AI_ENABLED "$RUNTIME_AI_ENABLED"
+          append_env LITELLM_MODEL "$RUNTIME_LITELLM_MODEL"
+          append_env OPENAI_API_KEY "$RUNTIME_OPENAI_API_KEY"
+          append_env CLOUDFLARE_TUNNEL_TOKEN "$CLOUDFLARE_TUNNEL_TOKEN"
+
           ssh -i ~/.ssh/vps_deploy_key -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "mkdir -p '$VPS_DEPLOY_DIR'"
           scp -i ~/.ssh/vps_deploy_key -P "$VPS_PORT" \
             backend/docker-compose.prod.yml \
             backend/.env.example \
             "$VPS_USER@$VPS_HOST:$VPS_DEPLOY_DIR/"
-          ssh -i ~/.ssh/vps_deploy_key -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" \
-            "cd '$VPS_DEPLOY_DIR' && mv docker-compose.prod.yml docker-compose.yml"
-          if [ -n "$VPS_ENV_FILE" ]; then
-            env_file="$(mktemp)"
-            printf '%s\n' "$VPS_ENV_FILE" > "$env_file"
-            scp -i ~/.ssh/vps_deploy_key -P "$VPS_PORT" "$env_file" "$VPS_USER@$VPS_HOST:$VPS_DEPLOY_DIR/.env"
-            rm -f "$env_file"
-          fi
+          scp -i ~/.ssh/vps_deploy_key -P "$VPS_PORT" "$env_updates" "$VPS_USER@$VPS_HOST:$VPS_DEPLOY_DIR/.env.incoming"
+          ssh -i ~/.ssh/vps_deploy_key -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "DEPLOY_DIR=$(quote "$VPS_DEPLOY_DIR") bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          cd "$DEPLOY_DIR"
+          mv docker-compose.prod.yml docker-compose.yml
+          python3 - <<'PY'
+          import secrets
+          from pathlib import Path
+
+          def env_key(line: str) -> str | None:
+              stripped = line.strip()
+              if not stripped or stripped.startswith("#") or "=" not in stripped:
+                  return None
+              return stripped.split("=", 1)[0].strip()
+
+          base_path = Path(".env")
+          incoming_path = Path(".env.incoming")
+          lines: list[str] = []
+          positions: dict[str, int] = {}
+
+          if base_path.exists():
+              for line in base_path.read_text().splitlines():
+                  key = env_key(line)
+                  if key and key not in positions:
+                      positions[key] = len(lines)
+                  lines.append(line)
+
+          for line in incoming_path.read_text().splitlines():
+              key = env_key(line)
+              if not key:
+                  continue
+              if key in positions:
+                  lines[positions[key]] = line
+              else:
+                  positions[key] = len(lines)
+                  lines.append(line)
+
+          def raw_value(key: str) -> str:
+              if key not in positions:
+                  return ""
+              value = lines[positions[key]].split("=", 1)[1].strip()
+              if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
+                  value = value[1:-1]
+              return value.strip()
+
+          def upsert(key: str, line: str) -> None:
+              if key in positions:
+                  lines[positions[key]] = line
+                  return
+              positions[key] = len(lines)
+              lines.append(line)
+
+          if raw_value("JWT_SECRET_KEY") in {"", "change-me", "change-me-with-a-long-random-string"}:
+              upsert("JWT_SECRET_KEY", f'JWT_SECRET_KEY="{secrets.token_urlsafe(48)}"')
+
+          base_path.write_text("\n".join(lines).rstrip() + "\n")
+          incoming_path.unlink(missing_ok=True)
+          PY
+          chmod 600 .env
+          REMOTE
+          rm -f "$env_updates"
 
       - name: Deploy services
         run: |

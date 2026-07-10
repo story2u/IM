@@ -71,3 +71,59 @@ export interface ReplyTemplate {
   content: string
   category: string
 }
+
+export interface AuthUser {
+  id: string
+  email: string
+  displayName: string
+  avatarUrl: string
+  isAdmin: boolean
+}
+
+export interface AuthTokenResponse {
+  accessToken: string
+  tokenType: string
+  user: AuthUser
+}
+
+export type OAuthProvider = 'google' | 'apple'
+
+export interface OAuthAuthorizeResponse {
+  authorizationUrl: string
+}
+
+export interface TelegramMonitor {
+  id: string
+  enabled: boolean
+  name: string
+  chatId: string
+  chatTitle: string | null
+  backfillLimit: number
+  lastError: string | null
+  updatedAt: string | null
+}
+
+export interface TelegramUserConfig {
+  apiId: number | null
+  apiHashConfigured: boolean
+  sessionConfigured: boolean
+  monitors: TelegramMonitor[]
+  monitorLimit: number
+  canCreateMore: boolean
+  updatedAt: string | null
+}
+
+export interface TelegramUserConfigUpdate {
+  enabled: boolean
+  apiId?: number | null
+  apiHash?: string
+  sessionString?: string
+  chats: Array<string | number>
+  backfillLimit: number
+}
+
+export interface TelegramDialog {
+  id: number
+  name: string
+  username: string | null
+}

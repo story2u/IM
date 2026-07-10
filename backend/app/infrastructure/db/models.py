@@ -25,6 +25,36 @@ class TimestampMixin(SQLModel):
     updated_at: datetime = Field(default_factory=utc_now)
 
 
+class User(TimestampMixin, table=True):
+    __tablename__ = "users"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    email: str = Field(index=True, unique=True)
+    display_name: str = Field(default="")
+    avatar_url: str = Field(default="")
+    password_hash: str | None = None
+    is_active: bool = Field(default=True, index=True)
+    is_admin: bool = Field(default=False, index=True)
+    last_login_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
+
+
+class AuthAccount(TimestampMixin, table=True):
+    __tablename__ = "auth_accounts"
+    __table_args__ = (
+        UniqueConstraint("provider", "provider_subject", name="uq_auth_accounts_provider_subject"),
+        Index("ix_auth_accounts_user_provider", "user_id", "provider"),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    provider: str = Field(index=True)
+    provider_subject: str = Field(index=True)
+    email: str | None = Field(default=None, index=True)
+
+
 class Opportunity(TimestampMixin, table=True):
     __tablename__ = "opportunities"
     __table_args__ = (
@@ -33,6 +63,7 @@ class Opportunity(TimestampMixin, table=True):
     )
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
+    owner_user_id: UUID | None = Field(default=None, foreign_key="users.id", index=True)
     channel: IMChannel = Field(
         sa_column=Column(SAEnum(IMChannel, native_enum=False), nullable=False, index=True)
     )
@@ -82,6 +113,7 @@ class Message(TimestampMixin, table=True):
     )
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
+    owner_user_id: UUID | None = Field(default=None, foreign_key="users.id", index=True)
     channel: IMChannel = Field(
         sa_column=Column(SAEnum(IMChannel, native_enum=False), nullable=False, index=True)
     )
@@ -134,6 +166,37 @@ class AppConfig(SQLModel, table=True):
         default_factory=utc_now,
         sa_column=Column(DateTime(timezone=True), nullable=False),
     )
+
+
+class TelegramUserConfig(TimestampMixin, table=True):
+    __tablename__ = "telegram_user_configs"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_telegram_user_configs_user_id"),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    enabled: bool = Field(default=False, index=True)
+    api_id: int | None = Field(default=None)
+    api_hash_encrypted: str | None = None
+    session_encrypted: str | None = None
+
+
+class TelegramMonitor(TimestampMixin, table=True):
+    __tablename__ = "telegram_monitors"
+    __table_args__ = (
+        UniqueConstraint("user_id", "chat_id", name="uq_telegram_monitors_user_chat"),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    telegram_config_id: UUID = Field(foreign_key="telegram_user_configs.id", index=True)
+    enabled: bool = Field(default=True, index=True)
+    name: str = Field(default="Telegram 群监控")
+    chat_id: str = Field(index=True)
+    chat_title: str | None = None
+    backfill_limit: int = Field(default=30, ge=0, le=500)
+    last_error: str | None = None
 
 
 class ReplyTemplate(TimestampMixin, table=True):

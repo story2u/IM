@@ -37,6 +37,7 @@ class ManualReplyUseCase:
 
         await self.message_repo.create_outgoing(
             channel=opportunity.channel,
+            owner_user_id=opportunity.owner_user_id,
             conversation_id=opportunity.conversation_id,
             text=text,
             source=MessageSource.HUMAN,

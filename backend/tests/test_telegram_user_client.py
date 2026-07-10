@@ -1,30 +1,32 @@
-from app.core.config import Settings
-from app.infrastructure.im.telegram_user import TelegramUserClient
+from uuid import uuid4
+
+from app.infrastructure.im.telegram_user import TelegramUserClient, TelegramUserClientConfig
 
 
 def test_telegram_user_client_normalizes_chat_ids() -> None:
-    settings = Settings(
-        database_url="postgresql+asyncpg://user:password@localhost:5432/im",
-        admin_api_token="test-token",
-        telegram_user_api_id=1,
-        telegram_user_api_hash="hash",
-        telegram_user_chats=["-1001234567890", "public_jobs_channel", 42, ""],
+    config = TelegramUserClientConfig(
+        user_id=uuid4(),
+        api_id=1,
+        api_hash="hash",
+        session_string="",
+        chats=["-1001234567890", "public_jobs_channel", 42, ""],
     )
 
-    client = TelegramUserClient(settings)
+    client = TelegramUserClient(config)
 
     assert client.normalized_chats() == [-1001234567890, "public_jobs_channel", 42]
 
 
 def test_telegram_user_client_extracts_unique_links() -> None:
-    settings = Settings(
-        database_url="postgresql+asyncpg://user:password@localhost:5432/im",
-        admin_api_token="test-token",
-        telegram_user_api_id=1,
-        telegram_user_api_hash="hash",
+    config = TelegramUserClientConfig(
+        user_id=uuid4(),
+        api_id=1,
+        api_hash="hash",
+        session_string="",
+        chats=[],
     )
 
-    client = TelegramUserClient(settings)
+    client = TelegramUserClient(config)
 
     assert client._extract_links("Apply: https://example.com/job https://example.com/job", []) == [
         "https://example.com/job"
