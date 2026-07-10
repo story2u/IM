@@ -6,8 +6,10 @@ from typing import Any
 from urllib.parse import parse_qs, urlencode
 
 import httpx
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.deps import get_user_repo, require_user
 from app.application.dto import AuthTokenRead, AuthUserRead, OAuthAuthorizeRead
@@ -24,6 +26,7 @@ from app.infrastructure.db.models import User
 from app.infrastructure.db.repositories import UserRepository
 
 router = APIRouter()
+logger = structlog.get_logger(__name__)
 
 
 @dataclass(frozen=True)
@@ -149,9 +152,15 @@ async def exchange_code_for_profile(
             ) from exc
         if token_response.status_code >= 400:
             error = token_data.get("error") if isinstance(token_data, dict) else None
+            error_description = token_data.get("error_description") if isinstance(token_data, dict) else None
+            detail = f"{provider} token exchange failed"
+            if error:
+                detail = f"{detail}: {error}"
+            if error_description:
+                detail = f"{detail} ({error_description})"
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"{provider} token exchange failed{f': {error}' if error else ''}",
+                detail=detail,
             )
         id_token = token_data.get("id_token")
         if not id_token:
@@ -184,12 +193,16 @@ async def exchange_code_for_profile(
             issuer=config.issuer,
             audience=config.client_id,
         )
-    except ValueError as exc:
+    except (KeyError, TypeError, ValueError) as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
+
+    subject = claims.get("sub")
+    if not subject:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="OAuth subject is missing")
 
     return {
         "provider": provider,
-        "subject": str(claims["sub"]),
+        "subject": str(subject),
         "email": claims.get("email"),
         "email_verified": claims.get("email_verified") in {True, "true", "1"},
         "name": claims.get("name") or "",
@@ -204,29 +217,44 @@ async def complete_oauth_login(
     settings: Settings,
     repo: UserRepository,
 ) -> HTMLResponse:
-    state_payload = decode_signed_token(state, settings)
-    if state_payload.get("provider") != provider:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="OAuth state mismatch")
+    try:
+        state_payload = decode_signed_token(state, settings)
+        if state_payload.get("provider") != provider:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="OAuth state mismatch")
 
-    profile = await exchange_code_for_profile(provider, code, settings)
-    existing_user = await repo.get_by_auth_account(provider, profile["subject"])
-    if existing_user and not profile.get("email"):
-        user = await repo.mark_login(existing_user)
-    else:
-        email = profile.get("email")
-        if not email:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="OAuth email is missing")
-        if not profile.get("email_verified"):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="OAuth email is not verified")
-        user = await repo.get_or_create_oauth_user(
-            provider=provider,
-            provider_subject=profile["subject"],
-            email=email,
-            display_name=profile.get("name") or email.split("@", 1)[0],
-            avatar_url=profile.get("avatar_url") or "",
-        )
+        profile = await exchange_code_for_profile(provider, code, settings)
+        existing_user = await repo.get_by_auth_account(provider, profile["subject"])
+        if existing_user and not profile.get("email"):
+            user = await repo.mark_login(existing_user)
+        else:
+            email = profile.get("email")
+            if not email:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="OAuth email is missing")
+            if not profile.get("email_verified"):
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="OAuth email is not verified")
+            user = await repo.get_or_create_oauth_user(
+                provider=provider,
+                provider_subject=profile["subject"],
+                email=email,
+                display_name=profile.get("name") or email.split("@", 1)[0],
+                avatar_url=profile.get("avatar_url") or "",
+            )
 
-    return frontend_login_response(settings, create_access_token(subject=user.id, settings=settings))
+        return frontend_login_response(settings, create_access_token(subject=user.id, settings=settings))
+    except HTTPException:
+        raise
+    except SQLAlchemyError as exc:
+        logger.exception("oauth.user_persistence_failed", provider=provider)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="OAuth user persistence failed",
+        ) from exc
+    except Exception as exc:
+        logger.exception("oauth.callback_failed", provider=provider)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="OAuth callback failed",
+        ) from exc
 
 
 @router.get("/oauth/{provider}/authorize", response_model=OAuthAuthorizeRead)

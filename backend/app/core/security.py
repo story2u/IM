@@ -182,13 +182,16 @@ def verify_rs256_jwt(
     key = next((item for item in jwks.get("keys", []) if item.get("kid") == header.get("kid")), None)
     if not key:
         raise ValueError("id token key not found")
-    public_key = rsa.RSAPublicNumbers(
-        e=int.from_bytes(_b64url_decode(key["e"]), "big"),
-        n=int.from_bytes(_b64url_decode(key["n"]), "big"),
-    ).public_key()
+    try:
+        public_key = rsa.RSAPublicNumbers(
+            e=int.from_bytes(_b64url_decode(key["e"]), "big"),
+            n=int.from_bytes(_b64url_decode(key["n"]), "big"),
+        ).public_key()
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("invalid id token key") from exc
     try:
         public_key.verify(signature, signing_input, padding.PKCS1v15(), hashes.SHA256())
-    except InvalidSignature as exc:
+    except (InvalidSignature, TypeError, ValueError) as exc:
         raise ValueError("invalid id token signature") from exc
     if payload.get("iss") != issuer:
         raise ValueError("invalid id token issuer")
@@ -199,7 +202,11 @@ def verify_rs256_jwt(
         audience_valid = token_audience == audience
     if not audience_valid:
         raise ValueError("invalid id token audience")
-    if int(payload.get("exp", 0)) < int(datetime.now(timezone.utc).timestamp()):
+    try:
+        expires_at = int(payload.get("exp", 0))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("invalid id token expiry") from exc
+    if expires_at < int(datetime.now(timezone.utc).timestamp()):
         raise ValueError("id token expired")
     return payload
 

@@ -286,11 +286,66 @@ jobs:
 
           docker compose --env-file .env config >/dev/null
 
+          wait_for_health() {
+            service="$1"
+            container_id="$(docker compose --env-file .env ps -q "$service" || true)"
+            if [ -z "$container_id" ]; then
+              return 0
+            fi
+            status="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$container_id")"
+            if [ "$status" = "none" ]; then
+              return 0
+            fi
+            for _ in $(seq 1 60); do
+              status="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$container_id")"
+              if [ "$status" = "healthy" ]; then
+                return 0
+              fi
+              sleep 2
+            done
+            echo "$service did not become healthy"
+            docker compose --env-file .env logs --tail=80 "$service"
+            exit 1
+          }
+
           echo "Pulling images for: $COMPOSE_SERVICES"
           docker compose --env-file .env pull $COMPOSE_SERVICES
 
-          echo "Starting services..."
-          docker compose --env-file .env up -d --remove-orphans $COMPOSE_SERVICES
+          stateful_services=""
+          runtime_services=""
+          run_migrate=false
+          for service in $COMPOSE_SERVICES; do
+            case "$service" in
+              migrate)
+                run_migrate=true
+                ;;
+              postgres|redis)
+                stateful_services="$stateful_services $service"
+                ;;
+              *)
+                runtime_services="$runtime_services $service"
+                ;;
+            esac
+          done
+
+          if [ -n "$stateful_services" ]; then
+            echo "Starting stateful services:$stateful_services"
+            docker compose --env-file .env up -d $stateful_services
+            for service in $stateful_services; do
+              wait_for_health "$service"
+            done
+          fi
+
+          if [ "$run_migrate" = "true" ]; then
+            echo "Running database migrations..."
+            docker compose --env-file .env rm -f migrate >/dev/null 2>&1 || true
+            docker compose --env-file .env up --no-deps --force-recreate --exit-code-from migrate migrate
+          fi
+
+          if [ -n "$runtime_services" ]; then
+            echo "Starting runtime services:$runtime_services"
+            docker compose --env-file .env up -d --remove-orphans --no-deps --force-recreate $runtime_services
+          fi
 
           echo "Cleaning up dangling images..."
           docker image prune -f

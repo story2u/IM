@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -129,17 +130,31 @@ class UserRepository:
 
         user = await self.get_by_email(email)
         if not user:
-            user = await self.create_oauth_user(
+            try:
+                user = await self.create_oauth_user(
+                    email=email,
+                    display_name=display_name,
+                    avatar_url=avatar_url,
+                )
+            except IntegrityError:
+                await self.session.rollback()
+                user = await self.get_by_email(email)
+                if not user:
+                    raise
+
+        try:
+            await self.link_auth_account(
+                user=user,
+                provider=provider,
+                provider_subject=provider_subject,
                 email=email,
-                display_name=display_name,
-                avatar_url=avatar_url,
             )
-        await self.link_auth_account(
-            user=user,
-            provider=provider,
-            provider_subject=provider_subject,
-            email=email,
-        )
+        except IntegrityError:
+            await self.session.rollback()
+            linked_user = await self.get_by_auth_account(provider, provider_subject)
+            if linked_user:
+                return await self.mark_login(linked_user)
+            raise
         return await self.mark_login(user)
 
     async def mark_login(self, user: User) -> User:
