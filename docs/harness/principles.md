@@ -35,7 +35,7 @@
 | 项目记忆 | `docs/architecture/`、`docs/product/`、ADR、归档计划 |
 | 任务状态 | `docs/plans/active/` 与计划模板 |
 | 工具入口 | 根 `Makefile` 与 `docs/development/commands.md` |
-| 结构约束 | `scripts/harness_check.py` 的导入边界检查 |
+| 结构约束 | 导入边界、Alembic 单链/单 head、持久化 datetime timezone 检查 |
 | 完成证据 | 后端测试/lint、前端 lint/build、CI |
 | 风险与权限 | `docs/quality/security.md` 与入口文件全局约束 |
 | 漂移治理 | Markdown 链接、必需文档和入口大小检查 |

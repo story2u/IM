@@ -26,7 +26,7 @@ jobs:
           python-version: "3.12"
 
       - name: Validate repository harness
-        run: python scripts/harness_check.py
+        run: make harness-check
 
   backend:
     name: Backend Test And Lint

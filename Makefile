@@ -5,6 +5,7 @@ UV ?= uv
 
 harness-check:
 	$(PYTHON) scripts/harness_check.py
+	$(PYTHON) -m unittest discover -s scripts/tests -p 'test_*.py'
 
 backend-sync:
 	cd backend && $(UV) sync --locked --dev

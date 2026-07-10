@@ -11,8 +11,8 @@
 make harness-check
 ```
 
-只依赖 Python 标准库，检查必需入口、入口大小、Markdown 本地链接、文档索引、CI 接入和后端
-Python 依赖边界。
+只依赖 Python 标准库，检查必需入口、入口大小、Markdown 本地链接、文档索引、CI 接入、后端
+Python/domain 外部依赖边界、Alembic 单链单 head 和持久化 datetime timezone，并运行检查器回归测试。
 
 ## 后端
 

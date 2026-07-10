@@ -8,7 +8,7 @@
 
 | 层级 | 关注点 | 当前工具/位置 |
 | --- | --- | --- |
-| Harness/结构 | 文档可达、入口大小、依赖边界 | `scripts/harness_check.py` |
+| Harness/结构 | 文档可达、依赖边界、迁移图、datetime timezone | harness script + stdlib unittest |
 | 领域单测 | 检测策略、状态迁移、时间窗、纯映射 | `backend/tests/test_*.py` + `uv run pytest` |
 | 适配器/安全单测 | webhook 解析、签名/加密、Telegram user client | backend tests + fakes/monkeypatch |
 | 应用/API 集成 | repository、owner 隔离、用例编排、HTTP 契约 | 当前覆盖不足，新增功能应优先补齐 |
