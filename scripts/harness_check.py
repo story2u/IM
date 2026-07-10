@@ -157,6 +157,8 @@ def check_python_boundaries(errors: list[str]) -> int:
 
 def check_ci_and_commands(errors: list[str]) -> None:
     ci_path = ROOT / ".github/workflows/ci.yml"
+    docker_path = ROOT / ".github/workflows/docker.yml"
+    deploy_path = ROOT / ".github/workflows/deploy.yml"
     makefile = ROOT / "Makefile"
     if not ci_path.is_file() or "scripts/harness_check.py" not in ci_path.read_text(encoding="utf-8"):
         errors.append(".github/workflows/ci.yml must run scripts/harness_check.py")
@@ -184,6 +186,28 @@ def check_ci_and_commands(errors: list[str]) -> None:
             errors.append(f"{label} must install backend dependencies with uv sync --locked")
     if (ROOT / "backend/requirements.txt").exists():
         errors.append("backend/requirements.txt duplicates uv project metadata; use pyproject.toml + uv.lock")
+
+    release_pattern = 'branches: ["release/v*.*.*"]'
+    workflow_triggers = {
+        "CI": (ci_path, "push:"),
+        "Build Images": (docker_path, "workflow_run:"),
+        "Deploy to VPS": (deploy_path, "workflow_run:"),
+    }
+    for label, (path, required_event) in workflow_triggers.items():
+        if not path.is_file():
+            errors.append(f"missing GitHub workflow: {relative(path)}")
+            continue
+        trigger_block = path.read_text(encoding="utf-8").split("permissions:", 1)[0]
+        if required_event not in trigger_block or release_pattern not in trigger_block:
+            errors.append(
+                f"{label} must be gated by {required_event.rstrip(':')} on release/v*.*.*"
+            )
+        forbidden_events = {"workflow_dispatch:", "pull_request:", "tags:"}
+        if label != "CI":
+            forbidden_events.add("push:")
+        for event in forbidden_events:
+            if event in trigger_block:
+                errors.append(f"{label} has disallowed trigger {event.rstrip(':')}")
 
 
 def main() -> int:

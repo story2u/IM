@@ -1,24 +1,10 @@
 name: Deploy to VPS
 
 on:
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: Deployment environment
-        required: true
-        default: production
-        type: choice
-        options:
-          - production
-          - staging
-      version:
-        description: Version to deploy, such as main, v1.0.0, latest, or sha-xxxx
-        required: false
-        default: ""
   workflow_run:
     workflows: ["Build Images"]
     types: [completed]
-    branches: [main]
+    branches: ["release/v*.*.*"]
 
 permissions:
   contents: read
@@ -29,7 +15,7 @@ env:
   IMAGE_NAMESPACE: ${{ github.repository_owner }}
 
 concurrency:
-  group: deploy-vps-${{ inputs.environment || 'production' }}
+  group: deploy-vps-production
   cancel-in-progress: false
 
 jobs:
@@ -37,18 +23,16 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
-    environment: ${{ inputs.environment || 'production' }}
+    if: github.event.workflow_run.conclusion == 'success'
+    environment: production
     env:
       VPS_HOST: ${{ vars.VPS_HOST || secrets.VPS_HOST }}
       VPS_USER: ${{ vars.VPS_USER || secrets.VPS_USER }}
       VPS_PORT: ${{ vars.VPS_PORT || secrets.VPS_PORT || '22' }}
       VPS_DEPLOY_DIR: ${{ vars.VPS_DEPLOY_DIR || secrets.VPS_DEPLOY_DIR || '/opt/im' }}
       VPS_COMPOSE_SERVICES: ${{ vars.VPS_COMPOSE_SERVICES || 'postgres redis migrate api celery_worker celery_beat telegram_listener frontend cloudflared' }}
-      DEPLOY_VERSION: ${{ inputs.version || github.event.workflow_run.head_branch || github.ref_name || 'main' }}
-      DEPLOY_ENVIRONMENT: ${{ inputs.environment || 'production' }}
+      RELEASE_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      DEPLOY_ENVIRONMENT: production
       GHCR_USERNAME: ${{ vars.GHCR_USERNAME || github.actor }}
       GHCR_TOKEN: ${{ secrets.GHCR_TOKEN || github.token }}
       CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
@@ -76,6 +60,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Resolve release version
+        run: |
+          set -euo pipefail
+          version="${RELEASE_BRANCH#release/}"
+          if [[ ! "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release branch must match release/v<major>.<minor>.<patch>, got: $RELEASE_BRANCH"
+            exit 1
+          fi
+          echo "DEPLOY_VERSION=$version" >> "$GITHUB_ENV"
 
       - name: Validate deploy configuration
         env:

@@ -47,8 +47,12 @@ worker 监听 `default,im,ai`。关键任务定义在 `backend/app/worker/tasks.
 
 ## 发布与回滚
 
-- CI 先执行 harness、backend、frontend；镜像 workflow 对 PR 构建但不推送，对 tag/main 事件按规则推送。
-- 部署版本可为 branch、tag 或 sha tag；生产优先使用不可变 tag/SHA，不依赖漂移的 `latest`。
+- 只有向 `release/v<major>.<minor>.<patch>` 分支推送提交才启动自动化；例如
+  `release/v1.0.0`。普通分支、`main`、PR、tag 和手动 dispatch 都不会触发这些 workflow。
+- 发布链固定为 `CI` 成功后触发 `Build Images`，镜像构建成功后触发生产 `Deploy to VPS`；
+  后续 workflow 使用上游的 `head_sha` checkout，避免误用默认分支代码。
+- 镜像使用去掉 `release/` 前缀的版本号（如 `v1.0.0`）和 `sha-<short-sha>` 双标签；部署使用
+  版本标签，不使用含 `/` 的分支名或漂移的 `latest`。
 - schema 变更上线前评估旧/新应用兼容窗口。不可向后兼容的迁移需要分阶段 expand/migrate/contract。
 - 回滚应用前确认数据库仍兼容旧版本；不能安全降级时以前向修复为主并在计划写明。
 
