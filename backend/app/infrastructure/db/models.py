@@ -21,8 +21,16 @@ def utc_now() -> datetime:
 
 
 class TimestampMixin(SQLModel):
-    created_at: datetime = Field(default_factory=utc_now)
-    updated_at: datetime = Field(default_factory=utc_now)
+    created_at: datetime = Field(
+        default_factory=utc_now,
+        sa_type=DateTime(timezone=True),
+        nullable=False,
+    )
+    updated_at: datetime = Field(
+        default_factory=utc_now,
+        sa_type=DateTime(timezone=True),
+        nullable=False,
+    )
 
 
 class User(TimestampMixin, table=True):
