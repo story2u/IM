@@ -9,7 +9,7 @@ import httpx
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError, SQLAlchemyError
 
 from app.api.deps import get_user_repo, require_user
 from app.application.dto import AuthTokenRead, AuthUserRead, OAuthAuthorizeRead
@@ -117,6 +117,16 @@ def provider_config(provider: str, settings: Settings) -> OAuthProviderConfig:
             extra_authorize_params={"response_mode": "form_post"},
         )
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="unsupported OAuth provider")
+
+
+def oauth_persistence_error_detail(exc: SQLAlchemyError) -> str:
+    if isinstance(exc, ProgrammingError):
+        return "OAuth user persistence failed: database schema error"
+    if isinstance(exc, IntegrityError):
+        return "OAuth user persistence failed: account constraint conflict"
+    if isinstance(exc, OperationalError):
+        return "OAuth user persistence failed: database connection error"
+    return f"OAuth user persistence failed: {exc.__class__.__name__}"
 
 
 async def exchange_code_for_profile(
@@ -244,10 +254,14 @@ async def complete_oauth_login(
     except HTTPException:
         raise
     except SQLAlchemyError as exc:
-        logger.exception("oauth.user_persistence_failed", provider=provider)
+        logger.exception(
+            "oauth.user_persistence_failed",
+            provider=provider,
+            error_class=exc.__class__.__name__,
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="OAuth user persistence failed",
+            detail=oauth_persistence_error_detail(exc),
         ) from exc
     except Exception as exc:
         logger.exception("oauth.callback_failed", provider=provider)
