@@ -348,6 +348,11 @@ def check_release_workflow(errors: list[str], deploy_path: Path | None = None) -
         errors.append("deploy workflow must be triggered directly by CI")
     if 'workflows: ["Build Images"]' in deploy_text:
         errors.append("deploy workflow must not chain workflow_run from Build Images")
+    webhook_module_command = "exec -T api python -m scripts.register_telegram_webhook"
+    if webhook_module_command not in deploy_text:
+        errors.append("deploy workflow must register the Telegram webhook as a Python module")
+    if "exec -T api python scripts/register_telegram_webhook.py" in deploy_text:
+        errors.append("deploy workflow must not execute the Telegram webhook script by file path")
     for expected in (
         "  build:\n",
         "docker/build-push-action@",
