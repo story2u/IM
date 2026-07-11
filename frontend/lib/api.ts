@@ -1,11 +1,15 @@
 import type {
   AuthUser,
+  AgentAction,
+  AgentAnalysisStatus,
   ExtractedContacts,
   LinkVerification,
   OAuthAuthorizeResponse,
   OAuthProvider,
   Opportunity,
   ReplyTemplate,
+  PlanEntitlements,
+  SubscriptionUsage,
   TelegramDialog,
   TelegramUserConfig,
   TelegramUserConfigUpdate,
@@ -35,6 +39,11 @@ interface ApiOpportunity {
   friendRequestStatus?: Opportunity['friendRequestStatus']
   sopStage?: Opportunity['sopStage']
   trustScore?: number
+  agentActions?: AgentAction[]
+  agentAnalysisStatus?: AgentAnalysisStatus
+  agentAnalysisError?: string | null
+  agentAnalyzedAt?: string | null
+  attentionRequired?: boolean
 }
 
 const defaultLinkVerification: LinkVerification = {
@@ -122,12 +131,39 @@ export function toOpportunity(item: ApiOpportunity): Opportunity {
     friendRequestStatus: item.friendRequestStatus ?? (item.sourceType === 'group' ? 'not_sent' : 'n/a'),
     sopStage: item.sopStage ?? 'detected',
     trustScore: item.trustScore ?? 70,
+    agentActions: item.agentActions ?? [],
+    agentAnalysisStatus: item.agentAnalysisStatus ?? 'not_requested',
+    agentAnalysisError: item.agentAnalysisError ?? null,
+    agentAnalyzedAt: item.agentAnalyzedAt ?? null,
+    attentionRequired: item.attentionRequired ?? false,
   }
 }
 
 export async function fetchOpportunities(): Promise<Opportunity[]> {
   const items = await fetchJson<ApiOpportunity[]>('/api/v1/opportunities?limit=200')
   return items.map(toOpportunity)
+}
+
+export async function fetchOpportunity(opportunityId: string): Promise<Opportunity> {
+  return toOpportunity(await fetchJson<ApiOpportunity>(`/api/v1/opportunities/${opportunityId}`))
+}
+
+export async function enqueueAgentAnalysis(opportunityId: string): Promise<{
+  messageId: string
+  status: AgentAnalysisStatus
+}> {
+  return fetchJson(`/api/v1/opportunities/${opportunityId}/agent-analysis`, {
+    method: 'POST',
+    headers: { 'Idempotency-Key': crypto.randomUUID() },
+  })
+}
+
+export async function fetchSubscriptionPlans(): Promise<PlanEntitlements[]> {
+  return fetchJson<PlanEntitlements[]>('/api/v1/subscriptions/plans')
+}
+
+export async function fetchMySubscription(): Promise<SubscriptionUsage> {
+  return fetchJson<SubscriptionUsage>('/api/v1/subscriptions/me')
 }
 
 export async function fetchReplyTemplates(): Promise<ReplyTemplate[]> {
@@ -153,6 +189,15 @@ export async function updateTelegramUserConfig(
   return fetchJson<TelegramUserConfig>('/api/v1/integrations/telegram-user/config', {
     method: 'PUT',
     body: JSON.stringify(payload),
+  })
+}
+
+export async function updateTelegramMonitorRetention(
+  monitorIds: string[],
+): Promise<TelegramUserConfig> {
+  return fetchJson<TelegramUserConfig>('/api/v1/integrations/telegram-user/monitors/retention', {
+    method: 'PUT',
+    body: JSON.stringify({ monitorIds }),
   })
 }
 

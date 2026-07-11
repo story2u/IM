@@ -1,4 +1,5 @@
 from app.application.dto import (
+    AgentActionRead,
     AuthUserRead,
     ChatMessageRead,
     OpportunityDetailRead,
@@ -22,23 +23,14 @@ from app.infrastructure.db.models import (
 )
 
 
-def default_link_verification(opportunity: Opportunity) -> dict:
-    return {
-        "status": "unverified",
-        "verifiedAt": None,
-        "riskReasons": [],
-        "resolvedInfo": None,
-    }
-
-
-def default_extracted_contacts(opportunity: Opportunity) -> dict:
-    return {
-        "phone": None,
-        "email": None,
-        "telegramHandle": None,
-        "wecomId": None,
-        "extractionSource": None,
-    }
+def to_agent_action_read(action: dict) -> AgentActionRead:
+    return AgentActionRead(
+        actionType=action["action_type"],
+        reason=action["reason"],
+        target=action.get("target"),
+        draft=action.get("draft"),
+        requiresApproval=bool(action.get("requires_approval", True)),
+    )
 
 
 def frontend_status(status: OpportunityStatus) -> FrontendOpportunityStatus:
@@ -68,11 +60,16 @@ def to_opportunity_read(opportunity: Opportunity) -> OpportunityRead:
         groupName=opportunity.group_name,
         groupMemberRole="member",
         rawMessageLinks=opportunity.raw_message_links,
-        linkVerification=default_link_verification(opportunity),
-        extractedContacts=default_extracted_contacts(opportunity),
-        friendRequestStatus="not_sent" if opportunity.source_type == "group" else "n/a",
-        sopStage="detected",
+        linkVerification=opportunity.link_verification,
+        extractedContacts=opportunity.extracted_contacts,
+        friendRequestStatus=opportunity.friend_request_status,
+        sopStage=opportunity.sop_stage,
         trustScore=opportunity.trust_score,
+        agentActions=[to_agent_action_read(action) for action in opportunity.agent_actions],
+        agentAnalysisStatus=opportunity.agent_analysis_status,
+        agentAnalysisError=opportunity.agent_analysis_error,
+        agentAnalyzedAt=opportunity.agent_analyzed_at,
+        attentionRequired=opportunity.attention_required,
     )
 
 
@@ -124,6 +121,8 @@ def to_telegram_monitor_read(monitor: TelegramMonitor) -> TelegramMonitorRead:
         chatId=monitor.chat_id,
         chatTitle=monitor.chat_title,
         backfillLimit=monitor.backfill_limit,
+        quotaPaused=monitor.quota_paused,
+        quotaReason=monitor.quota_reason,
         lastError=monitor.last_error,
         updatedAt=monitor.updated_at,
     )
@@ -135,11 +134,19 @@ def to_telegram_user_config_read(
     monitor_limit: int = 1,
 ) -> TelegramUserConfigRead:
     monitor_reads = [to_telegram_monitor_read(monitor) for monitor in monitors or []]
+    enabled_monitors = [monitor for monitor in monitors or [] if monitor.enabled]
+    active_monitor_count = sum(not monitor.quota_paused for monitor in enabled_monitors)
+    retention_selection_required = len(enabled_monitors) > monitor_limit and (
+        not config or config.retention_limit != monitor_limit
+    )
     if not config:
         return TelegramUserConfigRead(
             monitors=monitor_reads,
             monitorLimit=monitor_limit,
-            canCreateMore=len(monitor_reads) < monitor_limit,
+            canCreateMore=len(enabled_monitors) < monitor_limit,
+            activeMonitorCount=active_monitor_count,
+            storedMonitorCount=len(monitor_reads),
+            retentionSelectionRequired=retention_selection_required,
         )
     return TelegramUserConfigRead(
         apiId=config.api_id,
@@ -147,6 +154,10 @@ def to_telegram_user_config_read(
         sessionConfigured=bool(config.session_encrypted),
         monitors=monitor_reads,
         monitorLimit=monitor_limit,
-        canCreateMore=len(monitor_reads) < monitor_limit,
+        canCreateMore=len(enabled_monitors) < monitor_limit,
+        activeMonitorCount=active_monitor_count,
+        storedMonitorCount=len(monitor_reads),
+        retentionSelectionRequired=retention_selection_required,
+        retentionSelectedAt=config.retention_selected_at,
         updatedAt=config.updated_at,
     )

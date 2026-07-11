@@ -2,17 +2,23 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import Column, DateTime, Enum as SAEnum, Index, UniqueConstraint
+from sqlalchemy import CheckConstraint, Column, DateTime, Index, UniqueConstraint
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
 from app.domain.enums import (
+    AgentAnalysisStatus,
     IMChannel,
     MessageDirection,
     MessageSource,
     OpportunityStatus,
+    PlanCode,
     Priority,
     RuleType,
+    SubscriptionStatus,
+    UsageFeature,
+    UsageStatus,
 )
 
 
@@ -63,6 +69,38 @@ class AuthAccount(TimestampMixin, table=True):
     email: str | None = Field(default=None, index=True)
 
 
+class SubscriptionAccount(TimestampMixin, table=True):
+    __tablename__ = "subscription_accounts"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_subscription_accounts_user_id"),
+        Index("ix_subscription_accounts_status_period_end", "status", "current_period_end"),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    plan_code: PlanCode = Field(
+        default=PlanCode.FREE,
+        sa_column=Column(SAEnum(PlanCode, native_enum=False), nullable=False, index=True),
+    )
+    status: SubscriptionStatus = Field(
+        default=SubscriptionStatus.INACTIVE,
+        sa_column=Column(SAEnum(SubscriptionStatus, native_enum=False), nullable=False, index=True),
+    )
+    billing_provider: str | None = Field(default=None, max_length=32)
+    provider_customer_id: str | None = Field(default=None, max_length=255, index=True)
+    provider_subscription_id: str | None = Field(default=None, max_length=255, index=True)
+    current_period_start: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
+    current_period_end: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
+    cancel_at_period_end: bool = Field(default=False)
+    provider_event_version: str | None = Field(default=None, max_length=255)
+
+
 class Opportunity(TimestampMixin, table=True):
     __tablename__ = "opportunities"
     __table_args__ = (
@@ -82,7 +120,7 @@ class Opportunity(TimestampMixin, table=True):
     source_type: str = Field(default="private", index=True)
     group_name: str | None = None
 
-    source_message_id: UUID | None = Field(default=None, index=True)
+    source_message_id: UUID | None = Field(default=None, index=True, unique=True)
     title: str
     summary: str | None = None
     matched_keywords: list[str] = Field(default_factory=list, sa_column=Column(JSONB, nullable=False))
@@ -98,6 +136,42 @@ class Opportunity(TimestampMixin, table=True):
         sa_column=Column(SAEnum(OpportunityStatus, native_enum=False), nullable=False, index=True),
     )
     detection_reason: str | None = None
+
+    link_verification: dict[str, Any] = Field(
+        default_factory=lambda: {
+            "status": "unverified",
+            "verifiedAt": None,
+            "riskReasons": [],
+            "resolvedInfo": None,
+        },
+        sa_column=Column(JSONB, nullable=False),
+    )
+    extracted_contacts: dict[str, Any] = Field(
+        default_factory=lambda: {
+            "phone": None,
+            "email": None,
+            "telegramHandle": None,
+            "wecomId": None,
+            "extractionSource": None,
+        },
+        sa_column=Column(JSONB, nullable=False),
+    )
+    friend_request_status: str = Field(default="n/a")
+    sop_stage: str = Field(default="detected")
+    agent_actions: list[dict[str, Any]] = Field(
+        default_factory=list,
+        sa_column=Column(JSONB, nullable=False),
+    )
+    agent_analysis_status: AgentAnalysisStatus = Field(
+        default=AgentAnalysisStatus.NOT_REQUESTED,
+        sa_column=Column(SAEnum(AgentAnalysisStatus, native_enum=False), nullable=False, index=True),
+    )
+    agent_analysis_error: str | None = None
+    agent_analyzed_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
+    attention_required: bool = Field(default=False, index=True)
 
     ai_reply_draft: str | None = None
     final_reply: str | None = None
@@ -137,8 +211,25 @@ class Message(TimestampMixin, table=True):
         sa_column=Column(SAEnum(MessageSource, native_enum=False), nullable=True),
     )
     text: str | None = None
+    source_type: str = Field(default="private", index=True)
+    group_name: str | None = None
+    raw_message_links: list[str] = Field(default_factory=list, sa_column=Column(JSONB, nullable=False))
     raw_payload: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSONB, nullable=False))
     opportunity_id: UUID | None = Field(default=None, foreign_key="opportunities.id", index=True)
+    agent_analysis_status: AgentAnalysisStatus = Field(
+        default=AgentAnalysisStatus.NOT_REQUESTED,
+        sa_column=Column(SAEnum(AgentAnalysisStatus, native_enum=False), nullable=False, index=True),
+    )
+    agent_result: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSONB, nullable=False))
+    agent_error: str | None = None
+    agent_started_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
+    agent_analyzed_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
     sent_at: datetime = Field(
         default_factory=utc_now,
         sa_column=Column(DateTime(timezone=True), nullable=False, index=True),
@@ -147,6 +238,51 @@ class Message(TimestampMixin, table=True):
         default=None,
         sa_column=Column(DateTime(timezone=True), nullable=True),
     )
+
+
+class UsageLedger(TimestampMixin, table=True):
+    __tablename__ = "usage_ledger"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "feature",
+            "idempotency_key",
+            name="uq_usage_ledger_user_feature_idempotency",
+        ),
+        CheckConstraint("quantity > 0", name="ck_usage_ledger_quantity_positive"),
+        Index(
+            "ix_usage_ledger_user_feature_period_status",
+            "user_id",
+            "feature",
+            "period_start",
+            "period_end",
+            "status",
+        ),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    feature: UsageFeature = Field(
+        sa_column=Column(SAEnum(UsageFeature, native_enum=False), nullable=False, index=True)
+    )
+    quantity: int = Field(default=1, ge=1)
+    period_start: datetime = Field(sa_column=Column(DateTime(timezone=True), nullable=False))
+    period_end: datetime = Field(sa_column=Column(DateTime(timezone=True), nullable=False))
+    idempotency_key: str = Field(max_length=255)
+    source_message_id: UUID | None = Field(default=None, foreign_key="messages.id", index=True)
+    status: UsageStatus = Field(
+        default=UsageStatus.RESERVED,
+        sa_column=Column(SAEnum(UsageStatus, native_enum=False), nullable=False, index=True),
+    )
+    consumed_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
+    released_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
+    failure_reason: str | None = Field(default=None, max_length=500)
 
 
 class Rule(TimestampMixin, table=True):
@@ -188,6 +324,11 @@ class TelegramUserConfig(TimestampMixin, table=True):
     api_id: int | None = Field(default=None)
     api_hash_encrypted: str | None = None
     session_encrypted: str | None = None
+    retention_limit: int | None = Field(default=None, ge=0)
+    retention_selected_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
 
 
 class TelegramMonitor(TimestampMixin, table=True):
@@ -204,6 +345,9 @@ class TelegramMonitor(TimestampMixin, table=True):
     chat_id: str = Field(index=True)
     chat_title: str | None = None
     backfill_limit: int = Field(default=30, ge=0, le=500)
+    quota_paused: bool = Field(default=False, index=True)
+    quota_reason: str | None = Field(default=None, max_length=500)
+    retention_priority: int = Field(default=0, ge=0)
     last_error: str | None = None
 
 

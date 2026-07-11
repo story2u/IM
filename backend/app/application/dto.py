@@ -5,13 +5,25 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.time_window import WorkTimeConfig
 from app.domain.enums import (
+    AgentActionType,
+    AgentAnalysisStatus,
     FrontendOpportunityStatus,
     IMChannel,
     MessageSource,
     OpportunityStatus,
+    PlanCode,
     Priority,
     RuleType,
+    SubscriptionStatus,
 )
+
+
+class AgentActionRead(BaseModel):
+    actionType: AgentActionType
+    reason: str
+    target: str | None = None
+    draft: str | None = None
+    requiresApproval: bool = True
 
 
 class OpportunityRead(BaseModel):
@@ -37,6 +49,11 @@ class OpportunityRead(BaseModel):
     friendRequestStatus: str = "not_sent"
     sopStage: str = "detected"
     trustScore: int = 70
+    agentActions: list[AgentActionRead] = Field(default_factory=list)
+    agentAnalysisStatus: AgentAnalysisStatus = AgentAnalysisStatus.NOT_REQUESTED
+    agentAnalysisError: str | None = None
+    agentAnalyzedAt: datetime | None = None
+    attentionRequired: bool = False
 
 
 class OpportunityDetailRead(OpportunityRead):
@@ -63,6 +80,11 @@ class ManualReplyRequest(BaseModel):
 class AIDraftResponse(BaseModel):
     opportunity_id: UUID
     draft: str
+
+
+class AgentAnalysisEnqueueRead(BaseModel):
+    messageId: UUID
+    status: AgentAnalysisStatus
 
 
 class OpportunityStatusUpdate(BaseModel):
@@ -161,6 +183,29 @@ class AuthTokenRead(BaseModel):
     user: AuthUserRead
 
 
+class PlanEntitlementsRead(BaseModel):
+    planCode: PlanCode
+    telegramGroupLimit: int | None
+    wecomGroupLimit: int | None
+    combinedGroupLimit: int
+    piAgentAnalysisMonthlyLimit: int
+
+
+class SubscriptionUsageRead(BaseModel):
+    planCode: PlanCode
+    subscriptionStatus: SubscriptionStatus
+    periodStart: datetime
+    periodEnd: datetime
+    cancelAtPeriodEnd: bool = False
+    entitlements: PlanEntitlementsRead
+    telegramGroupsUsed: int
+    wecomGroupsUsed: int
+    combinedGroupsUsed: int
+    aiAnalysesConsumed: int
+    aiAnalysesReserved: int
+    aiAnalysesRemaining: int
+
+
 class OAuthAuthorizeRead(BaseModel):
     authorizationUrl: str
 
@@ -172,6 +217,8 @@ class TelegramMonitorRead(BaseModel):
     chatId: str
     chatTitle: str | None = None
     backfillLimit: int = 30
+    quotaPaused: bool = False
+    quotaReason: str | None = None
     lastError: str | None = None
     updatedAt: datetime | None = None
 
@@ -183,6 +230,10 @@ class TelegramUserConfigRead(BaseModel):
     monitors: list[TelegramMonitorRead] = Field(default_factory=list)
     monitorLimit: int = 1
     canCreateMore: bool = False
+    activeMonitorCount: int = 0
+    storedMonitorCount: int = 0
+    retentionSelectionRequired: bool = False
+    retentionSelectedAt: datetime | None = None
     updatedAt: datetime | None = None
 
 
@@ -193,6 +244,10 @@ class TelegramUserConfigUpdate(BaseModel):
     sessionString: str | None = Field(default=None, max_length=10000)
     chats: list[str | int] = Field(default_factory=list)
     backfillLimit: int = Field(default=30, ge=0, le=500)
+
+
+class TelegramMonitorRetentionUpdate(BaseModel):
+    monitorIds: list[UUID] = Field(default_factory=list, max_length=100)
 
 
 class TelegramSendCodeRequest(BaseModel):
