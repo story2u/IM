@@ -122,11 +122,7 @@ jobs:
       RUNTIME_DEFAULT_WORK_END: ${{ vars.DEFAULT_WORK_END }}
       RUNTIME_PENDING_HUMAN_SLA_MINUTES: ${{ vars.PENDING_HUMAN_SLA_MINUTES }}
       RUNTIME_TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      RUNTIME_TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
       RUNTIME_TELEGRAM_BOT_USERNAME: ${{ vars.TELEGRAM_BOT_USERNAME }}
-      RUNTIME_TELEGRAM_WEBHOOK_URL: ${{ vars.TELEGRAM_WEBHOOK_URL }}
-      RUNTIME_TELEGRAM_INTEGRATION_MODE: ${{ vars.TELEGRAM_INTEGRATION_MODE || 'live' }}
-      RUNTIME_TELEGRAM_CONNECT_TTL_SECONDS: ${{ vars.TELEGRAM_CONNECT_TTL_SECONDS || '600' }}
       RUNTIME_TELEGRAM_MTPROTO_QR_ENABLED: ${{ vars.TELEGRAM_MTPROTO_QR_ENABLED || 'false' }}
       RUNTIME_TELEGRAM_MTPROTO_QR_WORKER_ENABLED: ${{ vars.TELEGRAM_MTPROTO_QR_WORKER_ENABLED || 'false' }}
       RUNTIME_TELEGRAM_MTPROTO_API_ID: ${{ vars.TELEGRAM_MTPROTO_API_ID }}
@@ -249,11 +245,7 @@ jobs:
           append_env DEFAULT_WORK_END "$RUNTIME_DEFAULT_WORK_END"
           append_env PENDING_HUMAN_SLA_MINUTES "$RUNTIME_PENDING_HUMAN_SLA_MINUTES"
           append_env TELEGRAM_BOT_TOKEN "$RUNTIME_TELEGRAM_BOT_TOKEN"
-          append_env TELEGRAM_WEBHOOK_SECRET "$RUNTIME_TELEGRAM_WEBHOOK_SECRET"
           append_env TELEGRAM_BOT_USERNAME "$RUNTIME_TELEGRAM_BOT_USERNAME"
-          append_env TELEGRAM_WEBHOOK_URL "$RUNTIME_TELEGRAM_WEBHOOK_URL"
-          append_env TELEGRAM_INTEGRATION_MODE "$RUNTIME_TELEGRAM_INTEGRATION_MODE"
-          append_env TELEGRAM_CONNECT_TTL_SECONDS "$RUNTIME_TELEGRAM_CONNECT_TTL_SECONDS"
           append_env TELEGRAM_MTPROTO_QR_ENABLED "$RUNTIME_TELEGRAM_MTPROTO_QR_ENABLED"
           append_env TELEGRAM_MTPROTO_QR_WORKER_ENABLED "$RUNTIME_TELEGRAM_MTPROTO_QR_WORKER_ENABLED"
           append_env TELEGRAM_MTPROTO_API_ID "$RUNTIME_TELEGRAM_MTPROTO_API_ID"
@@ -329,6 +321,12 @@ jobs:
 
           if raw_value("JWT_SECRET_KEY") in {"", "change-me", "change-me-with-a-long-random-string"}:
               upsert("JWT_SECRET_KEY", f'JWT_SECRET_KEY="{secrets.token_urlsafe(48)}"')
+
+          if raw_value("TELEGRAM_WEBHOOK_SECRET") in {"", "change-me"}:
+              upsert(
+                  "TELEGRAM_WEBHOOK_SECRET",
+                  f'TELEGRAM_WEBHOOK_SECRET="{secrets.token_urlsafe(32)}"',
+              )
 
           base_path.write_text("\n".join(lines).rstrip() + "\n")
           incoming_path.unlink(missing_ok=True)

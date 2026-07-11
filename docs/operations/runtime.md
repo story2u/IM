@@ -25,7 +25,7 @@ Docker context。CI 分别验证两个锁文件。
 | Web/Auth | `FRONTEND_BASE_URL`、`CORS_ORIGINS`、`JWT_SECRET_KEY`、`ADMIN_API_TOKEN` | 生产必须使用强随机值 |
 | OAuth | `GOOGLE_*`、`APPLE_*` | 至少配置一个 provider；Apple secret 可由 key material 生成 |
 | 工作模式 | `DEFAULT_TIMEZONE`、`DEFAULT_WORKDAYS`、`DEFAULT_WORK_START/END`、`PENDING_HUMAN_SLA_MINUTES` | 决定人工/AI 路由与超时 |
-| Telegram | `TELEGRAM_BOT_TOKEN`、`TELEGRAM_WEBHOOK_SECRET`、`TELEGRAM_BOT_USERNAME`、`TELEGRAM_WEBHOOK_URL`、`TELEGRAM_INTEGRATION_MODE` | 原生 Bot 连接/webhook；生产必须为 `live`，群额度包含旧 monitor 与新 source |
+| Telegram | `TELEGRAM_BOT_TOKEN`、`TELEGRAM_WEBHOOK_SECRET`、`TELEGRAM_BOT_USERNAME`、`TELEGRAM_WEBHOOK_URL`、`TELEGRAM_INTEGRATION_MODE` | 原生 Bot 连接/webhook；首次 release 自动生成并持久化 secret，生产 URL/live/600 秒 TTL 均有 compose 默认值，群额度包含旧 monitor 与新 source |
 | 企业微信 | `WECOM_CORP_ID`、`WECOM_AGENT_ID`、`WECOM_SECRET`、`WECOM_TOKEN`、`WECOM_AES_KEY` | webhook 验签、解密与发送 |
 | AI/发送 | `AI_ENABLED`、`LITELLM_MODEL`、`OPENAI_API_KEY`、`IM_SEND_ENABLED` | 两个功能开关默认关闭 |
 | pi Agent | `PI_AGENT_ENABLED`、`PI_AGENT_PROVIDER`、`PI_AGENT_MODEL`、`PI_AGENT_API_KEY`、`PI_AGENT_*TIMEOUT*`、`PI_AGENT_MAX_*` | 默认开启；DeepSeek 可由 GitHub `DEEPSEEK_API_KEY` Secret 映射，OpenAI 可回退使用 `OPENAI_API_KEY` |

@@ -52,16 +52,17 @@ QR 登录需要平台全局 `TELEGRAM_MTPROTO_API_ID` / `TELEGRAM_MTPROTO_API_HA
 GitHub **Secrets**：
 
 - `TELEGRAM_BOT_TOKEN`
-- `TELEGRAM_WEBHOOK_SECRET`（1–256 位，仅 `A-Z a-z 0-9 _ -`）
 - `TELEGRAM_MTPROTO_API_HASH`（仅未来 P2）
 
 GitHub **Variables**：
 
 - `TELEGRAM_BOT_USERNAME`（不含 `@`）
-- `TELEGRAM_WEBHOOK_URL`，例如 `https://im.example.com/api/v1/webhooks/telegram`
-- `TELEGRAM_INTEGRATION_MODE=live`
-- `TELEGRAM_CONNECT_TTL_SECONDS=600`
 - `TELEGRAM_MTPROTO_QR_ENABLED`、`TELEGRAM_MTPROTO_QR_WORKER_ENABLED`、`TELEGRAM_MTPROTO_API_ID`（仅未来 P2）
+
+webhook secret 不需要 GitHub Secret：release 工作流会在服务器首次发布时生成随机值（1–256 位，仅
+`A-Z a-z 0-9 _ -`）并持久化在运行时 `.env`，后续发布保持不变。生产 compose 默认使用
+`https://im.story2u.xyz/api/v1/webhooks/telegram`、`TELEGRAM_INTEGRATION_MODE=live` 和
+`TELEGRAM_CONNECT_TTL_SECONDS=600`；如需覆盖这些默认值，可直接在服务器运行时 `.env` 中设置。
 
 release 部署会在 Bot token、secret 与 webhook URL 全部存在时注册 `setWebhook`，并限制 update 类型到
 连接和消息所需集合；未完整配置时会明确跳过注册。生产环境绝不能设置 `TELEGRAM_INTEGRATION_MODE=mock`。
