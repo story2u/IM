@@ -29,7 +29,7 @@ Docker context。CI 分别验证两个锁文件。
 | 企业微信 | `WECOM_CORP_ID`、`WECOM_AGENT_ID`、`WECOM_SECRET`、`WECOM_TOKEN`、`WECOM_AES_KEY` | webhook 验签、解密与发送 |
 | AI/发送 | `AI_ENABLED`、`LITELLM_MODEL`、`OPENAI_API_KEY`、`IM_SEND_ENABLED` | 两个功能开关默认关闭 |
 | pi Agent | `PI_AGENT_ENABLED`、`PI_AGENT_PROVIDER`、`PI_AGENT_MODEL`、`PI_AGENT_API_KEY`、`PI_AGENT_*TIMEOUT*`、`PI_AGENT_MAX_*` | 默认开启；DeepSeek 可由 GitHub `DEEPSEEK_API_KEY` Secret 映射，OpenAI 可回退使用 `OPENAI_API_KEY` |
-| RevenueCat | `REVENUECAT_ENABLED`、`REVENUECAT_SECRET_API_KEY`、`REVENUECAT_PROJECT_ID`、`REVENUECAT_WEBHOOK_*`、`REVENUECAT_RECONCILE_*` | 默认关闭；三个服务端凭据只能来自 Secrets；Web/iOS/Android Public Key 仅进对应客户端构建 |
+| RevenueCat | `REVENUECAT_ENABLED`、`REVENUECAT_SECRET_API_KEY`、`REVENUECAT_PROJECT_ID`、`REVENUECAT_WEBHOOK_*`、`REVENUECAT_RECONCILE_*` | 默认启用；API Secret 来自 GitHub Secret，Webhook 两项只保存在 VPS `.env`；三端 Public Key 仅进对应客户端构建 |
 
 `JWT_SECRET_KEY` 在首次 VPS 部署缺失或仍为占位值时由 workflow 生成并保留。秘密放 GitHub Secrets，
 非敏感配置放 Variables；不得把生产 `.env` 回写仓库。

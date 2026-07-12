@@ -14,18 +14,17 @@ transaction 的 `environment` 区分 Sandbox/Production，但 Customer identity 
 GitHub **Secrets**：
 
 - `REVENUECAT_SECRET_API_KEY`：服务端 Secret，供 Customer API 使用。
-- `REVENUECAT_WEBHOOK_AUTH_TOKEN`：完整固定 Authorization header 值，建议 `Bearer <random>`。
-- `REVENUECAT_WEBHOOK_HMAC_SECRET`：Webhook signing secret，仅在创建/轮换时可见。
 
 GitHub **Variables**：
 
-- `REVENUECAT_ENABLED`、`REVENUECAT_RECONCILE_ENABLED`：完成配置前均保持 `false`。
 - `REVENUECAT_PROJECT_ID`。
 - `NEXT_PUBLIC_REVENUECAT_WEB_API_KEY`、`NEXT_PUBLIC_REVENUECAT_OFFERING_ID=default`。
 - `REVENUECAT_IOS_PUBLIC_API_KEY`、`REVENUECAT_ANDROID_PUBLIC_API_KEY`：进入对应平台构建配置。
 
-Public SDK Key 不是 Secret，但必须使用对应平台的 Key。Paddle API Key、App Store private key 和 Google
-service-account JSON 不进入 GitHub/VPS 应用环境；Paddle Key 只粘贴到 RevenueCat Dashboard。
+`REVENUECAT_ENABLED=true` 与 `REVENUECAT_RECONCILE_ENABLED=true` 由部署工作流直接写入 VPS `.env`，
+不使用 GitHub Variables。Webhook Authorization 和 RevenueCat 生成的 HMAC signing secret 也只保存在
+VPS `.env`，部署不会覆盖。Public SDK Key 不是 Secret，但必须使用对应平台的 Key。Paddle API Key、
+App Store private key和 Google service-account JSON 不进入应用环境；Paddle Key 只粘贴到 RevenueCat。
 
 ## 2. RevenueCat Project 与目录
 
@@ -90,11 +89,11 @@ service-account JSON 不进入 GitHub/VPS 应用环境；Paddle Key 只粘贴到
 1. RevenueCat Integrations > Webhooks 新建配置。Webhook 当前需要支持该能力的 RevenueCat 套餐（官方
    文档当前标为 Pro integration），购买前确认账号套餐。
 2. URL：`https://im.story2u.xyz/api/v1/webhooks/revenuecat`；选择 Sandbox + Production lifecycle events。
-3. Authorization Header 填与 GitHub Secret 完全一致的固定值。
-4. 开启 HMAC signing，把一次性显示的 secret 存入 GitHub Secret。服务校验
+3. Authorization Header 填与 VPS `.env` 的 `REVENUECAT_WEBHOOK_AUTH_TOKEN` 完全一致的固定值。
+4. 开启 HMAC signing，把 RevenueCat 一次性显示的 secret 存入 VPS `.env`。服务校验
    `X-RevenueCat-Webhook-Signature: t=...,v1=...`、原始 body 和 300 秒容差。
-5. 配置 Secrets/Variables 后先部署 `REVENUECAT_ENABLED=true`，确认 `/healthz`；再设置
-   `REVENUECAT_RECONCILE_ENABLED=true`。发送 Dashboard 测试事件，确认 API 快速 200、Celery event
+5. 部署会默认启用 RevenueCat 与 reconcile。确认 `/healthz` 后发送 Dashboard 测试事件，确认 API
+   快速 200、Celery event
    completed、Customer API 全量同步。未知事件也应完成同步，重复 event ID 不重复处理。
 
 ## 7. Sandbox 端到端验收
