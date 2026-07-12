@@ -19,6 +19,10 @@ import type {
   TelegramMtprotoDialog,
   TelegramUserConfig,
   TelegramUserConfigUpdate,
+  DetectionSettings,
+  WorkSchedule,
+  NotificationSettings,
+  SettingsBundle,
 } from './types'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? ''
@@ -310,5 +314,38 @@ export async function addTelegramMtprotoSource(
   return fetchJson<TelegramConnection>(`/api/v1/integrations/telegram/connections/${connectionId}/sources`, {
     method: 'POST',
     body: JSON.stringify({ chatId }),
+  })
+}
+
+// MARK: 用户级设置（与 iOS/Android 共享同一后端设置源）
+
+export async function fetchSettings(): Promise<SettingsBundle> {
+  return fetchJson<SettingsBundle>('/api/v1/settings/me')
+}
+
+export async function updateDetectionSettings(
+  body: DetectionSettings,
+): Promise<DetectionSettings> {
+  return fetchJson<DetectionSettings>('/api/v1/settings/detection', {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function updateWorkSchedule(
+  body: Omit<WorkSchedule, 'isDefault'>,
+): Promise<WorkSchedule> {
+  return fetchJson<WorkSchedule>('/api/v1/settings/work-schedule', {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function updateNotificationSettings(
+  body: NotificationSettings,
+): Promise<NotificationSettings> {
+  return fetchJson<NotificationSettings>('/api/v1/settings/notifications', {
+    method: 'PATCH',
+    body: JSON.stringify(body),
   })
 }

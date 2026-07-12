@@ -273,3 +273,40 @@ export interface SubscriptionManagement {
   instruction: string
   canOpenInCurrentClient: boolean
 }
+
+export interface DetectionSettings {
+  keywords: string[]
+  aiSemanticsEnabled: boolean
+}
+
+export interface WorkScheduleSlot {
+  weekday: number
+  start: string
+  end: string
+}
+
+export interface WorkSchedule {
+  timezone: string
+  slots: WorkScheduleSlot[]
+  autoReplyOutsideHours: boolean
+  isDefault: boolean
+}
+
+export interface NotificationSettings {
+  newOpportunityEnabled: boolean
+  aiRepliedEnabled: boolean
+  dailyDigestEnabled: boolean
+  urgentOnly: boolean
+}
+
+export interface SettingsCapabilities {
+  pushAvailable: boolean
+  wecomUserBindingAvailable: boolean
+}
+
+export interface SettingsBundle {
+  detection: DetectionSettings
+  workSchedule: WorkSchedule
+  notifications: NotificationSettings
+  capabilities: SettingsCapabilities
+}

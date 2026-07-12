@@ -8,7 +8,6 @@ import { TrustBadge } from '@/components/trust-badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
-import { MOCK_NOW } from '@/lib/dashboard-filters'
 import { sopStageConfig } from '@/lib/sop'
 import type { Opportunity, Priority } from '@/lib/types'
 import { cn } from '@/lib/utils'
@@ -28,7 +27,7 @@ const statusConfig = {
 
 function formatTime(iso: string) {
   const date = new Date(iso)
-  const diffMs = MOCK_NOW.getTime() - date.getTime()
+  const diffMs = Date.now() - date.getTime()
   const diffMin = Math.floor(diffMs / 60000)
   if (diffMin < 1) return '刚刚'
   if (diffMin < 60) return `${diffMin} 分钟前`
