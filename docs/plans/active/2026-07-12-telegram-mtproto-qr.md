@@ -25,6 +25,8 @@ P2 卡片和 `/connect/mtproto-qr` 当前安全拒绝；即使环境开关为 tr
 - [x] 独立常驻 worker 完成 QR 生命周期和普通账号消息监听，消息按 owner/来源/订阅额度摄取且幂等。
 - [x] 用户只能查看、取消或删除自己的 QR 尝试、连接和群组来源；过期/失败路径可恢复。
 - [x] 新前端使用真实 API 显示二维码、加载/失败/过期状态及可监听来源，不存在旧凭据表单或相关提示。
+- [x] 同一用户最多保留一个 pending QR 尝试；重复或并发请求复用该尝试，不会无界创建 Telethon 连接。
+- [x] legacy 配置 API 在数据迁移和下线方案完成前保持兼容可用。
 
 ## 影响面与风险
 
@@ -45,6 +47,7 @@ P2 卡片和 `/connect/mtproto-qr` 当前安全拒绝；即使环境开关为 tr
 
 - 2026-07-12：开始。确认 P2 当前被 API 硬编码关闭，不能由环境开关单独启用。
 - 2026-07-12：实现平台凭据 QR worker、只读 listener 与用户来源选择；删除旧用户凭据采集路由和前端客户端。
+- 2026-07-12：review 修复恢复 legacy API；新增 pending QR 数据库唯一约束、API 复用与部署迁移停机保护。
 
 ## 发现日志
 
@@ -59,8 +62,12 @@ P2 卡片和 `/connect/mtproto-qr` 当前安全拒绝；即使环境开关为 tr
 | 命令/场景 | 结果 | 证据或备注 |
 | --- | --- | --- |
 | `make check` | 通过 | harness、后端 46 passed / 5 skipped、pi runtime、前端 lint/typecheck/build 通过 |
+| `make harness-check && make backend-check`（review 修复后） | 通过 | harness 7 tests；后端 59 passed / 6 PostgreSQL tests skipped |
+| `make pi-agent-check` 与前端 lint/typecheck/build | 通过 | pi runtime 4 tests；Next.js production build 成功 |
+| Alembic head | 通过 | `202607120002 (head)`；本机无 Docker，未实际连接 PostgreSQL 执行迁移 |
 | Compose config（本地/生产） | 通过 | 两个新增 worker 服务均可渲染 |
 | QR 尝试/API/worker 真实 Telegram 冒烟 | 未运行 | 需要平台 API 凭据与隔离 Telegram 普通账号 |
+| QR 回归测试 | 通过 | 覆盖重复请求复用、worker 未启用拒绝、QR grant/session 加密持久化与 owner-scoped repository |
 
 ## 回滚与恢复
 

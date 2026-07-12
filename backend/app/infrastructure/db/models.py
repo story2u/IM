@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import BigInteger, CheckConstraint, Column, DateTime, Index, UniqueConstraint
+from sqlalchemy import BigInteger, CheckConstraint, Column, DateTime, Index, UniqueConstraint, text
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
@@ -466,6 +466,12 @@ class TelegramConnectionAttempt(TimestampMixin, table=True):
             "owner_user_id",
             "status",
             "expires_at",
+        ),
+        Index(
+            "uq_telegram_connection_attempts_owner_pending_mtproto_qr",
+            "owner_user_id",
+            unique=True,
+            postgresql_where=text("connection_type = 'mtproto_qr' AND status = 'pending'"),
         ),
     )
 

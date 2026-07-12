@@ -1104,6 +1104,28 @@ class TelegramConnectionRepository:
         await self.session.refresh(attempt)
         return attempt
 
+    async def get_pending_attempt_for_owner(
+        self,
+        *,
+        owner_user_id: UUID,
+        connection_type: TelegramConnectionType,
+    ) -> TelegramConnectionAttempt | None:
+        statement = (
+            select(TelegramConnectionAttempt)
+            .where(
+                TelegramConnectionAttempt.owner_user_id == owner_user_id,
+                TelegramConnectionAttempt.connection_type == connection_type,
+                TelegramConnectionAttempt.status == TelegramConnectionAttemptStatus.PENDING,
+            )
+            .order_by(col(TelegramConnectionAttempt.created_at).desc())
+        )
+        result = await self.session.exec(statement)
+        for attempt in result.all():
+            await self._expire_attempt_if_needed(attempt)
+            if attempt.status == TelegramConnectionAttemptStatus.PENDING:
+                return attempt
+        return None
+
     async def get_attempt_for_owner(
         self,
         *,

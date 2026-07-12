@@ -272,13 +272,27 @@ async def start_mtproto_qr_connection(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="MTProto QR worker is not configured by the administrator",
         )
-    attempt, _ = await create_connection_attempt(
-        connection_repo=connection_repo,
+    attempt = await connection_repo.get_pending_attempt_for_owner(
         owner_user_id=current_user.id,
         connection_type=TelegramConnectionType.MTPROTO_QR,
-        expires_at=utc_now() + timedelta(seconds=settings.telegram_connect_ttl_seconds),
-        with_chat_picker=False,
     )
+    if attempt is None:
+        try:
+            attempt, _ = await create_connection_attempt(
+                connection_repo=connection_repo,
+                owner_user_id=current_user.id,
+                connection_type=TelegramConnectionType.MTPROTO_QR,
+                expires_at=utc_now() + timedelta(seconds=settings.telegram_connect_ttl_seconds),
+                with_chat_picker=False,
+            )
+        except HTTPException as exc:
+            # A concurrent request may have won the partial unique-index race.
+            attempt = await connection_repo.get_pending_attempt_for_owner(
+                owner_user_id=current_user.id,
+                connection_type=TelegramConnectionType.MTPROTO_QR,
+            )
+            if attempt is None:
+                raise exc
     return to_telegram_connection_attempt_read(
         attempt,
         instructions=["正在生成二维码。请使用已登录的 Telegram 客户端扫码确认。", "二维码过期后请重新开始。"],

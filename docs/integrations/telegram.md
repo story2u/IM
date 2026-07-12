@@ -13,7 +13,7 @@
 | Telegram Business | P1 | 部分实现 | 通过 Business connection 接收授权范围内的私聊 |
 | 普通账号 QR | P2 | 已实现 | 平台统一 MTProto 凭据、用户扫码、选择群组/频道并只读监听 |
 
-旧 `TelegramUserConfig` / `TelegramMonitor` 仍由兼容 listener 读取，但旧的用户凭据采集 API 已移除；
+旧 `TelegramUserConfig` / `TelegramMonitor` 仍由兼容 listener 读取，旧用户配置 API 暂时保留用于管理既有连接；
 它们不会被本次迁移解密、复制或删除。
 
 ## P0：Bot 群组/频道流程

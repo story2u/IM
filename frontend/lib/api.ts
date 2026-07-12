@@ -10,10 +10,13 @@ import type {
   ReplyTemplate,
   PlanEntitlements,
   SubscriptionUsage,
+  TelegramDialog,
   TelegramConnection,
   TelegramConnectionAttempt,
   TelegramConnectionHealth,
   TelegramMtprotoDialog,
+  TelegramUserConfig,
+  TelegramUserConfigUpdate,
 } from './types'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? ''
@@ -181,6 +184,47 @@ export async function fetchOAuthAuthorizeUrl(provider: OAuthProvider): Promise<s
 
 export async function fetchMe(): Promise<AuthUser> {
   return fetchJson<AuthUser>('/api/v1/auth/me')
+}
+
+export async function fetchTelegramUserConfig(): Promise<TelegramUserConfig> {
+  return fetchJson<TelegramUserConfig>('/api/v1/integrations/telegram-user/config')
+}
+
+export async function updateTelegramUserConfig(
+  payload: TelegramUserConfigUpdate,
+): Promise<TelegramUserConfig> {
+  return fetchJson<TelegramUserConfig>('/api/v1/integrations/telegram-user/config', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function updateTelegramMonitorRetention(monitorIds: string[]): Promise<TelegramUserConfig> {
+  return fetchJson<TelegramUserConfig>('/api/v1/integrations/telegram-user/monitors/retention', {
+    method: 'PUT',
+    body: JSON.stringify({ monitorIds }),
+  })
+}
+
+export async function sendTelegramCode(apiId: number, apiHash: string, phone: string) {
+  return fetchJson<{ loginId: string; expiresInSeconds: number }>('/api/v1/integrations/telegram-user/send-code', {
+    method: 'POST',
+    body: JSON.stringify({ apiId, apiHash, phone }),
+  })
+}
+
+export async function verifyTelegramCode(loginId: string, code: string, password?: string) {
+  return fetchJson<{ status: string; config: TelegramUserConfig | null }>(
+    '/api/v1/integrations/telegram-user/verify-code',
+    {
+      method: 'POST',
+      body: JSON.stringify({ loginId, code, password: password || null }),
+    },
+  )
+}
+
+export async function fetchTelegramDialogs(): Promise<TelegramDialog[]> {
+  return fetchJson<TelegramDialog[]>('/api/v1/integrations/telegram-user/dialogs')
 }
 
 export async function fetchTelegramConnectionHealth(): Promise<TelegramConnectionHealth> {

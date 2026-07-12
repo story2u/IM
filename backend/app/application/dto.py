@@ -214,6 +214,80 @@ class OAuthAuthorizeRead(BaseModel):
     authorizationUrl: str
 
 
+class NativeLoginRequest(BaseModel):
+    """移动端原生登录：App 用系统 SDK 取得 provider id_token 后换取本服务 JWT。"""
+
+    idToken: str = Field(min_length=16, max_length=8192)
+
+
+class TelegramMonitorRead(BaseModel):
+    id: UUID
+    enabled: bool
+    name: str
+    chatId: str
+    chatTitle: str | None = None
+    backfillLimit: int = 30
+    quotaPaused: bool = False
+    quotaReason: str | None = None
+    lastError: str | None = None
+    updatedAt: datetime | None = None
+
+
+class TelegramUserConfigRead(BaseModel):
+    apiId: int | None = None
+    apiHashConfigured: bool = False
+    sessionConfigured: bool = False
+    monitors: list[TelegramMonitorRead] = Field(default_factory=list)
+    monitorLimit: int = 1
+    canCreateMore: bool = False
+    activeMonitorCount: int = 0
+    storedMonitorCount: int = 0
+    retentionSelectionRequired: bool = False
+    retentionSelectedAt: datetime | None = None
+    updatedAt: datetime | None = None
+
+
+class TelegramUserConfigUpdate(BaseModel):
+    enabled: bool = False
+    apiId: int | None = Field(default=None, ge=1)
+    apiHash: str | None = Field(default=None, max_length=512)
+    sessionString: str | None = Field(default=None, max_length=10000)
+    chats: list[str | int] = Field(default_factory=list)
+    backfillLimit: int = Field(default=30, ge=0, le=500)
+
+
+class TelegramMonitorRetentionUpdate(BaseModel):
+    monitorIds: list[UUID] = Field(default_factory=list, max_length=100)
+
+
+class TelegramSendCodeRequest(BaseModel):
+    apiId: int = Field(ge=1)
+    apiHash: str = Field(min_length=1, max_length=512)
+    phone: str = Field(min_length=5, max_length=64)
+
+
+class TelegramSendCodeRead(BaseModel):
+    loginId: str
+    expiresInSeconds: int
+
+
+class TelegramVerifyCodeRequest(BaseModel):
+    loginId: str = Field(min_length=16, max_length=128)
+    code: str = Field(min_length=2, max_length=32)
+    password: str | None = Field(default=None, max_length=256)
+
+
+class TelegramVerifyCodeRead(BaseModel):
+    status: str
+    config: TelegramUserConfigRead | None = None
+
+
+class TelegramDialogRead(BaseModel):
+    id: int
+    name: str
+    username: str | None = None
+
+
 class TelegramSourceRead(BaseModel):
     id: UUID
     connectionId: UUID

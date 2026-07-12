@@ -115,6 +115,48 @@ export interface OAuthAuthorizeResponse {
   authorizationUrl: string
 }
 
+export interface TelegramMonitor {
+  id: string
+  enabled: boolean
+  name: string
+  chatId: string
+  chatTitle: string | null
+  backfillLimit: number
+  quotaPaused: boolean
+  quotaReason: string | null
+  lastError: string | null
+  updatedAt: string | null
+}
+
+export interface TelegramUserConfig {
+  apiId: number | null
+  apiHashConfigured: boolean
+  sessionConfigured: boolean
+  monitors: TelegramMonitor[]
+  monitorLimit: number
+  canCreateMore: boolean
+  activeMonitorCount: number
+  storedMonitorCount: number
+  retentionSelectionRequired: boolean
+  retentionSelectedAt: string | null
+  updatedAt: string | null
+}
+
+export interface TelegramUserConfigUpdate {
+  enabled: boolean
+  apiId?: number | null
+  apiHash?: string
+  sessionString?: string
+  chats: Array<string | number>
+  backfillLimit: number
+}
+
+export interface TelegramDialog {
+  id: number
+  name: string
+  username: string | null
+}
+
 export type TelegramConnectionType = 'bot_chat' | 'business' | 'mtproto_qr'
 export type TelegramConnectionStatus = 'pending' | 'connected' | 'disabled' | 'error' | 'expired'
 export type TelegramConnectionAttemptStatus = 'pending' | 'completed' | 'cancelled' | 'expired' | 'failed'

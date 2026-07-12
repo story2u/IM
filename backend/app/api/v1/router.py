@@ -10,6 +10,7 @@ from app.api.v1.routes import (
     stats,
     subscriptions,
     telegram_connections,
+    telegram_user_configs,
     templates,
     webhooks_telegram,
     webhooks_wecom,
@@ -30,5 +31,10 @@ api_router.include_router(subscriptions.router, prefix="/subscriptions", tags=["
 api_router.include_router(
     telegram_connections.router,
     prefix="/integrations/telegram",
+    tags=["integrations"],
+)
+api_router.include_router(
+    telegram_user_configs.router,
+    prefix="/integrations/telegram-user",
     tags=["integrations"],
 )
