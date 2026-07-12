@@ -9,10 +9,14 @@ from fastapi import HTTPException
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://user:password@localhost:5432/im")
 os.environ.setdefault("ADMIN_API_TOKEN", "test-admin-token")
 
-from app.api.v1.routes.telegram_connections import start_mtproto_qr_connection
+from telethon.tl.types import Chat, ChatPhotoEmpty
+
+from app.api.v1.routes import telegram_connections
+from app.api.v1.routes.telegram_connections import add_mtproto_source, start_mtproto_qr_connection
 from app.core.config import Settings
 from app.core.security import decrypt_secret
 from app.domain.enums import TelegramConnectionAttemptStatus, TelegramConnectionType
+from app.domain.services.subscription_policy import GroupQuotaExceeded
 from app.worker import telegram_mtproto_qr_worker
 
 
@@ -85,6 +89,67 @@ async def test_start_mtproto_qr_refuses_when_worker_is_disabled() -> None:
         )
 
     assert raised.value.status_code == 503
+
+
+class FakeDialogClient:
+    async def connect(self):
+        return None
+
+    async def disconnect(self):
+        return None
+
+    async def iter_dialogs(self, limit):
+        assert limit == 100
+        entity = Chat(
+            id=123,
+            title="Test group",
+            photo=ChatPhotoEmpty(),
+            participants_count=2,
+            date=None,
+            version=1,
+        )
+        yield SimpleNamespace(id=-123, entity=entity)
+
+
+class QuotaRejectingRepo:
+    async def add_mtproto_source(self, **_):
+        raise GroupQuotaExceeded("current plan allows 1 Telegram group")
+
+
+class FakeLegacyRepo:
+    async def count_active_monitors_by_user(self, _):
+        return 1
+
+
+class FakeSubscriptionRepo:
+    async def get_snapshot(self, _):
+        return SimpleNamespace(entitlements=SimpleNamespace())
+
+
+@pytest.mark.asyncio
+async def test_add_mtproto_source_returns_403_when_group_quota_is_full(monkeypatch) -> None:
+    async def fake_client(**_):
+        return FakeDialogClient()
+
+    monkeypatch.setattr(
+        telegram_connections,
+        "mtproto_client_for_connection",
+        fake_client,
+    )
+
+    with pytest.raises(HTTPException) as raised:
+        await add_mtproto_source(
+            connection_id=uuid4(),
+            payload=SimpleNamespace(chatId="-123"),
+            settings=qr_settings(),
+            current_user=SimpleNamespace(id=uuid4()),
+            connection_repo=QuotaRejectingRepo(),
+            legacy_repo=FakeLegacyRepo(),
+            subscription_repo=FakeSubscriptionRepo(),
+        )
+
+    assert raised.value.status_code == 403
+    assert raised.value.detail == "current plan allows 1 Telegram group"
 
 
 class FakeSessionContext:

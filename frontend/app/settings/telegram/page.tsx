@@ -458,12 +458,15 @@ export default function TelegramSettingsPage() {
                     </Button>
                     {dialogs[connection.id]?.length ? (
                       <div className="mt-3 grid gap-2">
-                        {dialogs[connection.id].map((dialog) => (
-                          <div key={dialog.id} className="flex items-center justify-between gap-3 rounded-lg bg-muted/45 px-3 py-2">
-                            <span className="min-w-0 truncate text-sm">{dialog.displayName}{dialog.username ? ` · @${dialog.username}` : ''}</span>
-                            <Button size="sm" variant="ghost" onClick={() => void addMtprotoSource(connection.id, dialog.id)} disabled={action === `dialog-${dialog.id}`}>监听</Button>
-                          </div>
-                        ))}
+                        {dialogs[connection.id].map((dialog) => {
+                          const monitored = connection.sources.some((source) => source.externalChatId === dialog.id)
+                          return (
+                            <div key={dialog.id} className="flex items-center justify-between gap-3 rounded-lg bg-muted/45 px-3 py-2">
+                              <span className="min-w-0 truncate text-sm">{dialog.displayName}{dialog.username ? ` · @${dialog.username}` : ''}</span>
+                              <Button size="sm" variant="ghost" onClick={() => void addMtprotoSource(connection.id, dialog.id)} disabled={monitored || action === `dialog-${dialog.id}`}>{monitored ? '监听中' : '监听'}</Button>
+                            </div>
+                          )
+                        })}
                       </div>
                     ) : null}
                   </div>

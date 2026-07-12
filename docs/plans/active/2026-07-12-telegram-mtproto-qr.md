@@ -49,6 +49,7 @@ P2 卡片和 `/connect/mtproto-qr` 当前安全拒绝；即使环境开关为 tr
 - 2026-07-12：实现平台凭据 QR worker、只读 listener 与用户来源选择；删除旧用户凭据采集路由和前端客户端。
 - 2026-07-12：review 修复恢复 legacy API；新增 pending QR 数据库唯一约束、API 复用与部署迁移停机保护。
 - 2026-07-12：CI 发现 ORM enum 按成员名存储；新增 `202607120003` 修复 partial index 条件，不改写已推送迁移。
+- 2026-07-12：生产选群暴露来源变更未触发 listener 重载、额度异常被通用 ValueError 吞并映射为 422；修复 connection revision 与 403 映射，前端增加已监听状态。
 
 ## 发现日志
 

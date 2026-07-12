@@ -79,4 +79,6 @@ release 部署会在 Bot token、secret 与 webhook URL 全部存在时注册 `s
 - webhook 返回 `duplicate: true` 表示 update 已完成，不会重复连接或摄取。
 - QR 连接失败时检查 P2 三项平台配置、`telegram_mtproto_qr_worker` / `telegram_mtproto_listener` 是否运行、
 账号是否启用两步验证以及套餐群额度。不要在服务器或浏览器中填入用户 API Hash、手机号、验证码或 Session。
+- 添加来源后 listener 最迟在一个 15 秒轮询周期内按 connection revision 重载；额度已满时 API 返回 403，
+  页面展示套餐限制，不会创建或启用超额来源。
 - 删除连接只删除本系统连接与来源记录；用户需在 Telegram 内自行移除 Business Bot 或群成员。

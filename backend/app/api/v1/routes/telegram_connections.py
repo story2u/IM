@@ -425,6 +425,8 @@ async def add_mtproto_source(
             entitlements=snapshot.entitlements,
             legacy_active_count=await legacy_repo.count_active_monitors_by_user(current_user.id),
         )
+    except GroupQuotaExceeded as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="invalid Telegram group") from exc
     finally:

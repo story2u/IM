@@ -1307,6 +1307,10 @@ class TelegramConnectionRepository:
             source.quota_reason = None
             source.last_error = None
             source.updated_at = utc_now()
+        # The MTProto listener keys its running task by the connection revision.
+        # Touch the parent whenever its selected chats change so the task reloads.
+        connection.updated_at = utc_now()
+        self.session.add(connection)
         self.session.add(source)
         await self.session.commit()
         await self.session.refresh(source)
