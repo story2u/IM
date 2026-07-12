@@ -1,6 +1,6 @@
 # 移动端 App P0（iOS/Android 商机处理端）
 
-> 状态：active · Owner：bruce / AI 代理 · 创建：2026-07-11 · 更新：2026-07-11
+> 状态：active · Owner：bruce / AI 代理 · 创建：2026-07-11 · 更新：2026-07-12
 
 ## 目标与用户价值
 
@@ -77,6 +77,13 @@
 
 - 2026-07-11：创建蓝图、ADR-0006（proposed）与本计划；等待评审后从步骤 1 开始。
 - 2026-07-11：按产品决策把栈从 RN/Expo 改为 Swift/Kotlin 原生双端，蓝图与 ADR 已同步更新。
+- 2026-07-12：iOS 端先行落地（步骤 1/3/4/5/6/7 的 iOS 侧）：`mobile/ios/` 工程
+  （xcodegen `project.yml` + 手写 Info.plist/entitlements）、Models 全量 DTO 镜像（容错枚举 +
+  JSONValue）、APIClient/Endpoints、Keychain + SessionStore、登录页（Sign in with Apple +
+  DEBUG token 通道）、收件箱（筛选/分页/30s 轮询）、详情页（消息历史、Agent 发现、手动回复、
+  AI 草稿、模板、状态流转/认领）、`Tests/ModelsDecodingTests`；`make ios-check` 入 Makefile 与
+  commands.md。Android 仅占位 README（步骤 1 Android 子任务待做）；CI macOS runner 待接。
+  Google Sign-In（需 SPM 依赖）为登录切片余项；端到端联调依赖步骤 2 的后端原生登录端点。
 
 ## 发现日志
 
@@ -84,6 +91,12 @@
   需要独立的原生 id_token 校验端点，已写入蓝图「后端新增面」。
 - 2026-07-11：`GET /stats/summary`、`GET /messages`、`GET /opportunities/{id}` 已实现但 Web
   未消费，移动端可直接使用，无需等待 Web 改造。
+- 2026-07-12：契约细节以代码为准核对完成——列表/详情共用 `OpportunityRead`（详情多 3 个
+  可空字段，iOS 用同一 struct）；`ManualReplyRequest`/`AIDraftResponse` 是 snake_case，其余
+  DTO 为 camelCase；`claim` 的 `operator_id` 走 query 而非 body；消息历史为
+  `GET /messages?opportunity_id=`。
+- 2026-07-12：xcodegen 的 `info:`/`entitlements:` 块每次 generate 都重写 plist，改为手写
+  文件 + `INFOPLIST_FILE`/`CODE_SIGN_ENTITLEMENTS` settings，plist 成为受版本控制的源文件。
 
 ## 决策日志
 
@@ -94,12 +107,20 @@
   后果已按此重写。
 - 2026-07-11：ADR 编号取 0006——0005 已被 `features/telegram-native-connections` 分支的
   统一连接模型 ADR 占用，避免合并冲突。
+- 2026-07-12：原生登录请求体契约定为 `{"idToken": "<jwt>"}`（iOS `NativeLoginRequest`），
+  步骤 2 的后端实现必须按此对齐；未知枚举值在 iOS 端统一容错为 `unknown`，避免后端新增
+  枚举导致旧版本 app 整个列表解码失败。
 
 ## 验证记录
 
 | 命令/场景 | 结果 | 证据或备注 |
 | --- | --- | --- |
-| `make harness-check` | 通过（2026-07-11，原生栈改写后复跑） | 30 个 Markdown 链接完整、无孤儿文档，65 个后端 Python 文件边界检查通过 |
+| `make harness-check` | 通过（2026-07-12） | 文档链接与索引、后端边界检查 |
+| iOS 源码类型检查 | 通过（2026-07-12） | `swiftc -typecheck`，Swift 6 严格模式，`arm64-apple-ios17.0-simulator` 目标，App/Core/Features/Models 全部文件 |
+| `Tests/ModelsDecodingTests.swift` 类型检查 | 通过（2026-07-12） | 以 `-enable-testing` 模块 + XCTest overlay 单独 typecheck |
+| DTO 解码/编码断言 | 通过（2026-07-12） | 与测试同断言的可执行检查在 macOS 实际运行（分数秒时间、未知枚举容错、snake_case 请求体） |
+| `make ios-check`（xcodegen + xcodebuild） | 未运行 | 本会话沙箱禁止 xcodegen/xcodebuild 写 `/var/folders` 暂存目录；需在正常终端或 CI macOS runner 执行 |
+| `xcodebuild test`（模拟器跑单测） | 未运行 | 同上；接入 CI 时补 |
 
 ## 回滚与恢复
 
