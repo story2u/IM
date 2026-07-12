@@ -7,9 +7,7 @@ from app.application.dto import (
     ReplyTemplateRead,
     TelegramConnectionAttemptRead,
     TelegramConnectionRead,
-    TelegramMonitorRead,
     TelegramSourceRead,
-    TelegramUserConfigRead,
 )
 from app.domain.enums import (
     FrontendOpportunityStatus,
@@ -22,9 +20,7 @@ from app.infrastructure.db.models import (
     ReplyTemplate,
     TelegramConnection,
     TelegramConnectionAttempt,
-    TelegramMonitor,
     TelegramSource,
-    TelegramUserConfig,
     User,
 )
 
@@ -119,56 +115,6 @@ def to_auth_user_read(user: User) -> AuthUserRead:
     )
 
 
-def to_telegram_monitor_read(monitor: TelegramMonitor) -> TelegramMonitorRead:
-    return TelegramMonitorRead(
-        id=monitor.id,
-        enabled=monitor.enabled,
-        name=monitor.name,
-        chatId=monitor.chat_id,
-        chatTitle=monitor.chat_title,
-        backfillLimit=monitor.backfill_limit,
-        quotaPaused=monitor.quota_paused,
-        quotaReason=monitor.quota_reason,
-        lastError=monitor.last_error,
-        updatedAt=monitor.updated_at,
-    )
-
-
-def to_telegram_user_config_read(
-    config: TelegramUserConfig | None,
-    monitors: list[TelegramMonitor] | None = None,
-    monitor_limit: int = 1,
-) -> TelegramUserConfigRead:
-    monitor_reads = [to_telegram_monitor_read(monitor) for monitor in monitors or []]
-    enabled_monitors = [monitor for monitor in monitors or [] if monitor.enabled]
-    active_monitor_count = sum(not monitor.quota_paused for monitor in enabled_monitors)
-    retention_selection_required = len(enabled_monitors) > monitor_limit and (
-        not config or config.retention_limit != monitor_limit
-    )
-    if not config:
-        return TelegramUserConfigRead(
-            monitors=monitor_reads,
-            monitorLimit=monitor_limit,
-            canCreateMore=len(enabled_monitors) < monitor_limit,
-            activeMonitorCount=active_monitor_count,
-            storedMonitorCount=len(monitor_reads),
-            retentionSelectionRequired=retention_selection_required,
-        )
-    return TelegramUserConfigRead(
-        apiId=config.api_id,
-        apiHashConfigured=bool(config.api_hash_encrypted),
-        sessionConfigured=bool(config.session_encrypted),
-        monitors=monitor_reads,
-        monitorLimit=monitor_limit,
-        canCreateMore=len(enabled_monitors) < monitor_limit,
-        activeMonitorCount=active_monitor_count,
-        storedMonitorCount=len(monitor_reads),
-        retentionSelectionRequired=retention_selection_required,
-        retentionSelectedAt=config.retention_selected_at,
-        updatedAt=config.updated_at,
-    )
-
-
 def to_telegram_source_read(source: TelegramSource) -> TelegramSourceRead:
     return TelegramSourceRead(
         id=source.id,
@@ -207,6 +153,7 @@ def to_telegram_connection_attempt_read(
     attempt: TelegramConnectionAttempt,
     *,
     telegram_url: str | None = None,
+    qr_code_url: str | None = None,
     instructions: list[str] | None = None,
     local_mock: bool = False,
 ) -> TelegramConnectionAttemptRead:
@@ -218,6 +165,7 @@ def to_telegram_connection_attempt_read(
         connectionId=attempt.connection_id,
         error=attempt.error,
         telegramUrl=telegram_url,
+        qrCodeUrl=qr_code_url,
         instructions=instructions or [],
         localMock=local_mock,
     )

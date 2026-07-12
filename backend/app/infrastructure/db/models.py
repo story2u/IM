@@ -499,6 +499,8 @@ class TelegramConnectionAttempt(TimestampMixin, table=True):
         default_factory=dict,
         sa_column=Column(JSONB, nullable=False),
     )
+    # QR URLs are bearer login grants. Keep them encrypted and only reveal them to the owner.
+    qr_url_encrypted: str | None = None
     expires_at: datetime = Field(
         sa_column=Column(DateTime(timezone=True), nullable=False, index=True)
     )
