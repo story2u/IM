@@ -74,6 +74,19 @@ async def test_detector_marks_recruiting_group_message_as_opportunity() -> None:
 
 
 @pytest.mark.asyncio
+async def test_detector_marks_project_budget_solicitation_as_opportunity_without_ai() -> None:
+    detector = OpportunityDetector()
+
+    result = await detector.detect("我手头有个项目，报价 10 万，谁有兴趣？", [])
+
+    assert result.is_opportunity
+    assert result.confidence >= 0.75
+    assert "项目" in result.matched_keywords
+    assert "报价" in result.matched_keywords
+    assert result.reason and "project_budget_partner_signal" in result.reason
+
+
+@pytest.mark.asyncio
 async def test_detector_semantically_reviews_zero_rule_score_with_context_and_hints() -> None:
     classifier = RecordingClassifier(
         DetectionResult(

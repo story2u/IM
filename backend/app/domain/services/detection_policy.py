@@ -66,6 +66,15 @@ CONTACT_SIGNAL_RE = re.compile(
     r"(@[A-Za-z0-9_]{4,}|[\w.+-]+@[\w-]+(?:\.[\w-]+)+|(?:微信|VX|vx|TG|Telegram|联系))"
 )
 SALARY_SIGNAL_RE = re.compile(r"(\d{1,3}\s*[kK]|[\d.]+\s*[万wW]|薪资|薪酬|预算|base)")
+PROJECT_SIGNAL_RE = re.compile(r"(项目|需求|业务|单子|外包)", re.IGNORECASE)
+COMMERCIAL_VALUE_RE = re.compile(
+    r"(报价|预算|价格|金额|\d+(?:\.\d+)?\s*(?:万|[wWkK]))",
+    re.IGNORECASE,
+)
+PARTNER_INTENT_RE = re.compile(
+    r"(谁有兴趣|有兴趣(?:的)?|寻找|找(?:个|人|团队)?|承接|合作|联系(?:我|一下)?)",
+    re.IGNORECASE,
+)
 
 
 class OpportunityDetector:
@@ -111,6 +120,14 @@ class OpportunityDetector:
                 if keyword not in matched_keywords:
                     matched_keywords.append(keyword)
             reasons.append("recruiting_signal")
+
+        project_score, project_keywords = self._project_opportunity_score(normalized)
+        if project_score > 0:
+            score = min(1.0, score + project_score)
+            for keyword in project_keywords:
+                if keyword not in matched_keywords:
+                    matched_keywords.append(keyword)
+            reasons.append("project_budget_partner_signal")
 
         if score >= 0.75:
             return self._build_positive_result(normalized, score, reasons, matched_keywords)
@@ -230,3 +247,11 @@ class OpportunityDetector:
             score += 0.08
 
         return min(score, 0.78), matched[:8]
+
+    def _project_opportunity_score(self, text: str) -> tuple[float, list[str]]:
+        project = PROJECT_SIGNAL_RE.search(text)
+        value = COMMERCIAL_VALUE_RE.search(text)
+        partner_intent = PARTNER_INTENT_RE.search(text)
+        if not (project and value and partner_intent):
+            return 0.0, []
+        return 0.65, [project.group(0), value.group(0), partner_intent.group(0)]
