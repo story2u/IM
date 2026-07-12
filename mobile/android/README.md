@@ -20,41 +20,41 @@ Kotlin + Compose 原生 app，作为后端 v1 REST API 的瘦客户端，与 `mo
 
 | 路径（`app/src/main/kotlin/com/codeiy/im/`） | 职责 |
 | --- | --- |
-| `MainActivity.kt` | 入口 + 会话路由 + Navigation Compose（`inbox` / `opportunity/{id}` + 深链） |
+| `MainActivity.kt` | 入口 + 会话路由 + Navigation Compose（双 Tab：dashboard/settings + 详情/设置子页 + 深链） |
 | `core/network/ApiClient.kt` | Retrofit 构造、Bearer 注入、`{"detail"}` 错误映射、401 统一回调清会话 |
-| `core/network/RadarApi.kt` | 全部端点定义，路径以 `backend/app/api/v1/routes/` 为准 |
+| `core/network/RadarApi.kt` | 全部端点定义（含 dashboard/settings/telegram），路径以 `backend/app/api/v1/routes/` 为准 |
 | `core/auth/TokenStore.kt` | JWT 加密存取清 |
 | `core/auth/SessionStore.kt` | `/auth/me` 会话恢复、邮箱密码 / Google 原生登录、登出 |
 | `core/billing/` | RevenueCat 身份、Offering、Google Play 购买与恢复协议边界 |
-| `model/Models.kt` | DTO 镜像 + 容错枚举 + `RadarJson` 配置 |
+| `model/Models.kt` | DTO 镜像 + 容错枚举 + `RadarJson` 配置（含看板/设置/Telegram DTO） |
+| `ui/theme/` | 语义色/可信度/SOP、DayNight 主题、AppBadge/AppCard/ConfidenceBadge |
 | `feature/login/LoginScreen.kt` | 邮箱密码 / Google 原生登录（本地校验 + IME 流转） |
-| `feature/inbox/InboxScreen.kt` | 收件箱：筛选、分页、下拉刷新、30s 轮询（单一在途请求，无竞态） |
+| `feature/dashboard/` | 商机看板：DashboardScreen/ViewModel/OpportunityCard/FilterSheet/Models |
+| `feature/settings/` | 设置中心 + 识别规则/工作时间/通知/Telegram 子页 |
 | `feature/opportunity/OpportunityDetailScreen.kt` | 详情、消息历史、Agent 发现、回复、状态流转、下拉刷新 |
 | `feature/subscription/` | Google Play 套餐页；购买/恢复后由后端同步确认权益 |
+| `feature/inbox/InboxScreen.kt` | 旧收件箱（已被看板取代，保留 Badge 供详情页复用） |
 | `ui/Time.kt` | ISO8601 相对时间/短时间格式化 |
 | `../test/.../ModelsDecodingTest.kt` | 解码契约测试（与 iOS 同一夹具） |
 | `../test/.../ViewModelConcurrencyTest.kt` | 收件箱竞态回归 + 模板一次性加载测试 |
 
 ## 已实现（P0，Android 侧）
 
-- 登录：邮箱密码（`POST /auth/password/login`，本地格式校验对齐 iOS）；Google 原生登录
-  （Credential Manager → `POST /auth/oauth/google/native`，需配置 `GOOGLE_SERVER_CLIENT_ID`，
-  未配置时按钮隐藏）；`/auth/me` 冷启动恢复；登出清加密存储。
-- 会话：任何业务请求 401 由 ApiClient 统一回调 SessionStore 清 token 回登录页。
-- 收件箱：状态/渠道筛选、分页、下拉刷新、30s 轮询；单一可取消加载 Job +
-  写入前筛选校验，筛选切换/轮询/分页不会互相覆盖。
-- 导航：Navigation Compose，`opportunity-radar://opportunity/{id}` 与
-  `https://im.story2u.xyz/app/opportunity/{id}` 深链路由已注册（后者直开 App 需在域名下
-  发布 `assetlinks.json` 并加 `autoVerify`）。
-- 详情：概要、检测依据、Agent 发现（链接核验/联系方式/动作建议/attention）、消息历史、
-  下拉刷新、初始加载失败重试。
-- 回复：手动回复、AI 草稿（可编辑）、模板选用（一次性加载 + 加载态/重试）；失败报错
-  不伪造已回复；额度耗尽展示后端提示。
-- 状态流转：认领/跟进/忽略/关闭，非法迁移展示后端 409 错误。
-- 订阅代码链路：登录后用后端用户 UUID 绑定 RevenueCat，加载 `default` Offering，支持
-  Google Play 月付/年付购买、用户主动恢复、后端权益同步和同渠道管理入口。未配置 Public Key
-  时保持只读且关闭购买；真实 Google Play License Tester E2E 待外部配置后验证。
-- ViewModel 均由 `viewModel()` 交给 ViewModelStoreOwner 管理，旋转不丢状态。
+- 导航：Material3 NavigationBar 双 Tab（商机/设置）+ Navigation Compose；商机详情、
+  订阅、Telegram、识别规则、工作时间、通知各自独立路由；`opportunity-radar://` 与
+  `https://im.story2u.xyz/app/opportunity/{id}` 深链已注册。
+- 商机看板：头部待处理数（服务端）、重大商机 banner、状态/平台/排序一级筛选、
+  高级筛选 Bottom Sheet（时间范围含用户时区/来源/可信度/阶段/关键词，草稿模式）、
+  结果摘要（服务端 total）、富卡片、平板自适应双列 LazyVerticalGrid、
+  skeleton/下拉刷新/加载更多/空/失败重试；单一可取消 Job + 写入前筛选校验防竞态。
+- 设置中心：分组列表 + 用户头部；套餐（复用真实 API）、Telegram（真实 health+
+  connections+sources 读取/启停）、识别规则（关键词+AI 开关，失败回滚）、
+  工作时间（一周 7 行 + 时区，失败回滚）、通知（4 开关，推送未开放标注），
+  企业微信标注"由管理员配置"不做假连接。
+- 登录：邮箱密码 + Google 原生登录；会话 401 统一清理。
+- 主题：DayNight 跟随系统深色（对齐 iOS）。
+- i18n：`values/strings.xml`（英文默认）+ `values-zh-rCN/strings.xml`（中文）固化跨端共享
+  产品文案；现有屏幕内联中文仍待逐屏迁移到 stringResource。
 
 ## 待开发
 
