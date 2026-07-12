@@ -1,6 +1,6 @@
 name: OpportunityRadar
 options:
-  bundleIdPrefix: com.storyim
+  bundleIdPrefix: com.codeiy
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
@@ -19,6 +19,7 @@ targets:
       - Models
     settings:
       base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.codeiy.im
         INFOPLIST_FILE: Info.plist
         CODE_SIGN_ENTITLEMENTS: OpportunityRadar.entitlements
   OpportunityRadarTests:

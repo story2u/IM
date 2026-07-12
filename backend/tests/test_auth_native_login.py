@@ -98,7 +98,7 @@ def make_settings(**overrides: Any) -> Settings:
         "admin_api_token": "admin-secret",
         "jwt_secret_key": "jwt-secret",
         "google_native_client_ids": "ios-client-id",
-        "apple_native_client_ids": "com.storyim.radar",
+        "apple_native_client_ids": "com.codeiy.im",
     }
     values.update(overrides)
     return Settings(**values)
@@ -150,7 +150,7 @@ def test_native_login_apple_uses_bundle_id_audience(monkeypatch: Any) -> None:
     client = make_client(monkeypatch, settings, FakeUserRepository())
     claims = google_claims(
         iss="https://appleid.apple.com",
-        aud="com.storyim.radar",
+        aud="com.codeiy.im",
         sub="apple-sub-1",
         email_verified="true",
     )

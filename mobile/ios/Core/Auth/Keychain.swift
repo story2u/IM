@@ -3,7 +3,7 @@ import Security
 
 /// JWT 只存 Keychain（蓝图安全约束：不得进 UserDefaults/日志）。
 enum Keychain {
-    private static let service = "com.storyim.radar.jwt"
+    private static let service = "com.codeiy.im.jwt"
     private static let account = "access-token"
 
     static func saveToken(_ token: String) {
