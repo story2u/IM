@@ -6,6 +6,7 @@ import com.codeiy.im.core.network.ApiClient
 import com.codeiy.im.core.network.ApiError
 import com.codeiy.im.core.network.api
 import com.codeiy.im.model.AuthUser
+import com.codeiy.im.model.NativeLoginRequest
 import com.codeiy.im.model.PasswordLoginRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +21,8 @@ sealed interface SessionState {
 }
 
 class SessionStore(private val tokens: TokenStore) : ViewModel() {
-    val api = ApiClient { tokens.token }
+    // 业务请求 401 统一走这里清会话，各页面不再自行处理（对齐验收「会话过期处理」）。
+    val api = ApiClient({ tokens.token }, onUnauthorized = ::logout)
 
     private val _state = MutableStateFlow<SessionState>(SessionState.Restoring)
     val state: StateFlow<SessionState> = _state
@@ -62,7 +64,14 @@ class SessionStore(private val tokens: TokenStore) : ViewModel() {
         _state.value = SessionState.Active(token.user)
     }
 
-    /** 401 时由界面调用：清 token 回登录页（对齐验收「会话过期处理」）。 */
+    /** Google 原生登录（`POST /auth/oauth/google/native`）：ID token 换后端 JWT。 */
+    suspend fun signInWithGoogle(idToken: String) {
+        val token = api { api.service.googleNativeLogin(NativeLoginRequest(idToken)) }
+        tokens.token = token.accessToken
+        _state.value = SessionState.Active(token.user)
+    }
+
+    /** 401 时由 ApiClient 统一回调：清 token 回登录页。 */
     fun logout() {
         tokens.token = null
         _state.value = SessionState.LoggedOut
