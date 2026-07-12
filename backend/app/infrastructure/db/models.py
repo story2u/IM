@@ -127,6 +127,7 @@ class SubscriptionAccount(TimestampMixin, table=True):
     last_synced_at: datetime | None = Field(
         default=None, sa_column=Column(DateTime(timezone=True), nullable=True, index=True)
     )
+    management_url_encrypted: str | None = None
     provider_event_version: str | None = Field(default=None, max_length=255)
 
 

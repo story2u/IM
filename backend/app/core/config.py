@@ -87,6 +87,18 @@ class Settings(BaseSettings):
     pi_agent_max_content_bytes: int = Field(default=200_000, ge=10_000, le=1_000_000)
     pi_agent_max_link_text_chars: int = Field(default=12_000, ge=1_000, le=20_000)
 
+    revenuecat_enabled: bool = False
+    revenuecat_secret_api_key: str = ""
+    revenuecat_project_id: str = ""
+    revenuecat_sync_timeout_seconds: float = Field(default=10.0, ge=1.0, le=60.0)
+    revenuecat_entitlement_plus: str = "plus"
+    revenuecat_entitlement_pro: str = "pro"
+    revenuecat_entitlement_max: str = "max"
+
+    @property
+    def revenuecat_server_available(self) -> bool:
+        return bool(self.revenuecat_enabled and self.revenuecat_secret_api_key)
+
     @field_validator("telegram_mtproto_api_id", mode="before")
     @classmethod
     def empty_mtproto_api_id_is_unset(cls, value: object) -> object:

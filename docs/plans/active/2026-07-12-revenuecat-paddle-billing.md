@@ -43,7 +43,7 @@
 ## 实施步骤
 
 - [x] Commit 1：Billing domain、迁移、Usage Period。
-- [ ] Commit 2：RevenueCat client、稳定模型、同步用例。
+- [x] Commit 2：RevenueCat client、稳定模型、同步用例。
 - [ ] Commit 3：Webhook、Celery、reconcile。
 - [ ] Commit 4：订阅 API 与 DTO。
 - [ ] Commit 5：H5 RevenueCat Web/Paddle。
@@ -55,6 +55,7 @@
 
 - 2026-07-12：完成基线审计并创建分支；开始 billing domain 与 migration。
 - 2026-07-12：新增 billing products/subscriptions/events、权益投影字段和可回滚迁移；usage period 固定为 UTC 自然月。
+- 2026-07-12：按官方 v1 CustomerInfo endpoint 实现有限重试 adapter、稳定模型、mock provider 和全量权益投影；management URL 加密保存。
 
 ## 发现日志
 

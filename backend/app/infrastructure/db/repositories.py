@@ -12,6 +12,10 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.domain.enums import (
     AgentAnalysisStatus,
+    BillingProvider,
+    BillingInterval,
+    BillingStore,
+    BillingSubscriptionStatus,
     FrontendOpportunityStatus,
     IMChannel,
     MessageDirection,
@@ -39,6 +43,7 @@ from app.domain.services.subscription_policy import (
 from app.infrastructure.db.models import (
     AppConfig,
     AuthAccount,
+    BillingSubscription,
     Message,
     Opportunity,
     ReplyTemplate,
@@ -249,6 +254,27 @@ class UsageReservation:
     allocated: int
 
 
+@dataclass(frozen=True, slots=True)
+class BillingSubscriptionWrite:
+    external_key: str
+    store: BillingStore
+    environment: str
+    external_product_id: str
+    external_transaction_id: str | None
+    revenuecat_entitlement_id: str | None
+    plan_code: PlanCode
+    billing_interval: BillingInterval
+    status: BillingSubscriptionStatus
+    current_period_start: datetime | None
+    current_period_end: datetime | None
+    grace_period_end: datetime | None
+    will_renew: bool
+    cancel_at_period_end: bool
+    billing_issue_detected_at: datetime | None
+    last_synced_at: datetime
+    metadata: dict
+
+
 class SubscriptionRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
@@ -257,6 +283,97 @@ class SubscriptionRepository:
         statement = select(SubscriptionAccount).where(SubscriptionAccount.user_id == user_id)
         result = await self.session.exec(statement)
         return result.first()
+
+    async def project_revenuecat_customer(
+        self,
+        *,
+        user_id: UUID,
+        subscriptions: list[BillingSubscriptionWrite],
+        effective_plan: PlanCode,
+        effective_store: BillingStore | None,
+        billing_interval: BillingInterval | None,
+        entitlement_started_at: datetime | None,
+        entitlement_expires_at: datetime | None,
+        billing_period_start: datetime | None,
+        billing_period_end: datetime | None,
+        will_renew: bool,
+        cancel_at_period_end: bool,
+        billing_issue: bool,
+        multiple_active_subscriptions: bool,
+        last_synced_at: datetime,
+        management_url_encrypted: str | None,
+    ) -> SubscriptionAccount:
+        existing_result = await self.session.exec(
+            select(BillingSubscription).where(
+                BillingSubscription.user_id == user_id,
+                BillingSubscription.provider == BillingProvider.REVENUECAT,
+            )
+        )
+        existing = {item.external_key: item for item in existing_result.all()}
+        current_keys: set[str] = set()
+        for item in subscriptions:
+            current_keys.add(item.external_key)
+            record = existing.get(item.external_key)
+            if not record:
+                record = BillingSubscription(
+                    user_id=user_id,
+                    provider=BillingProvider.REVENUECAT,
+                    store=item.store,
+                    environment=item.environment,
+                    external_key=item.external_key,
+                    external_product_id=item.external_product_id,
+                    plan_code=item.plan_code,
+                )
+            record.store = item.store
+            record.environment = item.environment
+            record.external_product_id = item.external_product_id
+            record.external_transaction_id = item.external_transaction_id
+            record.revenuecat_entitlement_id = item.revenuecat_entitlement_id
+            record.plan_code = item.plan_code
+            record.billing_interval = item.billing_interval
+            record.status = item.status
+            record.current_period_start = item.current_period_start
+            record.current_period_end = item.current_period_end
+            record.grace_period_end = item.grace_period_end
+            record.will_renew = item.will_renew
+            record.cancel_at_period_end = item.cancel_at_period_end
+            record.billing_issue_detected_at = item.billing_issue_detected_at
+            record.last_synced_at = item.last_synced_at
+            record.metadata_json = item.metadata
+            record.updated_at = last_synced_at
+            self.session.add(record)
+
+        for external_key, record in existing.items():
+            if external_key not in current_keys:
+                record.status = BillingSubscriptionStatus.INACTIVE
+                record.will_renew = False
+                record.last_synced_at = last_synced_at
+                record.updated_at = last_synced_at
+                self.session.add(record)
+
+        account = await self.get_account(user_id)
+        if not account:
+            account = SubscriptionAccount(user_id=user_id)
+        account.plan_code = effective_plan
+        account.status = SubscriptionStatus.ACTIVE if effective_plan != PlanCode.FREE else SubscriptionStatus.INACTIVE
+        account.billing_provider = BillingProvider.REVENUECAT.value
+        account.effective_store = effective_store
+        account.billing_interval = billing_interval
+        account.entitlement_started_at = entitlement_started_at
+        account.entitlement_expires_at = entitlement_expires_at
+        account.current_period_start = billing_period_start
+        account.current_period_end = billing_period_end
+        account.will_renew = will_renew
+        account.cancel_at_period_end = cancel_at_period_end
+        account.billing_issue = billing_issue
+        account.multiple_active_subscriptions = multiple_active_subscriptions
+        account.last_synced_at = last_synced_at
+        account.management_url_encrypted = management_url_encrypted
+        account.updated_at = last_synced_at
+        self.session.add(account)
+        await self.session.commit()
+        await self.session.refresh(account)
+        return account
 
     async def get_snapshot(
         self,
