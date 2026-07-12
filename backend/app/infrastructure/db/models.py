@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import BigInteger, CheckConstraint, Column, DateTime, Index, UniqueConstraint, text
+from sqlalchemy import BigInteger, CheckConstraint, Column, DateTime, Index, Text, UniqueConstraint, text
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
@@ -215,7 +215,7 @@ class BillingEvent(TimestampMixin, table=True):
     )
     provider_event_id: str = Field(max_length=255)
     event_type: str = Field(max_length=128, index=True)
-    app_user_id: str | None = Field(default=None, max_length=255, index=True)
+    app_user_id: str | None = Field(default=None, sa_column=Column(Text(), nullable=True, index=True))
     environment: str | None = Field(default=None, max_length=32)
     payload_hash: str = Field(min_length=64, max_length=64)
     status: BillingEventStatus = Field(

@@ -12,6 +12,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.domain.enums import (
     AgentAnalysisStatus,
+    BillingEventStatus,
     BillingProvider,
     BillingInterval,
     BillingStore,
@@ -44,6 +45,7 @@ from app.infrastructure.db.models import (
     AppConfig,
     AuthAccount,
     BillingSubscription,
+    BillingEvent,
     Message,
     Opportunity,
     ReplyTemplate,
@@ -273,6 +275,141 @@ class BillingSubscriptionWrite:
     billing_issue_detected_at: datetime | None
     last_synced_at: datetime
     metadata: dict
+
+
+@dataclass(frozen=True, slots=True)
+class BillingEventReservation:
+    event: BillingEvent
+    should_enqueue: bool
+    duplicate: bool
+
+
+class BillingEventRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def reserve_revenuecat_event(
+        self,
+        *,
+        provider_event_id: str,
+        event_type: str,
+        app_user_ids: list[UUID],
+        environment: str | None,
+        payload_hash: str,
+    ) -> BillingEventReservation:
+        joined_user_ids = ",".join(str(item) for item in app_user_ids) or None
+        event = BillingEvent(
+            provider=BillingProvider.REVENUECAT,
+            provider_event_id=provider_event_id,
+            event_type=event_type[:128],
+            app_user_id=joined_user_ids,
+            environment=environment[:32] if environment else None,
+            payload_hash=payload_hash,
+            status=BillingEventStatus.QUEUED,
+            queued_at=utc_now(),
+        )
+        self.session.add(event)
+        try:
+            await self.session.commit()
+            await self.session.refresh(event)
+            return BillingEventReservation(event=event, should_enqueue=True, duplicate=False)
+        except IntegrityError:
+            await self.session.rollback()
+        result = await self.session.exec(
+            select(BillingEvent).where(
+                BillingEvent.provider == BillingProvider.REVENUECAT,
+                BillingEvent.provider_event_id == provider_event_id,
+            )
+        )
+        existing = result.first()
+        if not existing:
+            raise RuntimeError("billing event reservation conflict could not be recovered")
+        if existing.payload_hash != payload_hash:
+            raise ValueError("provider event ID was reused with a different payload")
+        if existing.status == BillingEventStatus.FAILED:
+            existing.status = BillingEventStatus.QUEUED
+            existing.queued_at = utc_now()
+            existing.processing_error = None
+            existing.updated_at = utc_now()
+            self.session.add(existing)
+            await self.session.commit()
+            await self.session.refresh(existing)
+            return BillingEventReservation(event=existing, should_enqueue=True, duplicate=True)
+        return BillingEventReservation(event=existing, should_enqueue=False, duplicate=True)
+
+    async def begin_processing(self, event_id: UUID) -> BillingEvent | None:
+        event = await self.session.get(BillingEvent, event_id, with_for_update=True)
+        if not event or event.status in {
+            BillingEventStatus.COMPLETED,
+            BillingEventStatus.ORPHANED,
+            BillingEventStatus.PROCESSING,
+        }:
+            await self.session.rollback()
+            return None
+        event.status = BillingEventStatus.PROCESSING
+        event.attempt_count += 1
+        event.updated_at = utc_now()
+        self.session.add(event)
+        await self.session.commit()
+        await self.session.refresh(event)
+        return event
+
+    async def finish(self, event_id: UUID, *, orphaned: bool = False) -> None:
+        event = await self.session.get(BillingEvent, event_id)
+        if not event:
+            return
+        event.status = BillingEventStatus.ORPHANED if orphaned else BillingEventStatus.COMPLETED
+        event.processed_at = utc_now()
+        event.processing_error = None
+        event.updated_at = utc_now()
+        self.session.add(event)
+        await self.session.commit()
+
+    async def fail(self, event_id: UUID, error: str) -> None:
+        event = await self.session.get(BillingEvent, event_id)
+        if not event:
+            return
+        event.status = BillingEventStatus.FAILED
+        event.processing_error = error[:1000]
+        event.updated_at = utc_now()
+        self.session.add(event)
+        await self.session.commit()
+
+    async def reconciliation_user_ids(self, *, limit: int, now: datetime | None = None) -> list[UUID]:
+        current = now or utc_now()
+        statement = (
+            select(SubscriptionAccount.user_id)
+            .where(
+                SubscriptionAccount.billing_provider == BillingProvider.REVENUECAT.value,
+                (
+                    SubscriptionAccount.status.in_([SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING])
+                    | (SubscriptionAccount.entitlement_expires_at <= current + timedelta(hours=48))
+                    | SubscriptionAccount.billing_issue.is_(True)
+                ),
+            )
+            .order_by(col(SubscriptionAccount.last_synced_at).asc().nullsfirst())
+            .limit(limit)
+        )
+        result = await self.session.exec(statement)
+        user_ids = list(result.all())
+        failed_result = await self.session.exec(
+            select(BillingEvent.app_user_id).where(
+                BillingEvent.status == BillingEventStatus.FAILED,
+                BillingEvent.received_at >= current - timedelta(hours=48),
+                BillingEvent.app_user_id.is_not(None),
+            )
+        )
+        seen = set(user_ids)
+        for joined in failed_result.all():
+            for raw_user_id in joined.split(",") if joined else []:
+                try:
+                    user_id = UUID(raw_user_id)
+                except ValueError:
+                    continue
+                if user_id not in seen and len(user_ids) < limit:
+                    user_ids.append(user_id)
+                    seen.add(user_id)
+        return user_ids
 
 
 class SubscriptionRepository:

@@ -90,7 +90,14 @@ class Settings(BaseSettings):
     revenuecat_enabled: bool = False
     revenuecat_secret_api_key: str = ""
     revenuecat_project_id: str = ""
+    revenuecat_webhook_auth_token: str = ""
+    revenuecat_webhook_hmac_secret: str = ""
+    revenuecat_webhook_tolerance_seconds: int = Field(default=300, ge=30, le=3600)
     revenuecat_sync_timeout_seconds: float = Field(default=10.0, ge=1.0, le=60.0)
+    revenuecat_sync_rate_limit_seconds: int = Field(default=30, ge=1, le=3600)
+    revenuecat_reconcile_enabled: bool = False
+    revenuecat_reconcile_interval_hours: int = Field(default=24, ge=1, le=168)
+    revenuecat_reconcile_batch_size: int = Field(default=100, ge=1, le=500)
     revenuecat_entitlement_plus: str = "plus"
     revenuecat_entitlement_pro: str = "pro"
     revenuecat_entitlement_max: str = "max"
@@ -98,6 +105,14 @@ class Settings(BaseSettings):
     @property
     def revenuecat_server_available(self) -> bool:
         return bool(self.revenuecat_enabled and self.revenuecat_secret_api_key)
+
+    @property
+    def revenuecat_webhook_available(self) -> bool:
+        return bool(
+            self.revenuecat_server_available
+            and self.revenuecat_webhook_auth_token
+            and self.revenuecat_webhook_hmac_secret
+        )
 
     @field_validator("telegram_mtproto_api_id", mode="before")
     @classmethod
