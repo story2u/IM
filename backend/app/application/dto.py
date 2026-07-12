@@ -339,6 +339,7 @@ class TelegramConnectionAttemptRead(BaseModel):
     connectionId: UUID | None = None
     error: str | None = None
     telegramUrl: str | None = None
+    qrCodeUrl: str | None = None
     instructions: list[str] = Field(default_factory=list)
     localMock: bool = False
 
@@ -353,3 +354,14 @@ class TelegramConnectionHealthRead(BaseModel):
     legacyMonitoringActive: bool = False
     legacyActiveSourceCount: int = 0
     message: str | None = None
+
+
+class TelegramMtprotoDialogRead(BaseModel):
+    id: str
+    sourceType: TelegramSourceType
+    displayName: str
+    username: str | None = None
+
+
+class TelegramMtprotoSourceCreate(BaseModel):
+    chatId: str = Field(min_length=1, max_length=128)
