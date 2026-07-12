@@ -339,6 +339,100 @@ struct AIDraft: Codable, Sendable {
     }
 }
 
+// MARK: - 商机看板（backend GET /opportunities/dashboard）
+
+struct DashboardResponse: Codable, Sendable {
+    var items: [Opportunity]
+    var total: Int
+    var limit: Int
+    var offset: Int
+    var pendingCount: Int
+    var attentionItems: [Opportunity]
+    var keywordOptions: [String]
+}
+
+// MARK: - 用户级设置（backend /settings/*）
+
+struct DetectionSettings: Codable, Sendable, Hashable {
+    var keywords: [String]
+    var aiSemanticsEnabled: Bool
+}
+
+struct WorkScheduleSlotDTO: Codable, Sendable, Hashable, Identifiable {
+    var weekday: Int
+    var start: String
+    var end: String
+
+    var id: String { "\(weekday)-\(start)-\(end)" }
+}
+
+struct WorkSchedule: Codable, Sendable, Hashable {
+    var timezone: String
+    var slots: [WorkScheduleSlotDTO]
+    var autoReplyOutsideHours: Bool
+    var isDefault: Bool
+}
+
+struct NotificationSettings: Codable, Sendable, Hashable {
+    var newOpportunityEnabled: Bool
+    var aiRepliedEnabled: Bool
+    var dailyDigestEnabled: Bool
+    var urgentOnly: Bool
+}
+
+struct SettingsCapabilities: Codable, Sendable, Hashable {
+    var pushAvailable: Bool
+    var wecomUserBindingAvailable: Bool
+}
+
+struct SettingsBundle: Codable, Sendable {
+    var detection: DetectionSettings
+    var workSchedule: WorkSchedule
+    var notifications: NotificationSettings
+    var capabilities: SettingsCapabilities
+}
+
+// MARK: - Telegram 连接（backend /integrations/telegram/*）
+
+struct TelegramConnectionHealth: Codable, Sendable {
+    var mode: String
+    var botConfigured: Bool
+    var botUsername: String?
+    var businessAvailable: Bool
+    var mtprotoQrAvailable: Bool
+    var listenerMode: String
+    var legacyMonitoringActive: Bool
+    var legacyActiveSourceCount: Int
+    var message: String?
+}
+
+struct TelegramSourceDTO: Codable, Sendable, Identifiable, Hashable {
+    var id: UUID
+    var connectionId: UUID
+    var sourceType: String
+    var externalChatId: String
+    var displayName: String
+    var username: String?
+    var enabled: Bool
+    var quotaPaused: Bool
+    var quotaReason: String?
+    var lastError: String?
+    var updatedAt: Date
+}
+
+struct TelegramConnectionDTO: Codable, Sendable, Identifiable, Hashable {
+    var id: UUID
+    var connectionType: String
+    var status: String
+    var enabled: Bool
+    var label: String
+    var capabilities: [String: JSONValue]
+    var lastError: String?
+    var lastCheckedAt: Date?
+    var updatedAt: Date
+    var sources: [TelegramSourceDTO]
+}
+
 // MARK: - 请求体
 
 struct ManualReplyRequest: Encodable, Sendable {
@@ -366,4 +460,24 @@ struct NativeLoginRequest: Encodable, Sendable {
 struct PasswordLoginRequest: Encodable, Sendable {
     var email: String
     var password: String
+}
+
+// MARK: - 设置请求体（PATCH /settings/*）
+
+struct DetectionSettingsUpdate: Encodable, Sendable {
+    var keywords: [String]
+    var aiSemanticsEnabled: Bool
+}
+
+struct WorkScheduleUpdate: Encodable, Sendable {
+    var timezone: String
+    var slots: [WorkScheduleSlotDTO]
+    var autoReplyOutsideHours: Bool
+}
+
+struct NotificationSettingsUpdate: Encodable, Sendable {
+    var newOpportunityEnabled: Bool
+    var aiRepliedEnabled: Bool
+    var dailyDigestEnabled: Bool
+    var urgentOnly: Bool
 }

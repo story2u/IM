@@ -32,7 +32,24 @@ struct RootView: View {
         case .loggedOut:
             LoginView()
         case .active:
-            InboxView()
+            MainTabView()
+        }
+    }
+}
+
+/// 两个一级 Tab：商机看板 / 设置中心。每个 Tab 内部各自持有 NavigationStack，
+/// 切 Tab 保留各自的导航栈、滚动位置、筛选与已加载数据（SwiftUI TabView 默认行为）。
+struct MainTabView: View {
+    var body: some View {
+        TabView {
+            DashboardView()
+                .tabItem {
+                    Label(String(localized: "tab.dashboard", defaultValue: "商机"), systemImage: "tray.full")
+                }
+            SettingsView()
+                .tabItem {
+                    Label(String(localized: "tab.settings", defaultValue: "设置"), systemImage: "gearshape")
+                }
         }
     }
 }
