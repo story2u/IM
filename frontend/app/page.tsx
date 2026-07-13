@@ -151,13 +151,15 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
-          <div className="grid gap-3 md:grid-cols-2">
+          {/* CSS 多列瀑布流：卡片高度不齐时不再像 grid 那样按行对齐留大空隙 */}
+          <div className="columns-1 gap-3 md:columns-2">
             {pageItems.map((opportunity) => (
-              <OpportunityCard
-                key={opportunity.id}
-                opportunity={opportunity}
-                isNew={opportunity.id === newOpportunityId}
-              />
+              <div key={opportunity.id} className="mb-3 break-inside-avoid">
+                <OpportunityCard
+                  opportunity={opportunity}
+                  isNew={opportunity.id === newOpportunityId}
+                />
+              </div>
             ))}
           </div>
 
