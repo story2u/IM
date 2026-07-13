@@ -19,12 +19,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.ListItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,7 +32,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -74,25 +73,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             RadarTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    val demoScreen = if (BuildConfig.DEBUG) intent.getStringExtra("demo-screen") else null
-                    if (demoScreen != null) DemoMobileScreen(demoScreen) else RootView(session)
+                    RootView(session)
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun DemoMobileScreen(screen: String) {
-    val rows = when (screen) {
-        "login" -> listOf("商机雷达" to "登录后发现聊天中的潜在商机", "Google 登录" to "演示模式不发起真实 OAuth", "Apple 登录" to "Release 不接受 Demo Route")
-        "opportunity-detail" -> listOf("采购 50 套设备" to "相关度 96% · 可信度 91", "Pi Agent" to "未包含外部链接 · procurement@example.com", "建议动作" to "确认演示时间和设备规格，需人工批准", "回复草稿" to "下周二或周三哪天方便？")
-        "settings" -> listOf("Pro 套餐" to "本月 18 / 500 次分析", "Telegram" to "普通账号已连接 · 只读监听", "工作时间" to "周一至周五 09:00–18:00", "安全" to "外部动作人工审批")
-        else -> listOf("Pi Agent 重大商机" to "发现 2 条需要优先审核", "林远（演示） · 96%" to "采购 50 套设备，下周安排演示", "周屿（演示） · 93%" to "寻找 API 服务商，需要 CRM 与 SLA", "顾言（演示） · 91%" to "年度续约并增购 30 个席位")
-    }
-    LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 24.dp)) {
-        item { Text(if (screen == "opportunity-detail") "商机详情" else if (screen == "settings") "设置中心" else if (screen == "login") "登录或注册" else "商机收件箱", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(20.dp)) }
-        items(rows.size) { index -> ListItem(headlineContent = { Text(rows[index].first) }, supportingContent = { Text(rows[index].second) }) }
     }
 }
 

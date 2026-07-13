@@ -72,7 +72,7 @@ final class DashboardViewModel {
     }
 
     private func fetchPage(reset: Bool, generation: Int) async {
-        var pagedQuery = query
+        let pagedQuery = query
         do {
             let response = try await api.dashboard(
                 pagedQueryItems(base: pagedQuery, offset: reset ? 0 : offset)

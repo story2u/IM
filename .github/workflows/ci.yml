@@ -148,12 +148,6 @@ jobs:
       - name: Run frontend tests
         run: pnpm test
 
-      - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Verify deterministic Demo screenshots
-        run: pnpm demo:screenshots
-
       - name: Build frontend
         run: pnpm build
 

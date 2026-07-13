@@ -34,7 +34,6 @@ import com.codeiy.im.ui.theme.ConfidenceBadge
 import com.codeiy.im.ui.theme.SopStage
 import com.codeiy.im.ui.theme.TrustLevel
 import com.codeiy.im.ui.theme.color
-import com.codeiy.im.ui.theme.frontendColor
 import kotlinx.serialization.json.JsonPrimitive
 
 /** 商机卡片：信息层级对齐 Web opportunity-card.tsx 与 iOS OpportunityCardView。 */
@@ -93,7 +92,7 @@ fun OpportunityCard(opportunity: Opportunity, onClick: () -> Unit, modifier: Mod
                 Text("·", color = AppColors.muted)
                 Text(relativeTime(opportunity.createdAt), style = MaterialTheme.typography.labelSmall, color = AppColors.muted)
                 Spacer(Modifier.weight(1f))
-                AppBadge(opportunity.status.label, opportunity.status.frontendColor())
+                AppBadge(opportunity.status.label, opportunity.status.color())
             }
 
             Text(

@@ -5,7 +5,8 @@ from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 import structlog
-from sqlalchemy import func
+from sqlalchemy import String, cast, func
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -1058,7 +1059,7 @@ class OpportunityRepository:
             clauses.append(Opportunity.sop_stage.in_(sop_stages))
         if keywords:
             # matched_keywords 是 JSONB 数组，任一关键词命中即保留（?| 存在性运算符）。
-            clauses.append(col(Opportunity.matched_keywords).op("?|")(list(keywords)))
+            clauses.append(col(Opportunity.matched_keywords).op("?|")(cast(list(keywords), ARRAY(String))))
         return clauses
 
     async def dashboard(
