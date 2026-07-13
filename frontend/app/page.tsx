@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAppStore } from '@/lib/app-store'
+import { useAuth } from '@/lib/auth'
+import { ProductHome } from '@/components/landing/product-home'
 import { applyFilters, defaultFilters, type DashboardFilters, type SortKey } from '@/lib/dashboard-filters'
 import type { Platform } from '@/lib/types'
 
@@ -23,6 +25,15 @@ const sortLabels: Record<SortKey, string> = {
 }
 
 export default function DashboardPage() {
+  const { user, loading } = useAuth()
+
+  if (!loading && !user) return <ProductHome />
+  if (loading && !user) return <ProductHome />
+
+  return <AuthenticatedDashboard />
+}
+
+function AuthenticatedDashboard() {
   const { opportunities, newOpportunityId } = useAppStore()
   const [filters, setFilters] = useState<DashboardFilters>(defaultFilters)
   const [page, setPage] = useState(1)
