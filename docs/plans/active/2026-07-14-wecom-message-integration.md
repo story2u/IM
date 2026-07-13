@@ -50,6 +50,7 @@
 
 - 2026-07-14：从最新 `release/v2.0.0` 创建 `features/wecom-message-integration`；完成现状审计和设计。
 - 2026-07-14：完成 P0 数据、API、加密 webhook、Celery、人工发送、Web 配置页和文档；本地全量后端/前端/harness 验证通过。
+- 2026-07-14：首轮 CI 迁移往返通过；PostgreSQL 测试暴露新夹具同一 flush 的 FK 顺序假设，改为 User → Connection → Opportunity 显式提交后重跑。
 
 ## 发现日志
 

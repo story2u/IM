@@ -53,7 +53,9 @@ async def wecom_subject() -> AsyncIterator[
     )
     async with factory() as session:
         session.add(user)
+        await session.commit()
         session.add(connection)
+        await session.commit()
         session.add(opportunity)
         await session.commit()
 
