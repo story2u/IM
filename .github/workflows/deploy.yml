@@ -23,6 +23,7 @@ jobs:
     name: Build ${{ matrix.image }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    environment: production
     if: github.event.workflow_run.conclusion == 'success'
     strategy:
       fail-fast: false
@@ -143,6 +144,8 @@ jobs:
       RUNTIME_REVENUECAT_SECRET_API_KEY: ${{ secrets.REVENUECAT_SECRET_API_KEY }}
       RUNTIME_REVENUECAT_PROJECT_ID: ${{ vars.REVENUECAT_PROJECT_ID }}
       RUNTIME_REVENUECAT_WEBHOOK_HMAC_SECRET: ${{ secrets.REVENUECAT_WEBHOOK_HMAC_SECRET }}
+      RUNTIME_NEXT_PUBLIC_REVENUECAT_WEB_API_KEY: ${{ vars.NEXT_PUBLIC_REVENUECAT_WEB_API_KEY || '' }}
+      RUNTIME_NEXT_PUBLIC_REVENUECAT_OFFERING_ID: ${{ vars.NEXT_PUBLIC_REVENUECAT_OFFERING_ID || 'default' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -240,6 +243,11 @@ jobs:
               printf '%s=%s\n' "$key" "$(dotenv_quote "$value")" >> "$env_updates"
             fi
           }
+          set_env() {
+            key="$1"
+            value="$2"
+            printf '%s=%s\n' "$key" "$(dotenv_quote "$value")" >> "$env_updates"
+          }
 
           env_updates="$(mktemp)"
 
@@ -284,6 +292,8 @@ jobs:
           append_env REVENUECAT_PROJECT_ID "$RUNTIME_REVENUECAT_PROJECT_ID"
           append_env REVENUECAT_WEBHOOK_HMAC_SECRET "$RUNTIME_REVENUECAT_WEBHOOK_HMAC_SECRET"
           append_env REVENUECAT_RECONCILE_ENABLED "true"
+          set_env NEXT_PUBLIC_REVENUECAT_WEB_API_KEY "$RUNTIME_NEXT_PUBLIC_REVENUECAT_WEB_API_KEY"
+          set_env NEXT_PUBLIC_REVENUECAT_OFFERING_ID "$RUNTIME_NEXT_PUBLIC_REVENUECAT_OFFERING_ID"
           append_env CLOUDFLARE_TUNNEL_TOKEN "$CLOUDFLARE_TUNNEL_TOKEN"
 
           ssh -i ~/.ssh/vps_deploy_key -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "mkdir -p '$VPS_DEPLOY_DIR'"

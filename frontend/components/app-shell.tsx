@@ -39,14 +39,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { user, loading, logout } = useAuth()
   const isLoginPage = pathname === '/login'
+  const isHomePage = pathname === '/'
+  const isPublicPage = isLoginPage || isHomePage
 
   useEffect(() => {
-    if (!loading && !user && !isLoginPage) {
+    if (!loading && !user && !isPublicPage) {
       router.replace('/login')
     }
-  }, [isLoginPage, loading, router, user])
+  }, [isPublicPage, loading, router, user])
 
-  if (isLoginPage) {
+  if (isLoginPage || isHomePage) {
     return <main className="min-h-svh bg-background">{children}</main>
   }
 

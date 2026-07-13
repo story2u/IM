@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.OpportunityRadar" parent="@android:style/Theme.Material.Light.NoActionBar" />
+    <!-- DayNight 让 window 背景/系统栏跟随系统深色；Compose 内由 RadarTheme 控制配色。
+         用平台 DayNight 父主题，避免引入 Material Components 依赖（本 app 只用 Compose Material3）。 -->
+    <style name="Theme.OpportunityRadar" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+    </style>
 </resources>

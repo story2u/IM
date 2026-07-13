@@ -19,6 +19,10 @@ import type {
   TelegramMtprotoDialog,
   TelegramUserConfig,
   TelegramUserConfigUpdate,
+  DetectionSettings,
+  WorkSchedule,
+  NotificationSettings,
+  SettingsBundle,
 } from './types'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? ''
@@ -50,6 +54,9 @@ interface ApiOpportunity {
   agentAnalysisError?: string | null
   agentAnalyzedAt?: string | null
   attentionRequired?: boolean
+  archivedAt?: string | null
+  archivedByUserId?: string | null
+  archiveReason?: string | null
 }
 
 const defaultLinkVerification: LinkVerification = {
@@ -145,16 +152,57 @@ export function toOpportunity(item: ApiOpportunity): Opportunity {
     agentAnalysisError: item.agentAnalysisError ?? null,
     agentAnalyzedAt: item.agentAnalyzedAt ?? null,
     attentionRequired: item.attentionRequired ?? false,
+    archivedAt: item.archivedAt ?? null,
+    archivedByUserId: item.archivedByUserId ?? null,
+    archiveReason: item.archiveReason ?? null,
   }
 }
 
-export async function fetchOpportunities(): Promise<Opportunity[]> {
-  const items = await fetchJson<ApiOpportunity[]>('/api/v1/opportunities?limit=200')
+export async function fetchOpportunities(archive: 'active' | 'archived' | 'all' = 'active'): Promise<Opportunity[]> {
+  const items = await fetchJson<ApiOpportunity[]>(`/api/v1/opportunities?limit=200&archive=${archive}`)
   return items.map(toOpportunity)
 }
 
 export async function fetchOpportunity(opportunityId: string): Promise<Opportunity> {
   return toOpportunity(await fetchJson<ApiOpportunity>(`/api/v1/opportunities/${opportunityId}`))
+}
+
+/** 好友申请状态流转（发送/确认通过/确认被拒/重试）；非法流转后端返回 409。 */
+export async function updateFriendRequest(
+  opportunityId: string,
+  status: Exclude<Opportunity['friendRequestStatus'], 'n/a'>,
+): Promise<Opportunity> {
+  const item = await fetchJson<ApiOpportunity>(`/api/v1/opportunities/${opportunityId}/friend-request`, {
+    method: 'POST',
+    body: JSON.stringify({ status }),
+  })
+  return toOpportunity(item)
+}
+
+export async function archiveOpportunity(opportunityId: string, reason?: string): Promise<Opportunity> {
+  return toOpportunity(
+    await fetchJson<ApiOpportunity>(`/api/v1/opportunities/${opportunityId}/archive`, {
+      method: 'POST',
+      body: JSON.stringify({ reason: reason || null }),
+    }),
+  )
+}
+
+export async function restoreOpportunity(opportunityId: string): Promise<Opportunity> {
+  return toOpportunity(
+    await fetchJson<ApiOpportunity>(`/api/v1/opportunities/${opportunityId}/restore`, { method: 'POST' }),
+  )
+}
+
+export async function bulkArchiveOpportunities(opportunityIds: string[]): Promise<Opportunity[]> {
+  const result = await fetchJson<{ archivedCount: number; opportunities: ApiOpportunity[] }>(
+    '/api/v1/opportunities/bulk-archive',
+    {
+      method: 'POST',
+      body: JSON.stringify({ opportunityIds, reason: null }),
+    },
+  )
+  return result.opportunities.map(toOpportunity)
 }
 
 export async function enqueueAgentAnalysis(opportunityId: string): Promise<{
@@ -310,5 +358,38 @@ export async function addTelegramMtprotoSource(
   return fetchJson<TelegramConnection>(`/api/v1/integrations/telegram/connections/${connectionId}/sources`, {
     method: 'POST',
     body: JSON.stringify({ chatId }),
+  })
+}
+
+// MARK: 用户级设置（与 iOS/Android 共享同一后端设置源）
+
+export async function fetchSettings(): Promise<SettingsBundle> {
+  return fetchJson<SettingsBundle>('/api/v1/settings/me')
+}
+
+export async function updateDetectionSettings(
+  body: DetectionSettings,
+): Promise<DetectionSettings> {
+  return fetchJson<DetectionSettings>('/api/v1/settings/detection', {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function updateWorkSchedule(
+  body: Omit<WorkSchedule, 'isDefault'>,
+): Promise<WorkSchedule> {
+  return fetchJson<WorkSchedule>('/api/v1/settings/work-schedule', {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function updateNotificationSettings(
+  body: NotificationSettings,
+): Promise<NotificationSettings> {
+  return fetchJson<NotificationSettings>('/api/v1/settings/notifications', {
+    method: 'PATCH',
+    body: JSON.stringify(body),
   })
 }

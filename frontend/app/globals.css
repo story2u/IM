@@ -145,3 +145,7 @@
 .animate-card-enter {
   animation: card-enter 0.35s ease-out both;
 }
+
+#apps .text-primary {
+  color: oklch(0.82 0.1 285);
+}

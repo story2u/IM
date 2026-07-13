@@ -30,9 +30,6 @@ export const defaultFilters: DashboardFilters = {
   sort: 'newest',
 }
 
-// 与 Mock 数据保持一致的"当前时间"参考点
-export const MOCK_NOW = new Date('2026-07-07T10:10:00+08:00')
-
 export function countActiveAdvancedFilters(f: DashboardFilters) {
   let n = 0
   if (f.source !== 'all') n++
@@ -44,7 +41,9 @@ export function countActiveAdvancedFilters(f: DashboardFilters) {
 }
 
 export function applyFilters(list: Opportunity[], f: DashboardFilters): Opportunity[] {
-  const now = MOCK_NOW.getTime()
+  // 用真实当前时间计算时间范围边界（移除固定 MOCK_NOW 演示时间）。
+  const nowDate = new Date()
+  const now = nowDate.getTime()
   const dayMs = 24 * 60 * 60 * 1000
 
   const filtered = list.filter((o) => {
@@ -54,7 +53,7 @@ export function applyFilters(list: Opportunity[], f: DashboardFilters): Opportun
 
     const t = new Date(o.createdAt).getTime()
     if (f.timeRange === 'today') {
-      const startOfDay = new Date(MOCK_NOW)
+      const startOfDay = new Date(nowDate)
       startOfDay.setHours(0, 0, 0, 0)
       if (t < startOfDay.getTime()) return false
     } else if (f.timeRange === '3d') {

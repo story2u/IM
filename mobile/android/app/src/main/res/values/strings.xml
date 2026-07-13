@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 默认（英文）。中文见 values-zh-rCN/strings.xml。
+     说明：现有屏幕仍有内联中文字符串，本表先固化跨端共享的产品文案（蓝图 §19），
+     后续逐屏迁移到 stringResource 时以此为准。 -->
+<resources>
+    <string name="app_name">Opportunity Radar</string>
+
+    <!-- Tabs -->
+    <string name="tab_dashboard">Deals</string>
+    <string name="tab_settings">Settings</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">Opportunity Board</string>
+    <string name="dashboard_subtitle">Automatically surfaces potential deals from Telegram and WeCom</string>
+    <string name="dashboard_pending">%1$d pending</string>
+    <string name="dashboard_attention_title">pi Agent found %1$d major opportunities</string>
+    <string name="dashboard_attention_body">Please verify the link conclusions and follow-up actions first; external actions still require manual approval.</string>
+    <string name="dashboard_empty">No matching opportunities</string>
+    <string name="dashboard_result_count">%1$d opportunities</string>
+    <string name="card_link_risk">Contains unverified links, complete the safety analysis first</string>
+
+    <!-- Filters -->
+    <string name="status_all">All</string>
+    <string name="status_pending">Pending</string>
+    <string name="status_replied">Replied</string>
+    <string name="status_ignored">Ignored</string>
+    <string name="platform_all">All platforms</string>
+    <string name="time_all">All time</string>
+    <string name="time_today">Today</string>
+    <string name="source_group">Group messages</string>
+    <string name="source_private">Direct messages</string>
+    <string name="trust_trusted">Trusted</string>
+    <string name="trust_unverified">Unverified</string>
+    <string name="trust_suspicious">Suspicious</string>
+    <string name="trust_risky">High risk</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_subscription">Plan &amp; Usage</string>
+    <string name="settings_telegram">Telegram</string>
+    <string name="settings_wecom">WeCom</string>
+    <string name="settings_wecom_admin">Configured by admin</string>
+    <string name="settings_detection">Detection Rules</string>
+    <string name="settings_ai_semantics">AI Semantic Detection</string>
+    <string name="settings_work_hours">Working Hours</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_logout">Log out</string>
+</resources>

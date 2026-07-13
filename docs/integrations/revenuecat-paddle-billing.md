@@ -23,7 +23,9 @@ GitHub **Variables**：
 - `REVENUECAT_IOS_PUBLIC_API_KEY`、`REVENUECAT_ANDROID_PUBLIC_API_KEY`：进入对应平台构建配置。
 
 `REVENUECAT_ENABLED=true` 与 `REVENUECAT_RECONCILE_ENABLED=true` 由部署工作流直接写入 VPS `.env`，
-不使用 GitHub Variables。Webhook Authorization 只保存在 VPS `.env`；HMAC signing secret 从 GitHub
+不使用 GitHub Variables。`NEXT_PUBLIC_REVENUECAT_WEB_API_KEY` 与
+`NEXT_PUBLIC_REVENUECAT_OFFERING_ID` 来自 GitHub Variables，既作为前端镜像构建参数，也由部署工作流
+同步到 VPS `.env`。Webhook Authorization 只保存在 VPS `.env`；HMAC signing secret 从 GitHub
 Secret 同步。Public SDK Key 不是 Secret，但必须使用对应平台的 Key。Paddle API Key、
 App Store private key和 Google service-account JSON 不进入应用环境；Paddle Key 只粘贴到 RevenueCat。
 

@@ -96,4 +96,36 @@ extension APIClient {
     func subscriptionManagement() async throws -> SubscriptionManagement {
         try await get("subscriptions/management", query: [URLQueryItem(name: "client", value: "ios")])
     }
+
+    // MARK: Settings
+
+    func settings() async throws -> SettingsBundle {
+        try await get("settings/me")
+    }
+
+    func updateDetectionSettings(_ body: DetectionSettingsUpdate) async throws -> DetectionSettings {
+        try await patch("settings/detection", body: body)
+    }
+
+    func updateWorkSchedule(_ body: WorkScheduleUpdate) async throws -> WorkSchedule {
+        try await patch("settings/work-schedule", body: body)
+    }
+
+    func updateNotificationSettings(_ body: NotificationSettingsUpdate) async throws -> NotificationSettings {
+        try await patch("settings/notifications", body: body)
+    }
+
+    // MARK: Telegram 连接
+
+    func telegramHealth() async throws -> TelegramConnectionHealth {
+        try await get("integrations/telegram/health")
+    }
+
+    func telegramConnections() async throws -> [TelegramConnectionDTO] {
+        try await get("integrations/telegram/connections")
+    }
+
+    func setTelegramConnectionEnabled(id: UUID, enabled: Bool) async throws -> TelegramConnectionDTO {
+        try await patch("integrations/telegram/connections/\(id.uuidString)", body: ["enabled": enabled])
+    }
 }

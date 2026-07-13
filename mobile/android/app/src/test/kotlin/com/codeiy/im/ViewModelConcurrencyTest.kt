@@ -7,6 +7,7 @@ import com.codeiy.im.model.AIDraft
 import com.codeiy.im.model.AuthToken
 import com.codeiy.im.model.AuthUser
 import com.codeiy.im.model.ChatMessage
+import com.codeiy.im.model.DashboardResponse
 import com.codeiy.im.model.FrontendOpportunityStatus
 import com.codeiy.im.model.ManualReplyRequest
 import com.codeiy.im.model.NativeLoginRequest
@@ -17,6 +18,10 @@ import com.codeiy.im.model.ReplyTemplate
 import com.codeiy.im.model.SubscriptionCatalogPlan
 import com.codeiy.im.model.SubscriptionManagement
 import com.codeiy.im.model.SubscriptionUsage
+import com.codeiy.im.model.SettingsBundle
+import com.codeiy.im.model.TelegramConnectionDTO
+import com.codeiy.im.model.TelegramConnectionEnabledUpdate
+import com.codeiy.im.model.TelegramConnectionHealth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -69,6 +74,26 @@ private class FakeRadarApi : RadarApi {
     override suspend fun subscriptionCatalog(): List<SubscriptionCatalogPlan> = error("unused")
     override suspend fun syncSubscription(): SubscriptionUsage = error("unused")
     override suspend fun subscriptionManagement(client: String): SubscriptionManagement = error("unused")
+    override suspend fun dashboard(
+        status: String?,
+        platform: String?,
+        sourceType: String?,
+        createdFrom: String?,
+        createdTo: String?,
+        trustLevels: List<String>?,
+        sopStages: List<String>?,
+        keywords: List<String>?,
+        sort: String,
+        limit: Int,
+        offset: Int,
+    ): DashboardResponse = error("unused")
+    override suspend fun settings(): SettingsBundle = error("unused")
+    override suspend fun updateDetection(body: com.codeiy.im.model.DetectionSettingsUpdate): com.codeiy.im.model.DetectionSettings = error("unused")
+    override suspend fun updateWorkSchedule(body: com.codeiy.im.model.WorkScheduleUpdate): com.codeiy.im.model.WorkSchedule = error("unused")
+    override suspend fun updateNotifications(body: com.codeiy.im.model.NotificationSettingsUpdate): com.codeiy.im.model.NotificationSettings = error("unused")
+    override suspend fun telegramHealth(): TelegramConnectionHealth = error("unused")
+    override suspend fun telegramConnections(): List<TelegramConnectionDTO> = error("unused")
+    override suspend fun setTelegramConnectionEnabled(id: String, body: TelegramConnectionEnabledUpdate): TelegramConnectionDTO = error("unused")
 }
 
 /** 收件箱竞态回归：筛选切换取消在途请求，旧响应不得覆盖新筛选结果。 */

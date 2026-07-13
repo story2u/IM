@@ -2,26 +2,86 @@
 
 import { ArrowLeft, Globe } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { fetchSettings, updateWorkSchedule } from '@/lib/api'
+import type { WorkScheduleSlot } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 // 时段：8:00 - 22:00，每格 1 小时
 const hours = Array.from({ length: 14 }, (_, i) => i + 8)
 
-function defaultSchedule() {
-  // 周一至周五 9:00-18:00 默认选中
-  return days.map((_, dayIndex) => hours.map((h) => dayIndex < 5 && h >= 9 && h < 18))
+function emptySchedule(): boolean[][] {
+  return days.map(() => hours.map(() => false))
+}
+
+const HOUR_FMT = (h: number) => `${String(h).padStart(2, '0')}:00`
+
+// 后端 slots（每天可多段）→ 14×7 布尔网格。
+function slotsToGrid(slots: WorkScheduleSlot[]): boolean[][] {
+  const grid = emptySchedule()
+  for (const slot of slots) {
+    const dayIndex = slot.weekday - 1
+    if (dayIndex < 0 || dayIndex > 6) continue
+    const start = parseInt(slot.start.slice(0, 2), 10)
+    const end = parseInt(slot.end.slice(0, 2), 10)
+    for (let h = start; h < end; h++) {
+      const hourIndex = h - 8
+      if (hourIndex >= 0 && hourIndex < hours.length) grid[dayIndex][hourIndex] = true
+    }
+  }
+  return grid
+}
+
+// 网格 → slots：把每天连续选中的小时合并成一段。
+function gridToSlots(grid: boolean[][]): WorkScheduleSlot[] {
+  const slots: WorkScheduleSlot[] = []
+  grid.forEach((row, dayIndex) => {
+    let runStart: number | null = null
+    for (let i = 0; i <= row.length; i++) {
+      const on = i < row.length && row[i]
+      if (on && runStart === null) {
+        runStart = i
+      } else if (!on && runStart !== null) {
+        slots.push({
+          weekday: dayIndex + 1,
+          start: HOUR_FMT(runStart + 8),
+          end: HOUR_FMT(i + 8),
+        })
+        runStart = null
+      }
+    }
+  })
+  return slots
 }
 
 export default function WorkingHoursPage() {
-  const [schedule, setSchedule] = useState<boolean[][]>(defaultSchedule)
+  const [schedule, setSchedule] = useState<boolean[][]>(emptySchedule)
   const [timezone, setTimezone] = useState('Asia/Shanghai')
+  const [loaded, setLoaded] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const dragRef = useRef<{ active: boolean; value: boolean }>({ active: false, value: true })
+
+  // 加载真实工作时间（与 iOS/Android 同源）。默认（isDefault）表示后端回退值。
+  useEffect(() => {
+    let active = true
+    fetchSettings()
+      .then((bundle) => {
+        if (!active) return
+        setSchedule(slotsToGrid(bundle.workSchedule.slots))
+        setTimezone(bundle.workSchedule.timezone)
+        setLoaded(true)
+      })
+      .catch((e) => active && setError(e instanceof Error ? e.message : '加载工作时间失败'))
+    return () => {
+      active = false
+    }
+  }, [])
 
   const setCell = useCallback((day: number, hour: number, value: boolean) => {
     setSchedule((prev) => {
@@ -41,6 +101,24 @@ export default function WorkingHoursPage() {
   const handlePointerEnter = (day: number, hour: number) => {
     if (dragRef.current.active) {
       setCell(day, hour, dragRef.current.value)
+    }
+  }
+
+  const save = async () => {
+    setSaving(true)
+    setError(null)
+    try {
+      const saved = await updateWorkSchedule({
+        timezone,
+        slots: gridToSlots(schedule),
+        autoReplyOutsideHours: true,
+      })
+      setSchedule(slotsToGrid(saved.slots))
+      setTimezone(saved.timezone)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '保存失败')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -170,8 +248,11 @@ export default function WorkingHoursPage() {
           <p className="text-xs text-muted-foreground">日夜模式切换将依据所选时区判断</p>
         </Card>
 
-        <div className="flex justify-end">
-          <Button>保存设置</Button>
+        <div className="flex items-center justify-end gap-3">
+          {error && <span className="text-sm text-destructive">{error}</span>}
+          <Button onClick={save} disabled={!loaded || saving}>
+            {saving ? '保存中…' : '保存设置'}
+          </Button>
         </div>
       </div>
     </div>

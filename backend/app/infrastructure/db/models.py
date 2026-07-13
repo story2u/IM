@@ -17,6 +17,7 @@ from app.domain.enums import (
     IMChannel,
     MessageDirection,
     MessageSource,
+    OpportunityArchiveAction,
     OpportunityStatus,
     PlanCode,
     Priority,
@@ -234,6 +235,12 @@ class Opportunity(TimestampMixin, table=True):
     __table_args__ = (
         Index("ix_opportunities_channel_conversation", "channel", "conversation_id"),
         Index("ix_opportunities_status_created", "status", "created_at"),
+        Index(
+            "ix_opportunities_owner_archived_last_message",
+            "owner_user_id",
+            "archived_at",
+            "last_message_at",
+        ),
     )
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
@@ -313,6 +320,27 @@ class Opportunity(TimestampMixin, table=True):
         default_factory=utc_now,
         sa_column=Column(DateTime(timezone=True), nullable=False, index=True),
     )
+    archived_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True, index=True),
+    )
+    archived_by_user_id: UUID | None = Field(default=None, foreign_key="users.id", index=True)
+    archive_reason: str | None = Field(default=None, max_length=500)
+
+
+class OpportunityArchiveEvent(TimestampMixin, table=True):
+    __tablename__ = "opportunity_archive_events"
+    __table_args__ = (
+        Index("ix_opportunity_archive_events_owner_created", "owner_user_id", "created_at"),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    opportunity_id: UUID = Field(foreign_key="opportunities.id", index=True)
+    owner_user_id: UUID = Field(foreign_key="users.id", index=True)
+    action: OpportunityArchiveAction = Field(
+        sa_column=Column(SAEnum(OpportunityArchiveAction, native_enum=False), nullable=False, index=True)
+    )
+    reason: str | None = Field(default=None, max_length=500)
 
 
 class Message(TimestampMixin, table=True):
@@ -438,6 +466,52 @@ class AppConfig(SQLModel, table=True):
         default_factory=utc_now,
         sa_column=Column(DateTime(timezone=True), nullable=False),
     )
+
+
+class UserDetectionPreference(TimestampMixin, table=True):
+    """用户级商机识别偏好：自定义关键词 + AI 语义识别开关（叠加在全局规则之上）。"""
+
+    __tablename__ = "user_detection_preferences"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_user_detection_preferences_user_id"),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    keywords: list[str] = Field(default_factory=list, sa_column=Column(JSONB, nullable=False))
+    ai_semantics_enabled: bool = Field(default=True)
+
+
+class UserWorkSchedule(TimestampMixin, table=True):
+    """用户级工作时间：选中时段为人工审核，其余时段可 AI 自动回复；时区为 IANA 标识。"""
+
+    __tablename__ = "user_work_schedules"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_user_work_schedules_user_id"),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    timezone: str = Field(default="Asia/Shanghai", max_length=64)
+    # 每个元素 {"weekday": 1-7, "start": "HH:MM", "end": "HH:MM"}
+    slots: list[dict[str, Any]] = Field(default_factory=list, sa_column=Column(JSONB, nullable=False))
+    auto_reply_outside_hours: bool = Field(default=True)
+
+
+class UserNotificationPreference(TimestampMixin, table=True):
+    """用户级通知偏好；推送通道落地前仅持久化，不代表已生效。"""
+
+    __tablename__ = "user_notification_preferences"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_user_notification_preferences_user_id"),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    new_opportunity_enabled: bool = Field(default=True)
+    ai_replied_enabled: bool = Field(default=True)
+    daily_digest_enabled: bool = Field(default=False)
+    urgent_only: bool = Field(default=False)
 
 
 class TelegramUserConfig(TimestampMixin, table=True):
