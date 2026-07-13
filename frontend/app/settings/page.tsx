@@ -2,31 +2,88 @@
 
 import { Bell, ChevronRight, Clock, CreditCard, MessageSquare, Send, Tags, X } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import {
+  fetchSettings,
+  updateDetectionSettings,
+  updateNotificationSettings,
+} from '@/lib/api'
+import type { NotificationSettings } from '@/lib/types'
 
-const initialKeywords = ['报价', 'API 接入', '私有化部署', '批量采购', '续约', '免费试用', '合作', '折扣']
+const emptyNotifications: NotificationSettings = {
+  newOpportunityEnabled: true,
+  aiRepliedEnabled: true,
+  dailyDigestEnabled: false,
+  urgentOnly: false,
+}
 
 export default function SettingsPage() {
-  const [keywords, setKeywords] = useState(initialKeywords)
+  const [keywords, setKeywords] = useState<string[]>([])
   const [newKeyword, setNewKeyword] = useState('')
   const [aiSemantics, setAiSemantics] = useState(true)
-  const [notifications, setNotifications] = useState({
-    newOpportunity: true,
-    aiReplied: true,
-    dailyDigest: false,
-    urgentOnly: false,
-  })
+  const [notifications, setNotifications] = useState<NotificationSettings>(emptyNotifications)
+  const [loaded, setLoaded] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [wecomBindingAvailable, setWecomBindingAvailable] = useState(false)
+
+  // 从后端加载真实设置（与 iOS/Android 同一数据源）；失败不用默认值冒充服务端值。
+  useEffect(() => {
+    let active = true
+    fetchSettings()
+      .then((bundle) => {
+        if (!active) return
+        setKeywords(bundle.detection.keywords)
+        setAiSemantics(bundle.detection.aiSemanticsEnabled)
+        setNotifications(bundle.notifications)
+        setWecomBindingAvailable(bundle.capabilities.wecomUserBindingAvailable)
+        setLoaded(true)
+      })
+      .catch((e) => active && setError(e instanceof Error ? e.message : '加载设置失败'))
+    return () => {
+      active = false
+    }
+  }, [])
+
+  // 关键词/AI 语义：本地先改，写回后端；失败回滚。
+  const persistDetection = async (nextKeywords: string[], nextAi: boolean) => {
+    const prevKeywords = keywords
+    const prevAi = aiSemantics
+    setKeywords(nextKeywords)
+    setAiSemantics(nextAi)
+    setError(null)
+    try {
+      const saved = await updateDetectionSettings({ keywords: nextKeywords, aiSemanticsEnabled: nextAi })
+      setKeywords(saved.keywords)
+      setAiSemantics(saved.aiSemanticsEnabled)
+    } catch (e) {
+      setKeywords(prevKeywords)
+      setAiSemantics(prevAi)
+      setError(e instanceof Error ? e.message : '保存失败')
+    }
+  }
+
+  const persistNotifications = async (next: NotificationSettings) => {
+    const prev = notifications
+    setNotifications(next)
+    setError(null)
+    try {
+      setNotifications(await updateNotificationSettings(next))
+    } catch (e) {
+      setNotifications(prev)
+      setError(e instanceof Error ? e.message : '保存失败')
+    }
+  }
 
   const addKeyword = () => {
     const kw = newKeyword.trim()
     if (kw && !keywords.includes(kw)) {
-      setKeywords((prev) => [...prev, kw])
+      void persistDetection([...keywords, kw], aiSemantics)
     }
     setNewKeyword('')
   }
@@ -36,6 +93,7 @@ export default function SettingsPage() {
       <header className="mb-6">
         <h1 className="text-xl font-semibold tracking-tight md:text-2xl">设置中心</h1>
         <p className="mt-1 text-sm text-muted-foreground">管理平台绑定、识别规则与通知偏好</p>
+        {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
       </header>
 
       <div className="flex flex-col gap-5">
@@ -81,9 +139,13 @@ export default function SettingsPage() {
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">企业微信</p>
-                <p className="text-xs text-muted-foreground">星辰科技有限公司</p>
+                <p className="text-xs text-muted-foreground">
+                  {wecomBindingAvailable ? '管理个人企业微信绑定' : '由管理员统一配置'}
+                </p>
               </div>
-              <Badge className="bg-success/15 text-success border-transparent">已连接</Badge>
+              <Badge variant="secondary" className="border-transparent">
+                {wecomBindingAvailable ? '可管理' : '仅管理员'}
+              </Badge>
             </Card>
           </div>
         </section>
@@ -105,7 +167,7 @@ export default function SettingsPage() {
                     {keyword}
                     <button
                       type="button"
-                      onClick={() => setKeywords((prev) => prev.filter((k) => k !== keyword))}
+                      onClick={() => void persistDetection(keywords.filter((k) => k !== keyword), aiSemantics)}
                       className="rounded-sm p-0.5 hover:bg-foreground/10"
                       aria-label={`删除关键词 ${keyword}`}
                     >
@@ -118,6 +180,7 @@ export default function SettingsPage() {
                 <Input
                   value={newKeyword}
                   onChange={(e) => setNewKeyword(e.target.value)}
+                  disabled={!loaded}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.nativeEvent.isComposing && e.keyCode !== 229) {
                       e.preventDefault()
@@ -142,7 +205,7 @@ export default function SettingsPage() {
                   除关键词外，用大模型理解上下文语义识别潜在商机
                 </p>
               </div>
-              <Switch id="ai-semantics" checked={aiSemantics} onCheckedChange={setAiSemantics} />
+              <Switch id="ai-semantics" checked={aiSemantics} onCheckedChange={(checked) => void persistDetection(keywords, checked)} />
             </div>
           </Card>
         </section>
@@ -174,9 +237,9 @@ export default function SettingsPage() {
           <Card className="gap-0 rounded-xl p-0 shadow-sm">
             {(
               [
-                { key: 'newOpportunity', label: '新商机提醒', desc: '识别到新商机时立即推送通知' },
-                { key: 'aiReplied', label: 'AI 代回复通知', desc: '夜间 AI 自动回复后同步告知' },
-                { key: 'dailyDigest', label: '每日商机摘要', desc: '每天早上 9 点汇总前一天商机' },
+                { key: 'newOpportunityEnabled', label: '新商机提醒', desc: '识别到新商机时立即推送通知' },
+                { key: 'aiRepliedEnabled', label: 'AI 代回复通知', desc: '夜间 AI 自动回复后同步告知' },
+                { key: 'dailyDigestEnabled', label: '每日商机摘要', desc: '每天早上 9 点汇总前一天商机' },
                 { key: 'urgentOnly', label: '仅紧急商机', desc: '开启后仅推送紧急优先级商机' },
               ] as const
             ).map((item, index) => (
@@ -196,7 +259,7 @@ export default function SettingsPage() {
                 <Switch
                   id={`notify-${item.key}`}
                   checked={notifications[item.key]}
-                  onCheckedChange={(checked) => setNotifications((prev) => ({ ...prev, [item.key]: checked }))}
+                  onCheckedChange={(checked) => void persistNotifications({ ...notifications, [item.key]: checked })}
                 />
               </div>
             ))}

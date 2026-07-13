@@ -262,6 +262,132 @@ data class AIDraft(
     val draft: String,
 )
 
+// MARK: 商机看板（backend GET /opportunities/dashboard）
+
+@Serializable
+data class DashboardResponse(
+    val items: List<Opportunity> = emptyList(),
+    val total: Int = 0,
+    val limit: Int = 20,
+    val offset: Int = 0,
+    val pendingCount: Int = 0,
+    val attentionItems: List<Opportunity> = emptyList(),
+    val keywordOptions: List<String> = emptyList(),
+)
+
+// MARK: 用户级设置（backend /settings/*）
+
+@Serializable
+data class DetectionSettings(
+    val keywords: List<String> = emptyList(),
+    val aiSemanticsEnabled: Boolean = true,
+)
+
+@Serializable
+data class WorkScheduleSlotDTO(
+    val weekday: Int,
+    val start: String,
+    val end: String,
+)
+
+@Serializable
+data class WorkSchedule(
+    val timezone: String = "Asia/Shanghai",
+    val slots: List<WorkScheduleSlotDTO> = emptyList(),
+    val autoReplyOutsideHours: Boolean = true,
+    val isDefault: Boolean = false,
+)
+
+@Serializable
+data class NotificationSettings(
+    val newOpportunityEnabled: Boolean = true,
+    val aiRepliedEnabled: Boolean = true,
+    val dailyDigestEnabled: Boolean = false,
+    val urgentOnly: Boolean = false,
+)
+
+@Serializable
+data class SettingsCapabilities(
+    val pushAvailable: Boolean = false,
+    val wecomUserBindingAvailable: Boolean = false,
+)
+
+@Serializable
+data class SettingsBundle(
+    val detection: DetectionSettings,
+    val workSchedule: WorkSchedule,
+    val notifications: NotificationSettings,
+    val capabilities: SettingsCapabilities,
+)
+
+@Serializable
+data class DetectionSettingsUpdate(
+    val keywords: List<String>,
+    val aiSemanticsEnabled: Boolean,
+)
+
+@Serializable
+data class WorkScheduleUpdate(
+    val timezone: String,
+    val slots: List<WorkScheduleSlotDTO>,
+    val autoReplyOutsideHours: Boolean,
+)
+
+@Serializable
+data class NotificationSettingsUpdate(
+    val newOpportunityEnabled: Boolean,
+    val aiRepliedEnabled: Boolean,
+    val dailyDigestEnabled: Boolean,
+    val urgentOnly: Boolean,
+)
+
+// MARK: Telegram 连接（backend /integrations/telegram/*）
+
+@Serializable
+data class TelegramConnectionHealth(
+    val mode: String = "",
+    val botConfigured: Boolean = false,
+    val botUsername: String? = null,
+    val businessAvailable: Boolean = false,
+    val mtprotoQrAvailable: Boolean = false,
+    val listenerMode: String = "",
+    val legacyMonitoringActive: Boolean = false,
+    val legacyActiveSourceCount: Int = 0,
+    val message: String? = null,
+)
+
+@Serializable
+data class TelegramSourceDTO(
+    val id: String,
+    val connectionId: String,
+    val sourceType: String,
+    val externalChatId: String,
+    val displayName: String,
+    val username: String? = null,
+    val enabled: Boolean = true,
+    val quotaPaused: Boolean = false,
+    val quotaReason: String? = null,
+    val lastError: String? = null,
+    val updatedAt: String,
+)
+
+@Serializable
+data class TelegramConnectionDTO(
+    val id: String,
+    val connectionType: String,
+    val status: String,
+    val enabled: Boolean,
+    val label: String,
+    val capabilities: Map<String, JsonElement> = emptyMap(),
+    val lastError: String? = null,
+    val lastCheckedAt: String? = null,
+    val updatedAt: String,
+    val sources: List<TelegramSourceDTO> = emptyList(),
+)
+
+@Serializable
+data class TelegramConnectionEnabledUpdate(val enabled: Boolean)
+
 // MARK: 请求体
 
 @Serializable

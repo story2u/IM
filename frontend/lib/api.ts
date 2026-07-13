@@ -19,6 +19,10 @@ import type {
   TelegramMtprotoDialog,
   TelegramUserConfig,
   TelegramUserConfigUpdate,
+  DetectionSettings,
+  WorkSchedule,
+  NotificationSettings,
+  SettingsBundle,
 } from './types'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? ''
@@ -155,6 +159,18 @@ export async function fetchOpportunities(): Promise<Opportunity[]> {
 
 export async function fetchOpportunity(opportunityId: string): Promise<Opportunity> {
   return toOpportunity(await fetchJson<ApiOpportunity>(`/api/v1/opportunities/${opportunityId}`))
+}
+
+/** 好友申请状态流转（发送/确认通过/确认被拒/重试）；非法流转后端返回 409。 */
+export async function updateFriendRequest(
+  opportunityId: string,
+  status: Exclude<Opportunity['friendRequestStatus'], 'n/a'>,
+): Promise<Opportunity> {
+  const item = await fetchJson<ApiOpportunity>(`/api/v1/opportunities/${opportunityId}/friend-request`, {
+    method: 'POST',
+    body: JSON.stringify({ status }),
+  })
+  return toOpportunity(item)
 }
 
 export async function enqueueAgentAnalysis(opportunityId: string): Promise<{
@@ -310,5 +326,38 @@ export async function addTelegramMtprotoSource(
   return fetchJson<TelegramConnection>(`/api/v1/integrations/telegram/connections/${connectionId}/sources`, {
     method: 'POST',
     body: JSON.stringify({ chatId }),
+  })
+}
+
+// MARK: 用户级设置（与 iOS/Android 共享同一后端设置源）
+
+export async function fetchSettings(): Promise<SettingsBundle> {
+  return fetchJson<SettingsBundle>('/api/v1/settings/me')
+}
+
+export async function updateDetectionSettings(
+  body: DetectionSettings,
+): Promise<DetectionSettings> {
+  return fetchJson<DetectionSettings>('/api/v1/settings/detection', {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function updateWorkSchedule(
+  body: Omit<WorkSchedule, 'isDefault'>,
+): Promise<WorkSchedule> {
+  return fetchJson<WorkSchedule>('/api/v1/settings/work-schedule', {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function updateNotificationSettings(
+  body: NotificationSettings,
+): Promise<NotificationSettings> {
+  return fetchJson<NotificationSettings>('/api/v1/settings/notifications', {
+    method: 'PATCH',
+    body: JSON.stringify(body),
   })
 }
