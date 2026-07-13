@@ -88,6 +88,14 @@ Telegram 原生连接由 API webhook 处理：先验证 Bot secret，再按 `upd
   应用继续访问可能已部分变更的 schema。
 - 回滚应用前确认数据库仍兼容旧版本；不能安全降级时以前向修复为主并在计划写明。
 
+## 生产数据维护
+
+手动 workflow `Production Data Maintenance` 提供只读计数和受确认保护的商机数据清理。清理操作会
+短暂停止 API、Celery 与 Telegram 摄取服务，在单个事务中解除用量账本的消息引用并删除商机、消息；
+可选项还会删除 legacy monitor 与统一 Telegram source，从而释放监听配额，但保留用户、订阅、用量
+审计、Telegram connection 及加密 session。操作前后都会输出分表计数，不能通过该 workflow 执行
+任意 SQL。执行前仍应确认清理范围；该入口不是归档能力，也不能代替数据库备份。
+
 ## 运维缺口
 
 当前仓库没有完整的集中日志/指标/trace、外部告警、备份恢复演练或依赖型 readiness。相关建设记录在

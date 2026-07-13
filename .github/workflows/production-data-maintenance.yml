@@ -1,0 +1,133 @@
+name: Production Data Maintenance
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Inspect counts or purge opportunity data
+        required: true
+        default: inspect
+        type: choice
+        options:
+          - inspect
+          - purge
+      confirmation:
+        description: Type PURGE_PRODUCTION_OPPORTUNITY_DATA when action is purge
+        required: false
+        type: string
+      clear_telegram_sources:
+        description: Also remove legacy and unified Telegram monitor selections
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-data-maintenance
+  cancel-in-progress: false
+
+jobs:
+  maintain:
+    name: ${{ inputs.action == 'purge' && 'Purge opportunity data' || 'Inspect opportunity data' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    env:
+      VPS_HOST: ${{ vars.VPS_HOST || secrets.VPS_HOST }}
+      VPS_USER: ${{ vars.VPS_USER || secrets.VPS_USER }}
+      VPS_PORT: ${{ vars.VPS_PORT || secrets.VPS_PORT || '22' }}
+      VPS_DEPLOY_DIR: ${{ vars.VPS_DEPLOY_DIR || secrets.VPS_DEPLOY_DIR || '/opt/im' }}
+      ACTION: ${{ inputs.action }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+      CLEAR_TELEGRAM_SOURCES: ${{ inputs.clear_telegram_sources }}
+    steps:
+      - name: Validate request
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$VPS_HOST"
+          test -n "$VPS_USER"
+          test -n "$VPS_SSH_KEY"
+          if [ "$ACTION" = "purge" ] && [ "$CONFIRMATION" != "PURGE_PRODUCTION_OPPORTUNITY_DATA" ]; then
+            echo "The purge confirmation text does not match."
+            exit 1
+          fi
+          case "$VPS_DEPLOY_DIR" in
+            *"'"*) echo "VPS_DEPLOY_DIR must not contain single quotes"; exit 1 ;;
+          esac
+
+      - name: Prepare SSH key
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/vps_maintenance_key
+          chmod 600 ~/.ssh/vps_maintenance_key
+          ssh-keyscan -p "$VPS_PORT" "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Inspect or purge data
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/vps_maintenance_key -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" \
+            "DEPLOY_DIR='$VPS_DEPLOY_DIR' ACTION='$ACTION' CLEAR_TELEGRAM_SOURCES='$CLEAR_TELEGRAM_SOURCES' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$DEPLOY_DIR"
+
+          count_data() {
+            docker compose exec -T postgres sh -c \
+              'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<'SQL'
+          SELECT 'opportunities' AS entity, count(*) AS row_count FROM opportunities
+          UNION ALL SELECT 'messages', count(*) FROM messages
+          UNION ALL SELECT 'telegram_sources', count(*) FROM telegram_sources
+          UNION ALL SELECT 'telegram_monitors', count(*) FROM telegram_monitors
+          ORDER BY entity;
+          SQL
+          }
+
+          echo "Production data counts before action:"
+          count_data
+          [ "$ACTION" = "purge" ] || exit 0
+
+          services="api celery_worker celery_beat telegram_listener telegram_mtproto_listener"
+          restart_services() {
+            docker compose up -d $services >/dev/null
+          }
+          trap restart_services EXIT
+          docker compose stop $services
+
+          if [ "$CLEAR_TELEGRAM_SOURCES" = "true" ]; then
+            source_cleanup="DELETE FROM telegram_sources; DELETE FROM telegram_monitors;"
+          else
+            source_cleanup=""
+          fi
+
+          docker compose exec -T postgres sh -c \
+            'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<SQL
+          BEGIN;
+          UPDATE usage_ledger SET source_message_id = NULL WHERE source_message_id IS NOT NULL;
+          UPDATE messages SET opportunity_id = NULL WHERE opportunity_id IS NOT NULL;
+          DELETE FROM opportunities;
+          DELETE FROM messages;
+          $source_cleanup
+          COMMIT;
+          SQL
+
+          restart_services
+          trap - EXIT
+          echo "Production data counts after action:"
+          count_data
+
+          for attempt in 1 2 3 4 5 6; do
+            if curl --fail --silent --show-error http://127.0.0.1:8000/healthz; then
+              echo
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "API did not become healthy after maintenance."
+          exit 1
+          REMOTE
