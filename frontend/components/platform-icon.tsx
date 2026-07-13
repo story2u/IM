@@ -11,6 +11,7 @@ export function PlatformIcon({ platform, className }: { platform: Platform; clas
           className,
         )}
         title="Telegram"
+        role="img"
         aria-label="Telegram"
       >
         <Send className="size-3.5" />
@@ -24,6 +25,7 @@ export function PlatformIcon({ platform, className }: { platform: Platform; clas
         className,
       )}
       title="企业微信"
+      role="img"
       aria-label="企业微信"
     >
       <MessageSquare className="size-3.5" />

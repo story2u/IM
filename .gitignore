@@ -18,3 +18,12 @@ mobile/android/build/
 mobile/android/app/build/
 mobile/android/local.properties
 mobile/android/.idea/
+
+# 可重复生成的 Demo 大型媒体；通过 GitHub Release / Actions artifact 分发
+docs/assets/demo/raw/
+docs/assets/demo/render/
+docs/assets/demo/*.mp4
+docs/assets/demo/*.webm
+demo-video/public/raw/
+demo-video/public/screenshots/
+demo-video/public/audio/

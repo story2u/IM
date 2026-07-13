@@ -70,6 +70,22 @@ cd frontend && pnpm dev
 `frontend-check` 运行 ESLint、独立 `tsc --noEmit`、Vitest 和 production build。独立 typecheck 是必须项，
 因为当前 `next.config.mjs` 的 build 兼容设置会跳过 TypeScript 错误。
 
+## 产品截图与演示视频
+
+```bash
+make demo-web
+make demo-screenshots
+make demo-record
+make demo-video
+make demo-assets
+make demo-ios-screenshots
+make demo-android-screenshots
+```
+
+Web 资产要求 Chrome/Chromium、FFmpeg/ffprobe、Node 22；固定 Demo 数据不会访问生产 API。完整
+MP4/WebM 被 `.gitignore` 排除并作为 Actions artifact/GitHub Release 资产分发。移动截图分别要求
+macOS/Xcode 和已启动的 Android Emulator，缺少工具时脚本明确失败。
+
 ## iOS App
 
 需要 macOS + Xcode 和 xcodegen（`brew install xcodegen`）；`.xcodeproj` 是生成产物不入库：
