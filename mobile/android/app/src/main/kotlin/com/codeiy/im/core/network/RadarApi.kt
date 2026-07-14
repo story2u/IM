@@ -15,6 +15,10 @@ import com.codeiy.im.model.NotificationSettingsUpdate
 import com.codeiy.im.model.Opportunity
 import com.codeiy.im.model.OpportunityStatusUpdate
 import com.codeiy.im.model.PasswordLoginRequest
+import com.codeiy.im.model.PasswordActionResponse
+import com.codeiy.im.model.PasswordChangeRequest
+import com.codeiy.im.model.PasswordResetConfirmRequest
+import com.codeiy.im.model.PasswordResetRequest
 import com.codeiy.im.model.ReplyTemplate
 import com.codeiy.im.model.SettingsBundle
 import com.codeiy.im.model.SubscriptionCatalogPlan
@@ -36,6 +40,15 @@ import retrofit2.http.Query
 interface RadarApi {
     @POST("auth/password/login")
     suspend fun passwordLogin(@Body body: PasswordLoginRequest): AuthToken
+
+    @POST("auth/password/reset/request")
+    suspend fun requestPasswordReset(@Body body: PasswordResetRequest): PasswordActionResponse
+
+    @POST("auth/password/reset/confirm")
+    suspend fun confirmPasswordReset(@Body body: PasswordResetConfirmRequest): PasswordActionResponse
+
+    @POST("auth/password/change")
+    suspend fun changePassword(@Body body: PasswordChangeRequest): PasswordActionResponse
 
     @POST("auth/oauth/google/native")
     suspend fun googleNativeLogin(@Body body: NativeLoginRequest): AuthToken

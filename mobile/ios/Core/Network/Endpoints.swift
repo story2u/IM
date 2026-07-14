@@ -20,6 +20,36 @@ extension APIClient {
         )
     }
 
+    func requestPasswordReset(email: String) async throws -> PasswordActionResponse {
+        try await post("auth/password/reset/request", body: PasswordResetRequest(email: email))
+    }
+
+    func confirmPasswordReset(
+        email: String,
+        code: String,
+        newPassword: String
+    ) async throws -> PasswordActionResponse {
+        try await post(
+            "auth/password/reset/confirm",
+            body: PasswordResetConfirmRequest(
+                newPassword: newPassword,
+                token: nil,
+                email: email,
+                code: code
+            )
+        )
+    }
+
+    func changePassword(currentPassword: String, newPassword: String) async throws -> PasswordActionResponse {
+        try await post(
+            "auth/password/change",
+            body: PasswordChangeRequest(
+                currentPassword: currentPassword,
+                newPassword: newPassword
+            )
+        )
+    }
+
     // MARK: Opportunities
 
     func opportunities(

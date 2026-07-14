@@ -83,6 +83,14 @@ final class SessionStore {
         Task { await billing.clearIdentity() }
     }
 
+    func changePassword(currentPassword: String, newPassword: String) async throws {
+        _ = try await api.changePassword(
+            currentPassword: currentPassword,
+            newPassword: newPassword
+        )
+        logout()
+    }
+
     private func identifyBilling(_ user: AuthUser) async {
         guard billing.isConfigured else { return }
         try? await billing.identify(userID: user.id)

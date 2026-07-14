@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.core.time_window import WorkTimeConfig
 from app.domain.enums import (
@@ -232,6 +232,7 @@ class AuthUserRead(BaseModel):
     displayName: str
     avatarUrl: str = ""
     isAdmin: bool = False
+    hasPassword: bool = False
 
 
 class AuthTokenRead(BaseModel):
@@ -315,6 +316,58 @@ class PasswordLoginRequest(BaseModel):
     @classmethod
     def normalize_email(cls, value: object) -> object:
         return value.strip().lower() if isinstance(value, str) else value
+
+
+class PasswordChangeRequest(BaseModel):
+    currentPassword: str = Field(min_length=1, max_length=128)
+    newPassword: str = Field(min_length=10, max_length=128)
+
+
+class PasswordResetRequest(BaseModel):
+    email: str = Field(
+        min_length=3,
+        max_length=320,
+        pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+    )
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, value: object) -> object:
+        return value.strip().lower() if isinstance(value, str) else value
+
+
+class PasswordResetConfirmRequest(BaseModel):
+    newPassword: str = Field(min_length=10, max_length=128)
+    token: str | None = Field(default=None, min_length=32, max_length=256)
+    email: str | None = Field(
+        default=None,
+        min_length=3,
+        max_length=320,
+        pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+    )
+    code: str | None = Field(default=None, min_length=10, max_length=10, pattern=r"^[A-Z2-9]+$")
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_optional_email(cls, value: object) -> object:
+        return value.strip().lower() if isinstance(value, str) else value
+
+    @field_validator("code", mode="before")
+    @classmethod
+    def normalize_code(cls, value: object) -> object:
+        return value.replace(" ", "").upper() if isinstance(value, str) else value
+
+    @model_validator(mode="after")
+    def validate_reset_credential(self) -> "PasswordResetConfirmRequest":
+        has_token = bool(self.token)
+        has_code = bool(self.email and self.code)
+        if has_token == has_code:
+            raise ValueError("provide either token or email and code")
+        return self
+
+
+class PasswordActionRead(BaseModel):
+    message: str
 
 
 class TelegramMonitorRead(BaseModel):

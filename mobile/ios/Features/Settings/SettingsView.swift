@@ -64,6 +64,11 @@ private struct SettingsList: View {
             }
 
             Section {
+                NavigationLink {
+                    PasswordSecurityView()
+                } label: {
+                    settingsRow(icon: "key", tint: AppColors.success, title: "账户安全")
+                }
                 if let user = session.currentUser {
                     NavigationLink {
                         SubscriptionView(api: session.api, billing: session.billing, userID: user.id)

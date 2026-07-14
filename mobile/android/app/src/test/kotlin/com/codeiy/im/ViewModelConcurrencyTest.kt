@@ -14,6 +14,10 @@ import com.codeiy.im.model.NativeLoginRequest
 import com.codeiy.im.model.Opportunity
 import com.codeiy.im.model.OpportunityStatusUpdate
 import com.codeiy.im.model.PasswordLoginRequest
+import com.codeiy.im.model.PasswordActionResponse
+import com.codeiy.im.model.PasswordChangeRequest
+import com.codeiy.im.model.PasswordResetConfirmRequest
+import com.codeiy.im.model.PasswordResetRequest
 import com.codeiy.im.model.ReplyTemplate
 import com.codeiy.im.model.SubscriptionCatalogPlan
 import com.codeiy.im.model.SubscriptionManagement
@@ -62,6 +66,9 @@ private class FakeRadarApi : RadarApi {
     }
 
     override suspend fun passwordLogin(body: PasswordLoginRequest): AuthToken = error("unused")
+    override suspend fun requestPasswordReset(body: PasswordResetRequest): PasswordActionResponse = error("unused")
+    override suspend fun confirmPasswordReset(body: PasswordResetConfirmRequest): PasswordActionResponse = error("unused")
+    override suspend fun changePassword(body: PasswordChangeRequest): PasswordActionResponse = error("unused")
     override suspend fun googleNativeLogin(body: NativeLoginRequest): AuthToken = error("unused")
     override suspend fun me(): AuthUser = error("unused")
     override suspend fun opportunity(id: String): Opportunity = error("unused")

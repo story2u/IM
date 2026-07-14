@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { fetchMe, getAuthToken, setAuthToken } from './api'
+import { fetchMe, getAuthToken, passwordLogin, setAuthToken } from './api'
 import type { AuthUser } from './types'
 
 interface AuthContextValue {
@@ -9,6 +9,7 @@ interface AuthContextValue {
   token: string | null
   loading: boolean
   completeOAuth: (accessToken: string) => Promise<void>
+  loginWithPassword: (email: string, password: string) => Promise<void>
   logout: () => void
 }
 
@@ -62,6 +63,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [applyAuth],
   )
 
+  const loginWithPassword = useCallback(
+    async (email: string, password: string) => {
+      const auth = await passwordLogin(email.trim().toLowerCase(), password)
+      applyAuth(auth.accessToken, auth.user)
+    },
+    [applyAuth],
+  )
+
   const logout = useCallback(() => {
     setAuthToken(null)
     setToken(null)
@@ -69,8 +78,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const value = useMemo(
-    () => ({ user, token, loading, completeOAuth, logout }),
-    [user, token, loading, completeOAuth, logout],
+    () => ({ user, token, loading, completeOAuth, loginWithPassword, logout }),
+    [user, token, loading, completeOAuth, loginWithPassword, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

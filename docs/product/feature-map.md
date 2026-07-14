@@ -16,7 +16,7 @@
 | 能力 | 前端入口 | 后端/API | 成熟度 | 备注 |
 | --- | --- | --- | --- | --- |
 | Google / Apple OAuth 登录 | `/login` | `/api/v1/auth/oauth/*`、`/auth/me` | 部分实现 | 真实 OAuth 与 JWT；依赖外部 provider 配置，缺少端到端 OAuth 测试。移动端原生登录 `POST /auth/oauth/{google\|apple}/native`（id_token 换 JWT）已实现并有路由测试，audience 经 `GOOGLE/APPLE_NATIVE_CLIENT_IDS` 配置，为空即关闭 |
-| iOS 邮箱密码登录 | iOS 登录页 | `POST /auth/password/login`、`/auth/me` | 已实现 | 仅登录已有密码账户，不含注册/重置；PBKDF2 校验、统一失败响应、Redis 登录限流、JWT 存 Keychain；DEBUG/Release 均无粘贴 token 旁路 |
+| 邮箱密码登录、修改与重置 | Web/iOS/Android 登录页与账户安全 | `/auth/password/login`、`/password/change`、`/password/reset/*`、`/auth/me` | 部分实现 | 三端真实 API；PBKDF2、一次性摘要挑战、Redis 限流、统一未知邮箱响应和 `auth_version` 全设备吊销已实现。生产默认关闭重置，需外部 SMTP、SPF/DKIM/DMARC 与真实送达 E2E；不提供公开邮箱注册 |
 | 商机列表、筛选、分页 | `/` | `GET /opportunities` | 已实现 | 登录后每 30 秒轮询；查询按 owner 隔离；默认排除归档记录，可按 `archive=active\|archived\|all` 查询 |
 | 商机归档与恢复 | `/`、`/opportunity/[id]` | `POST .../archive`、`POST .../restore`、`POST /bulk-archive` | 已实现 | 单条/最多 100 条批量归档、归档视图与恢复；保留原状态、消息和分析；归档项禁止业务写操作并跳过 AI 自动回复 |
 | 商机看板（服务端筛选/排序/分页） | iOS/Android 商机 Tab | `GET /opportunities/dashboard` | 部分实现 | 后端聚合端点已实现：status/platform/source/时间范围/trust/sop/keyword 多维筛选 + 4 种排序 + total/pendingCount/attentionItems/keywordOptions，全部 SQL 完成并按 owner 隔离，有 Postgres 门控筛选矩阵测试；移动端 iOS(SwiftUI)/Android(Compose) 双 Tab 已接入但未在 CI 外做真机 E2E。iOS 在生产后端滚动升级期间会把默认/status/platform 查询降级到旧 `/opportunities`，并明确停用无法等价支持的高级筛选。Web `/` 仍走客户端 `applyFilters` 内存筛选，未切到该端点 |

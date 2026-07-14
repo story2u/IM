@@ -27,7 +27,7 @@ Swift 6 + SwiftUI 原生 app，作为现有后端 v1 REST API 的瘦客户端。
 | `Core/Network/APIClient.swift` | 唯一 HTTP 边界：JWT 注入、ISO8601（含小数秒）解码、错误映射 |
 | `Core/Network/Endpoints.swift` | 各资源方法，路径参数以 `backend/app/api/v1/routes/` 为准 |
 | `Core/Auth/Keychain.swift` | JWT 的 Keychain 读写清 |
-| `Core/Auth/SessionStore.swift` | `/auth/me` 会话恢复、邮箱密码/Apple 登录、登出 |
+| `Core/Auth/SessionStore.swift` | `/auth/me` 会话恢复、邮箱密码/Apple 登录、改密后登出 |
 | `Core/Billing/` | RevenueCat 身份、Offering、购买与恢复协议边界；只使用 Public iOS Key |
 | `Features/Auth/RadarLogoView.swift` | 应用内品牌 Logo；读取与 AppIcon 同源的 `BrandLogo.imageset` |
 | `Features/Auth/LoginView.swift` | 邮箱密码登录 + Sign in with Apple |
@@ -40,7 +40,8 @@ Swift 6 + SwiftUI 原生 app，作为现有后端 v1 REST API 的瘦客户端。
 
 ## 已实现（P0，iOS 侧）
 
-- **登录**：已有密码账户通过 `POST /auth/password/login` 登录；Sign in with Apple 通过
+- **登录与密码**：已有密码账户通过 `POST /auth/password/login` 登录；忘记密码使用邮件验证码，账户安全
+  支持修改密码，成功后清 Keychain 并重新登录；Sign in with Apple 通过
   `POST /auth/oauth/apple/native` 换 JWT；`/auth/me` 冷启动恢复会话；登出清 Keychain。
   DEBUG 与 Release 均不提供粘贴 JWT 的旁路入口。
 - **收件箱**：`GET /opportunities`，状态/渠道筛选、分页、下拉刷新、30s 轮询。
@@ -94,7 +95,7 @@ Release 构建已就绪：生产 API 地址烧进 Info.plist（`RadarAPIBaseURL`
 
 线上后端 `APPLE_NATIVE_CLIENT_IDS` 默认已是 `com.codeiy.im`（与 bundle id 一致），真机
 Apple 登录直连线上后端；若报 401，检查 Apple 开发者后台该 App ID 是否开启 Sign in with
-Apple。邮箱密码登录只适用于已有 `password_hash` 的账户。
+Apple。OAuth 无密码账户必须先通过邮件验证才能设置密码。
 
 iOS 访问公网 HTTPS 不需要应用声明或主动请求“网络权限”；系统限制蜂窝数据或设备离线时，App 会
 显示可操作的中文网络错误。若生产后端尚未滚动到包含 `/opportunities/dashboard` 与

@@ -1,10 +1,13 @@
 'use client'
 
 import { Loader2 } from 'lucide-react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { BrandLogo } from '@/components/brand-logo'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { fetchOAuthAuthorizeUrl } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import type { OAuthProvider } from '@/lib/types'
@@ -46,7 +49,10 @@ const appleIcon = (
 
 export default function LoginPage() {
   const router = useRouter()
-  const { user, completeOAuth } = useAuth()
+  const { user, completeOAuth, loginWithPassword } = useAuth()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [passwordLoading, setPasswordLoading] = useState(false)
   const [loadingProvider, setLoadingProvider] = useState<OAuthProvider | null>(null)
   const [processingCallback, setProcessingCallback] = useState(false)
   const [error, setError] = useState('')
@@ -88,6 +94,20 @@ export default function LoginPage() {
     }
   }
 
+  async function submitPasswordLogin(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError('')
+    setPasswordLoading(true)
+    try {
+      await loginWithPassword(email, password)
+      router.replace('/')
+    } catch (exc) {
+      setError(exc instanceof Error ? exc.message : '邮箱登录失败')
+    } finally {
+      setPasswordLoading(false)
+    }
+  }
+
   return (
     <div className="flex min-h-svh justify-center bg-[#202020] px-5 py-10 text-white sm:items-center sm:px-8 sm:py-14">
       <section className="flex w-full max-w-xl flex-col text-center" aria-labelledby="login-heading">
@@ -101,13 +121,61 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="mt-14 grid gap-4 sm:mt-16 sm:gap-5">
+        <form className="mt-12 grid gap-4 text-left" onSubmit={submitPasswordLogin}>
+          <div className="grid gap-2">
+            <Label htmlFor="email" className="text-zinc-200">邮箱</Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="username"
+              required
+              maxLength={320}
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              className="h-12 border-white/20 bg-white/5 text-white placeholder:text-zinc-500"
+            />
+          </div>
+          <div className="grid gap-2">
+            <div className="flex items-center justify-between gap-4">
+              <Label htmlFor="password" className="text-zinc-200">密码</Label>
+              <Link href="/forgot-password" className="text-sm text-zinc-300 underline-offset-4 hover:underline">
+                忘记密码？
+              </Link>
+            </div>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              maxLength={128}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="h-12 border-white/20 bg-white/5 text-white"
+            />
+          </div>
+          <Button
+            type="submit"
+            className="h-12 rounded-full bg-white font-semibold text-zinc-950 hover:bg-zinc-200"
+            disabled={passwordLoading || Boolean(loadingProvider) || processingCallback}
+          >
+            {passwordLoading ? <Loader2 className="size-5 animate-spin" /> : null}
+            使用邮箱登录
+          </Button>
+        </form>
+
+        <div className="my-7 flex items-center gap-4 text-xs text-zinc-500" aria-hidden="true">
+          <span className="h-px flex-1 bg-white/15" />
+          或
+          <span className="h-px flex-1 bg-white/15" />
+        </div>
+
+        <div className="grid gap-4 sm:gap-5">
           <Button
             type="button"
             variant="outline"
             className="h-16 rounded-full border-white/20 bg-transparent px-6 text-base font-semibold text-white shadow-none hover:border-white/35 hover:bg-white/5 hover:text-white sm:h-[4.5rem] sm:text-lg"
             onClick={() => startOAuth('google')}
-            disabled={Boolean(loadingProvider) || processingCallback}
+            disabled={passwordLoading || Boolean(loadingProvider) || processingCallback}
             aria-busy={loadingProvider === 'google'}
           >
             {loadingProvider === 'google' ? <Loader2 className="size-5 animate-spin" /> : googleIcon}
@@ -118,7 +186,7 @@ export default function LoginPage() {
             variant="outline"
             className="h-16 rounded-full border-white/20 bg-transparent px-6 text-base font-semibold text-white shadow-none hover:border-white/35 hover:bg-white/5 hover:text-white sm:h-[4.5rem] sm:text-lg"
             onClick={() => startOAuth('apple')}
-            disabled={Boolean(loadingProvider) || processingCallback}
+            disabled={passwordLoading || Boolean(loadingProvider) || processingCallback}
             aria-busy={loadingProvider === 'apple'}
           >
             {loadingProvider === 'apple' ? (

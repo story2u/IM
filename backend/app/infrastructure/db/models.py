@@ -73,12 +73,33 @@ class User(TimestampMixin, table=True):
     display_name: str = Field(default="")
     avatar_url: str = Field(default="")
     password_hash: str | None = None
+    auth_version: int = Field(default=0, nullable=False)
     is_active: bool = Field(default=True, index=True)
     is_admin: bool = Field(default=False, index=True)
     last_login_at: datetime | None = Field(
         default=None,
         sa_column=Column(DateTime(timezone=True), nullable=True),
     )
+
+
+class PasswordResetChallenge(TimestampMixin, table=True):
+    __tablename__ = "password_reset_challenges"
+    __table_args__ = (
+        CheckConstraint("failed_attempts >= 0", name="ck_password_reset_failed_attempts"),
+        Index("ix_password_reset_user_expires", "user_id", "expires_at"),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    token_digest: str = Field(max_length=64, unique=True)
+    code_digest: str = Field(max_length=64)
+    expires_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False, index=True)
+    )
+    used_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
+    failed_attempts: int = Field(default=0, nullable=False)
 
 
 class AuthAccount(TimestampMixin, table=True):

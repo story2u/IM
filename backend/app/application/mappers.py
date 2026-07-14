@@ -172,6 +172,7 @@ def to_auth_user_read(user: User) -> AuthUserRead:
         displayName=user.display_name,
         avatarUrl=user.avatar_url,
         isAdmin=user.is_admin,
+        hasPassword=bool(user.password_hash),
     )
 
 
