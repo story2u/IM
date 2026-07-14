@@ -101,7 +101,7 @@ jobs:
       VPS_USER: ${{ vars.VPS_USER || secrets.VPS_USER }}
       VPS_PORT: ${{ vars.VPS_PORT || secrets.VPS_PORT || '22' }}
       VPS_DEPLOY_DIR: ${{ vars.VPS_DEPLOY_DIR || secrets.VPS_DEPLOY_DIR || '/opt/im' }}
-      VPS_COMPOSE_SERVICES: ${{ vars.VPS_COMPOSE_SERVICES || 'postgres redis migrate api celery_worker celery_beat telegram_listener telegram_mtproto_qr_worker telegram_mtproto_listener frontend cloudflared' }}
+      VPS_COMPOSE_SERVICES: ${{ vars.VPS_COMPOSE_SERVICES || 'postgres redis migrate api celery_worker celery_beat wecom_archive_worker telegram_listener telegram_mtproto_qr_worker telegram_mtproto_listener frontend cloudflared' }}
       RELEASE_BRANCH: ${{ github.event.workflow_run.head_branch }}
       DEPLOY_ENVIRONMENT: production
       GHCR_USERNAME: ${{ vars.GHCR_USERNAME || github.actor }}
@@ -111,6 +111,7 @@ jobs:
       RUNTIME_DEBUG: ${{ vars.DEBUG || 'false' }}
       RUNTIME_ADMIN_API_TOKEN: ${{ secrets.ADMIN_API_TOKEN }}
       RUNTIME_ACCESS_TOKEN_EXPIRE_MINUTES: ${{ vars.ACCESS_TOKEN_EXPIRE_MINUTES }}
+      RUNTIME_RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       RUNTIME_GOOGLE_OAUTH_CLIENT_ID: ${{ vars.GOOGLE_OAUTH_CLIENT_ID }}
       RUNTIME_GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
       RUNTIME_GOOGLE_OAUTH_REDIRECT_URI: ${{ vars.GOOGLE_OAUTH_REDIRECT_URI }}
@@ -131,6 +132,7 @@ jobs:
       RUNTIME_TELEGRAM_MTPROTO_QR_WORKER_ENABLED: ${{ vars.TELEGRAM_MTPROTO_QR_WORKER_ENABLED || 'false' }}
       RUNTIME_TELEGRAM_MTPROTO_API_ID: ${{ vars.TELEGRAM_MTPROTO_API_ID }}
       RUNTIME_TELEGRAM_MTPROTO_API_HASH: ${{ secrets.TELEGRAM_MTPROTO_API_HASH }}
+      RUNTIME_WECOM_ARCHIVE_ENABLED: ${{ vars.WECOM_ARCHIVE_ENABLED || 'false' }}
       RUNTIME_AI_ENABLED: ${{ vars.AI_ENABLED }}
       RUNTIME_LITELLM_MODEL: ${{ vars.LITELLM_MODEL }}
       RUNTIME_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -189,6 +191,11 @@ jobs:
           if [ "$google_ready" != "true" ] && [ "$apple_ready" != "true" ]; then
             echo "Configure at least one OAuth provider through GitHub vars/secrets."
             exit 1
+          fi
+          if [ -n "$RUNTIME_RESEND_API_KEY" ]; then
+            echo "Resend SMTP is configured."
+          else
+            echo "RESEND_API_KEY is not configured; password reset endpoints will fail closed."
           fi
           case " $VPS_COMPOSE_SERVICES " in
             *" cloudflared "*)
@@ -255,6 +262,27 @@ jobs:
           append_env DEBUG "$RUNTIME_DEBUG"
           append_env ADMIN_API_TOKEN "$RUNTIME_ADMIN_API_TOKEN"
           append_env ACCESS_TOKEN_EXPIRE_MINUTES "$RUNTIME_ACCESS_TOKEN_EXPIRE_MINUTES"
+          set_env PASSWORD_RESET_ENABLED "true"
+          if [ -n "$RUNTIME_RESEND_API_KEY" ]; then
+            set_env SMTP_HOST "smtp.resend.com"
+            set_env SMTP_PORT "465"
+            set_env SMTP_USERNAME "resend"
+            set_env SMTP_PASSWORD "$RUNTIME_RESEND_API_KEY"
+            set_env SMTP_FROM_EMAIL "dev@story2u.xyz"
+            set_env SMTP_FROM_NAME "商机雷达"
+            set_env SMTP_STARTTLS "false"
+            set_env SMTP_USE_TLS "true"
+          else
+            # Explicitly clear credentials left by an earlier SMTP provider.
+            set_env SMTP_HOST ""
+            set_env SMTP_PORT "465"
+            set_env SMTP_USERNAME ""
+            set_env SMTP_PASSWORD ""
+            set_env SMTP_FROM_EMAIL ""
+            set_env SMTP_FROM_NAME "商机雷达"
+            set_env SMTP_STARTTLS "false"
+            set_env SMTP_USE_TLS "true"
+          fi
           append_env FRONTEND_BASE_URL "https://im.story2u.xyz"
           append_env CORS_ORIGINS '["https://im.story2u.xyz","http://localhost:3000"]'
           append_env GOOGLE_OAUTH_CLIENT_ID "$RUNTIME_GOOGLE_OAUTH_CLIENT_ID"
@@ -277,6 +305,7 @@ jobs:
           append_env TELEGRAM_MTPROTO_QR_WORKER_ENABLED "$RUNTIME_TELEGRAM_MTPROTO_QR_WORKER_ENABLED"
           append_env TELEGRAM_MTPROTO_API_ID "$RUNTIME_TELEGRAM_MTPROTO_API_ID"
           append_env TELEGRAM_MTPROTO_API_HASH "$RUNTIME_TELEGRAM_MTPROTO_API_HASH"
+          append_env WECOM_ARCHIVE_ENABLED "$RUNTIME_WECOM_ARCHIVE_ENABLED"
           append_env AI_ENABLED "$RUNTIME_AI_ENABLED"
           append_env LITELLM_MODEL "$RUNTIME_LITELLM_MODEL"
           append_env OPENAI_API_KEY "$RUNTIME_OPENAI_API_KEY"
@@ -393,6 +422,11 @@ jobs:
           cd "$DEPLOY_DIR"
           echo "Deploying ${VERSION} to ${ENVIRONMENT}..."
 
+          case " $COMPOSE_SERVICES " in
+            *" wecom_archive_worker "*) ;;
+            *) COMPOSE_SERVICES="$COMPOSE_SERVICES wecom_archive_worker" ;;
+          esac
+
           if [ ! -f .env ]; then
             cp .env.example .env
             echo "Created $DEPLOY_DIR/.env from .env.example. Replace change-me values before exposing traffic."
@@ -453,7 +487,7 @@ jobs:
               *)
                 runtime_services="$runtime_services $service"
                 case "$service" in
-                  api|celery_worker|celery_beat|telegram_listener|telegram_mtproto_qr_worker|telegram_mtproto_listener)
+                  api|celery_worker|celery_beat|wecom_archive_worker|telegram_listener|telegram_mtproto_qr_worker|telegram_mtproto_listener)
                     database_client_services="$database_client_services $service"
                     ;;
                 esac
