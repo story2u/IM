@@ -35,7 +35,7 @@ struct PasswordResetView: View {
                 }
 
                 if requested {
-                    Section("邮件验证") {
+                    Section {
                         TextField("10 位验证码", text: $code)
                             .textContentType(.oneTimeCode)
                             .textInputAutocapitalization(.characters)
@@ -47,6 +47,8 @@ struct PasswordResetView: View {
                             .textContentType(.newPassword)
                         SecureField("确认新密码", text: $confirmPassword)
                             .textContentType(.newPassword)
+                    } header: {
+                        Text("邮件验证")
                     } footer: {
                         Text("新密码至少 10 个字符。")
                     }

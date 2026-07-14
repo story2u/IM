@@ -16,7 +16,7 @@ struct PasswordSecurityView: View {
             }
 
             if session.currentUser?.hasPassword == true {
-                Section("修改密码") {
+                Section {
                     SecureField("当前密码", text: $currentPassword)
                         .textContentType(.password)
                     SecureField("新密码", text: $newPassword)
@@ -29,6 +29,8 @@ struct PasswordSecurityView: View {
                         if isLoading { ProgressView() } else { Text("修改密码") }
                     }
                     .disabled(!canChange || isLoading)
+                } header: {
+                    Text("修改密码")
                 } footer: {
                     Text("新密码至少 10 个字符。修改后所有设备需要重新登录。")
                 }
