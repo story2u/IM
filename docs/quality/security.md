@@ -5,7 +5,7 @@
 ## 数据分类
 
 - **秘密**：OAuth client secret、JWT key、admin token、Telegram api_hash/session、IM token/AES key、
-  OpenAI key、RevenueCat server/webhook key、VPS/GHCR/Cloudflare 凭据。只允许在环境变量、GitHub
+  OpenAI key、Resend API key、RevenueCat server/webhook key、VPS/GHCR/Cloudflare 凭据。只允许在环境变量、GitHub
   Secrets 或经应用加密的数据库字段。Paddle API Key 只允许进入 RevenueCat Dashboard。
 - **个人/通信数据**：邮箱、手机号、聊天内容、外部用户 ID、群信息。日志和测试 fixture 最小化、脱敏。
 - **公开配置**：client ID、redirect URI、镜像标签等可进入变量，但仍需防止环境混淆。

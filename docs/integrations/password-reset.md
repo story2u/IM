@@ -1,6 +1,6 @@
 # 密码修改与邮箱重置
 
-> 状态：代码已实现，外部 SMTP 待环境配置 · 最后核验：2026-07-15
+> 状态：代码已实现，生产使用 Resend SMTP · 最后核验：2026-07-15
 
 ## 能力边界
 
@@ -27,49 +27,33 @@
 - 密码为 10–128 个字符，继续使用现有 PBKDF2-SHA256 哈希；日志不得记录密码、token、验证码或邮件正文。
 - SMTP 未配置、Redis 不可用或任务无法入队时 fail closed，不使用 mock 邮件或在响应中返回验证码。
 
-## GitHub 配置
+## Resend 配置
 
-Repository/Environment Variables：
+1. 在 Resend 创建项目，将 `story2u.xyz` 添加为发件域名。
+2. 把 Resend 生成的 SPF、DKIM 和反馈 MX 记录添加到 Cloudflare DNS，以 Resend Dashboard
+   展示的名称和值为准。Cloudflare Email Routing 的收件路由可以继续保留。
+3. 等待 Resend 域名状态变为 `Verified`。验证后可以从该域下的地址发件，
+   生产固定使用 `dev@story2u.xyz`。
+4. 在 Resend 创建仅用于生产邮件发送的 API Key，不要写入仓库或 GitHub Variable。
+5. 将 API Key 写入 GitHub Repository/Environment Secret `RESEND_API_KEY`。
 
-| 名称 | 示例 | 说明 |
-| --- | --- | --- |
-| `SMTP_HOST` | `smtp.provider.example` | SMTP 服务地址 |
-| `SMTP_PORT` | `587` | STARTTLS 通常为 587，隐式 TLS 通常为 465 |
-| `SMTP_USERNAME` | provider 用户名 | 无认证的内部 relay 可留空 |
-| `SMTP_FROM_EMAIL` | `no-reply@example.com` | 已在邮件服务验证的发件地址 |
-| `SMTP_FROM_NAME` | `商机雷达` | 发件显示名 |
-| `SMTP_STARTTLS` | `true` | 与 `SMTP_USE_TLS` 不能同时为 true |
-| `SMTP_USE_TLS` | `false` | 465 等隐式 TLS 场景使用 |
+Workflow 会把该 Secret 映射为 SMTP 密码，并固定下列非敏感配置，无需创建
+GitHub Variables：
 
-Repository/Environment Secret：
-
-| 名称 | 说明 |
-| --- | --- |
-| `SMTP_PASSWORD` | SMTP 密码或 provider 生成的应用专用密码 |
+```dotenv
+SMTP_HOST=smtp.resend.com
+SMTP_PORT=465
+SMTP_USERNAME=resend
+SMTP_FROM_EMAIL=dev@story2u.xyz
+SMTP_FROM_NAME=商机雷达
+SMTP_STARTTLS=false
+SMTP_USE_TLS=true
+```
 
 `PASSWORD_RESET_ENABLED` 默认且固定为 `true`，不需要加入 GitHub vars。`PASSWORD_RESET_TTL_MINUTES`、
 失败次数和限流窗口在镜像中有保守默认值，通常也无需加入 GitHub vars；确需调整时应先做安全评审。
-部署 workflow 会检查已提供的 SMTP 参数是否完整；完全未配置时仍允许应用部署，但密码重置端点会
-fail closed 并返回 503。
-
-### Gmail 配置
-
-个人 Gmail 或 Google Workspace 使用以下 Repository/Environment Variables：
-
-```dotenv
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USERNAME=your-account@gmail.com
-SMTP_FROM_EMAIL=your-account@gmail.com
-SMTP_FROM_NAME=商机雷达
-SMTP_STARTTLS=true
-SMTP_USE_TLS=false
-```
-
-`SMTP_PASSWORD` 必须保存为 GitHub Secret，值为 Google 账户生成的 16 位应用专用密码，不是日常登录
-密码。生成应用专用密码前需开启 Google 两步验证；如果账户启用了高级保护、只允许安全密钥，或
-Google Workspace 管理员禁用了应用专用密码，该选项可能不可用。`SMTP_FROM_EMAIL` 默认应与认证账户
-一致；使用 Workspace 别名时，应先在 Gmail/Workspace 中确认该发件身份已获准。
+未配置 `RESEND_API_KEY` 时仍允许应用部署，Workflow 会清理 VPS 上可能残留的旧 SMTP
+凭据，密码重置端点会 fail closed 并返回 503。
 
 ## 邮件域配置与上线
 
@@ -85,7 +69,7 @@ Google Workspace 管理员禁用了应用专用密码，该选项可能不可用
 ## 故障与回滚
 
 - 邮件大量失败：立即把 `PASSWORD_RESET_ENABLED=false` 后重新部署；已有密码登录和 OAuth 不受影响。
-- 凭据泄漏：在邮件 provider 撤销并重建密码，更新 `SMTP_PASSWORD` 后部署。
+- 凭据泄漏：在 Resend 撤销并重建 API Key，更新 `RESEND_API_KEY` 后部署。
 - 投递延迟：检查默认 Celery worker 的 `auth.prepare_password_reset` 任务和 provider 日志；不要人工从数据库
   恢复或回显验证码。
 - 应用回滚优先保留 `auth_version` 和挑战表。直接 downgrade 迁移会让旧应用不再检查认证版本，不适合作为

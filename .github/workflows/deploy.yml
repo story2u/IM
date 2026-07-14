@@ -111,14 +111,7 @@ jobs:
       RUNTIME_DEBUG: ${{ vars.DEBUG || 'false' }}
       RUNTIME_ADMIN_API_TOKEN: ${{ secrets.ADMIN_API_TOKEN }}
       RUNTIME_ACCESS_TOKEN_EXPIRE_MINUTES: ${{ vars.ACCESS_TOKEN_EXPIRE_MINUTES }}
-      RUNTIME_SMTP_HOST: ${{ vars.SMTP_HOST }}
-      RUNTIME_SMTP_PORT: ${{ vars.SMTP_PORT || '587' }}
-      RUNTIME_SMTP_USERNAME: ${{ vars.SMTP_USERNAME }}
-      RUNTIME_SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-      RUNTIME_SMTP_FROM_EMAIL: ${{ vars.SMTP_FROM_EMAIL }}
-      RUNTIME_SMTP_FROM_NAME: ${{ vars.SMTP_FROM_NAME || '商机雷达' }}
-      RUNTIME_SMTP_STARTTLS: ${{ vars.SMTP_STARTTLS || 'true' }}
-      RUNTIME_SMTP_USE_TLS: ${{ vars.SMTP_USE_TLS || 'false' }}
+      RUNTIME_RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       RUNTIME_GOOGLE_OAUTH_CLIENT_ID: ${{ vars.GOOGLE_OAUTH_CLIENT_ID }}
       RUNTIME_GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
       RUNTIME_GOOGLE_OAUTH_REDIRECT_URI: ${{ vars.GOOGLE_OAUTH_REDIRECT_URI }}
@@ -199,14 +192,10 @@ jobs:
             echo "Configure at least one OAuth provider through GitHub vars/secrets."
             exit 1
           fi
-          if [ -n "$RUNTIME_SMTP_HOST" ] || [ -n "$RUNTIME_SMTP_USERNAME" ] || [ -n "$RUNTIME_SMTP_PASSWORD" ] || [ -n "$RUNTIME_SMTP_FROM_EMAIL" ]; then
-            test -n "$RUNTIME_SMTP_HOST" || { echo "SMTP_HOST var is required when SMTP is partially configured"; exit 1; }
-            test -n "$RUNTIME_SMTP_FROM_EMAIL" || { echo "SMTP_FROM_EMAIL var is required when SMTP is partially configured"; exit 1; }
-            if [ -n "$RUNTIME_SMTP_USERNAME" ]; then
-              test -n "$RUNTIME_SMTP_PASSWORD" || { echo "SMTP_PASSWORD secret is required when SMTP_USERNAME is configured"; exit 1; }
-            fi
+          if [ -n "$RUNTIME_RESEND_API_KEY" ]; then
+            echo "Resend SMTP is configured."
           else
-            echo "SMTP is not configured; password reset endpoints will fail closed until SMTP vars/secrets are added."
+            echo "RESEND_API_KEY is not configured; password reset endpoints will fail closed."
           fi
           case " $VPS_COMPOSE_SERVICES " in
             *" cloudflared "*)
@@ -274,14 +263,26 @@ jobs:
           append_env ADMIN_API_TOKEN "$RUNTIME_ADMIN_API_TOKEN"
           append_env ACCESS_TOKEN_EXPIRE_MINUTES "$RUNTIME_ACCESS_TOKEN_EXPIRE_MINUTES"
           set_env PASSWORD_RESET_ENABLED "true"
-          append_env SMTP_HOST "$RUNTIME_SMTP_HOST"
-          append_env SMTP_PORT "$RUNTIME_SMTP_PORT"
-          append_env SMTP_USERNAME "$RUNTIME_SMTP_USERNAME"
-          append_env SMTP_PASSWORD "$RUNTIME_SMTP_PASSWORD"
-          append_env SMTP_FROM_EMAIL "$RUNTIME_SMTP_FROM_EMAIL"
-          append_env SMTP_FROM_NAME "$RUNTIME_SMTP_FROM_NAME"
-          append_env SMTP_STARTTLS "$RUNTIME_SMTP_STARTTLS"
-          append_env SMTP_USE_TLS "$RUNTIME_SMTP_USE_TLS"
+          if [ -n "$RUNTIME_RESEND_API_KEY" ]; then
+            set_env SMTP_HOST "smtp.resend.com"
+            set_env SMTP_PORT "465"
+            set_env SMTP_USERNAME "resend"
+            set_env SMTP_PASSWORD "$RUNTIME_RESEND_API_KEY"
+            set_env SMTP_FROM_EMAIL "dev@story2u.xyz"
+            set_env SMTP_FROM_NAME "商机雷达"
+            set_env SMTP_STARTTLS "false"
+            set_env SMTP_USE_TLS "true"
+          else
+            # Explicitly clear credentials left by an earlier SMTP provider.
+            set_env SMTP_HOST ""
+            set_env SMTP_PORT "465"
+            set_env SMTP_USERNAME ""
+            set_env SMTP_PASSWORD ""
+            set_env SMTP_FROM_EMAIL ""
+            set_env SMTP_FROM_NAME "商机雷达"
+            set_env SMTP_STARTTLS "false"
+            set_env SMTP_USE_TLS "true"
+          fi
           append_env FRONTEND_BASE_URL "https://im.story2u.xyz"
           append_env CORS_ORIGINS '["https://im.story2u.xyz","http://localhost:3000"]'
           append_env GOOGLE_OAUTH_CLIENT_ID "$RUNTIME_GOOGLE_OAUTH_CLIENT_ID"
