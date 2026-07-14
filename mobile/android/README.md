@@ -24,7 +24,7 @@ Kotlin + Compose 原生 app，作为后端 v1 REST API 的瘦客户端，与 `mo
 | `core/network/ApiClient.kt` | Retrofit 构造、Bearer 注入、`{"detail"}` 错误映射、401 统一回调清会话 |
 | `core/network/RadarApi.kt` | 全部端点定义（含 dashboard/settings/telegram），路径以 `backend/app/api/v1/routes/` 为准 |
 | `core/auth/TokenStore.kt` | JWT 加密存取清 |
-| `core/auth/SessionStore.kt` | `/auth/me` 会话恢复、邮箱密码 / Google 原生登录、登出 |
+| `core/auth/SessionStore.kt` | `/auth/me` 会话恢复、邮箱密码 / Google 原生登录、改密后登出 |
 | `core/billing/` | RevenueCat 身份、Offering、Google Play 购买与恢复协议边界 |
 | `model/Models.kt` | DTO 镜像 + 容错枚举 + `RadarJson` 配置（含看板/设置/Telegram DTO） |
 | `ui/theme/` | 语义色/可信度/SOP、DayNight 主题、AppBadge/AppCard/ConfidenceBadge |

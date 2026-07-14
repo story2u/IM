@@ -1,4 +1,5 @@
 import asyncio
+from datetime import timedelta
 from uuid import UUID
 
 import structlog
@@ -9,6 +10,11 @@ from app.application.use_cases.ingest_message import IngestMessageUseCase
 from app.application.use_cases.sync_revenuecat_customer import SyncRevenueCatCustomer
 from app.application.use_cases.sync_wecom_archive import SyncWeComArchive
 from app.core.config import get_settings
+from app.core.password_reset import (
+    generate_reset_code,
+    generate_reset_token,
+    reset_credential_digest,
+)
 from app.core.security import decrypt_secret
 from app.core.time_window import WorkTimeConfig, WorkTimeService
 from app.domain.ports import InboundMessage
@@ -22,6 +28,7 @@ from app.infrastructure.db.repositories import (
     ConfigRepository,
     MessageRepository,
     OpportunityRepository,
+    PasswordResetRepository,
     RuleRepository,
     SubscriptionRepository,
     TelegramConnectionRepository,
@@ -32,6 +39,8 @@ from app.infrastructure.db.repositories import (
     WeComArchiveRepository,
     WeComEventRepository,
 )
+from app.infrastructure.db.models import utc_now
+from app.infrastructure.email.smtp import SMTPEmailSender
 from app.infrastructure.db.session import AsyncSessionLocal
 from app.infrastructure.im.base import AdapterRegistry
 from app.infrastructure.im.telegram import TelegramAdapter
@@ -45,6 +54,46 @@ from app.worker.celery_app import celery_app
 from app.worker.queue import CeleryTaskQueue
 
 logger = structlog.get_logger(__name__)
+
+
+@celery_app.task(
+    name="auth.prepare_password_reset",
+    queue="default",
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_kwargs={"max_retries": 3},
+)
+def prepare_password_reset(email: str) -> None:
+    asyncio.run(_prepare_password_reset(email))
+
+
+async def _prepare_password_reset(email: str) -> None:
+    settings = get_settings()
+    if not settings.password_reset_email_configured:
+        raise RuntimeError("password reset email is not configured")
+    async with AsyncSessionLocal() as session:
+        user = await UserRepository(session).get_by_email(email)
+        if not user or not user.is_active:
+            return
+        token = generate_reset_token()
+        code = generate_reset_code()
+        reset_repo = PasswordResetRepository(session)
+        challenge = await reset_repo.create(
+            user_id=user.id,
+            token_digest=reset_credential_digest(token, settings),
+            code_digest=reset_credential_digest(code, settings),
+            expires_at=utc_now() + timedelta(minutes=settings.password_reset_ttl_minutes),
+        )
+        try:
+            await SMTPEmailSender(settings).send_password_reset(
+                recipient=user.email,
+                token=token,
+                code=code,
+            )
+        except Exception:
+            await reset_repo.invalidate(challenge)
+            raise
+        logger.info("auth.password_reset_email_sent", challenge_id=str(challenge.id))
 
 
 @celery_app.task(

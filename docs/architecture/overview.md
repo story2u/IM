@@ -86,7 +86,8 @@ ADR 和迁移计划，不要在单个功能中半途改造。
 
 | 模型 | 作用 | 关键关系/约束 |
 | --- | --- | --- |
-| `User` / `AuthAccount` | 本地用户与 OAuth 身份 | provider + subject 唯一；资源按 `user_id` 隔离 |
+| `User` / `AuthAccount` | 本地用户与 OAuth 身份 | provider + subject 唯一；`auth_version` 吊销旧 JWT；资源按 `user_id` 隔离 |
+| `PasswordResetChallenge` | 一次性密码重置挑战 | 只存 token/code HMAC 摘要；用户、到期时间、失败次数和使用状态受约束 |
 | `SubscriptionAccount` | 用户有效权益投影 | user 唯一；受限 API 的最终权限来源；旧 provider ID 字段仅兼容保留 |
 | `BillingSubscription` / `BillingEvent` / `BillingProduct` | RevenueCat 渠道事实、幂等事件与产品映射审计 | 多渠道订阅；provider external key 与 event ID 唯一；不长期保存 raw webhook |
 | `UsageLedger` | AI 功能额度的可审计账本 | user + feature + idempotency key 唯一；reserved/consumed/released |
@@ -229,6 +230,16 @@ sequenceDiagram
 - AI 自动回复：Celery → `AIAutoReplyUseCase` → 生成/复用草稿 → IM adapter 发送 → 记录消息 →
   状态进入 `REPLIED`。
 - `IM_SEND_ENABLED=false` 是本地安全阀；适配器不得绕过它执行真实发送。
+
+### 密码修改与邮箱重置
+
+- 忘记密码 API 先按客户端与邮箱摘要在 Redis 限流，再始终投递同一种 Celery 任务；worker 才查询用户，
+  避免 HTTP 路径通过账户存在性分叉。
+- worker 为有效用户创建短时挑战并通过 SMTP 发送高熵链接 token 与移动端验证码；数据库只保存使用
+  `JWT_SECRET_KEY` HMAC 后的摘要。新挑战使旧挑战失效，成功后消费该用户全部未使用挑战。
+- 已有密码用户修改时必须验证当前 PBKDF2 hash；OAuth 无密码用户必须走邮箱验证。
+- 成功修改或重置递增 `users.auth_version`。JWT 携带签发时版本，`require_user` 每次与数据库对比，
+  因此 Web、iOS、Android 的旧会话都会收到 401 并回到登录页。
 
 ## 前端结构与状态边界
 

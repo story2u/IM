@@ -17,6 +17,7 @@ from app.infrastructure.db.repositories import (
     ConfigRepository,
     MessageRepository,
     OpportunityRepository,
+    PasswordResetRepository,
     ReplyTemplateRepository,
     RuleRepository,
     SubscriptionRepository,
@@ -65,6 +66,12 @@ async def _user_from_token(token: str, settings: Settings, session: AsyncSession
     user = await UserRepository(session).get(user_id)
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="inactive user")
+    try:
+        token_version = int(payload.get("ver", 0))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token") from exc
+    if token_version != user.auth_version:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token")
     return user
 
 
@@ -106,6 +113,12 @@ def get_template_repo(session: AsyncSession = Depends(get_session)) -> ReplyTemp
 
 def get_user_repo(session: AsyncSession = Depends(get_session)) -> UserRepository:
     return UserRepository(session)
+
+
+def get_password_reset_repo(
+    session: AsyncSession = Depends(get_session),
+) -> PasswordResetRepository:
+    return PasswordResetRepository(session)
 
 
 def get_subscription_repo(session: AsyncSession = Depends(get_session)) -> SubscriptionRepository:

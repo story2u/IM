@@ -8,6 +8,7 @@ struct LoginView: View {
     @State private var password = ""
     @State private var errorMessage: String?
     @State private var activeLoginMethod: LoginMethod?
+    @State private var showPasswordReset = false
     @FocusState private var focusedField: Field?
 
     private enum LoginMethod {
@@ -74,6 +75,10 @@ struct LoginView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .disabled(!canSubmitPassword)
+
+                Button("忘记密码？") { showPasswordReset = true }
+                    .font(.footnote)
+                    .disabled(activeLoginMethod != nil)
             }
 
             HStack {
@@ -97,6 +102,9 @@ struct LoginView: View {
             .disabled(activeLoginMethod != nil)
         }
         .padding(24)
+        .sheet(isPresented: $showPasswordReset) {
+            PasswordResetView(api: session.api, initialEmail: email)
+        }
         .alert("登录失败", isPresented: .init(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }

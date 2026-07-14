@@ -28,8 +28,34 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60 * 24 * 7
     password_login_max_attempts: int = Field(default=5, ge=1, le=100)
     password_login_window_seconds: int = Field(default=300, ge=10, le=3600)
+    password_reset_enabled: bool = False
+    password_reset_ttl_minutes: int = Field(default=15, ge=5, le=60)
+    password_reset_max_attempts: int = Field(default=5, ge=1, le=20)
+    password_reset_request_limit: int = Field(default=3, ge=1, le=20)
+    password_reset_request_window_seconds: int = Field(default=900, ge=60, le=86400)
+    password_reset_verify_limit: int = Field(default=10, ge=1, le=100)
+    password_reset_verify_window_seconds: int = Field(default=900, ge=60, le=86400)
+    smtp_host: str = ""
+    smtp_port: int = Field(default=587, ge=1, le=65535)
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+    smtp_from_name: str = "商机雷达"
+    smtp_starttls: bool = True
+    smtp_use_tls: bool = False
+    smtp_timeout_seconds: float = Field(default=10.0, ge=1.0, le=60.0)
     frontend_base_url: str = "http://localhost:3000"
     cors_origins: list[AnyHttpUrl | str] = Field(default_factory=list)
+
+    @property
+    def password_reset_email_configured(self) -> bool:
+        return bool(
+            self.password_reset_enabled
+            and self.smtp_host
+            and self.smtp_from_email
+            and (not self.smtp_username or self.smtp_password)
+            and not (self.smtp_starttls and self.smtp_use_tls)
+        )
 
     google_oauth_client_id: str = ""
     google_oauth_client_secret: str = ""

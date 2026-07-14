@@ -68,11 +68,13 @@ final class ModelsDecodingTests: XCTestCase {
         let json = """
         {"accessToken": "jwt", "tokenType": "bearer",
          "user": {"id": "1b6a4f5e-8f9f-4a1a-9d3e-3a2b1c0d9e8f", "email": "a@b.c",
-                  "displayName": "Bruce", "avatarUrl": "", "isAdmin": false}}
+                  "displayName": "Bruce", "avatarUrl": "", "isAdmin": false,
+                  "hasPassword": true}}
         """
         let token = try JSONDecoder().decode(AuthToken.self, from: Data(json.utf8))
         XCTAssertEqual(token.accessToken, "jwt")
         XCTAssertEqual(token.user.displayName, "Bruce")
+        XCTAssertTrue(token.user.hasPassword)
     }
 
     func testPasswordLoginRequestEncoding() throws {
@@ -82,5 +84,20 @@ final class ModelsDecodingTests: XCTestCase {
 
         XCTAssertEqual(object["email"], "member@example.com")
         XCTAssertEqual(object["password"], "secret")
+    }
+
+    func testPasswordResetCodeRequestEncoding() throws {
+        let request = PasswordResetConfirmRequest(
+            newPassword: "new-password-123",
+            token: nil,
+            email: "member@example.com",
+            code: "ABCDEFGH23"
+        )
+        let data = try JSONEncoder().encode(request)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+        XCTAssertEqual(object["email"] as? String, "member@example.com")
+        XCTAssertEqual(object["code"] as? String, "ABCDEFGH23")
+        XCTAssertNil(object["token"])
     }
 }

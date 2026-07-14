@@ -51,6 +51,7 @@ import com.codeiy.im.feature.login.LoginScreen
 import com.codeiy.im.feature.opportunity.OpportunityDetailScreen
 import com.codeiy.im.feature.settings.DetectionSettingsScreen
 import com.codeiy.im.feature.settings.NotificationSettingsScreen
+import com.codeiy.im.feature.settings.PasswordSecurityScreen
 import com.codeiy.im.feature.settings.SettingsRoute
 import com.codeiy.im.feature.settings.SettingsScreen
 import com.codeiy.im.feature.settings.SettingsViewModel
@@ -134,6 +135,9 @@ private fun AppNavHost(session: SessionStore) {
         composable("settings/subscription") {
             SubscriptionScreen(session = session, onBack = { navController.popBackStack() })
         }
+        composable("settings/security") {
+            PasswordSecurityScreen(session = session, onBack = { navController.popBackStack() })
+        }
         composable("settings/telegram") {
             TelegramSettingsScreen(session = session, onBack = { navController.popBackStack() })
         }
@@ -180,6 +184,7 @@ private fun MainTabs(
                 0 -> DashboardScreen(session, onOpenOpportunity = onOpenOpportunity)
                 else -> SettingsScreen(session) { route ->
                     when (route) {
+                        SettingsRoute.Security -> onOpenSettingsRoute("settings/security")
                         SettingsRoute.Subscription -> onOpenSettingsRoute("settings/subscription")
                         SettingsRoute.Telegram -> onOpenSettingsRoute("settings/telegram")
                         SettingsRoute.Detection -> onOpenSettingsRoute("settings/detection")

@@ -26,6 +26,7 @@ celery_app.conf.update(
         "billing.process_revenuecat_event": {"queue": "default"},
         "billing.sync_revenuecat_customer": {"queue": "default"},
         "billing.reconcile_revenuecat_subscriptions": {"queue": "default"},
+        "auth.prepare_password_reset": {"queue": "default"},
         "wecom.process_webhook_event": {"queue": "im"},
         "wecom.enqueue_archive_syncs": {"queue": "default"},
         "wecom.sync_archive_connection": {"queue": "wecom_archive"},

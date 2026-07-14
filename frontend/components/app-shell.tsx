@@ -9,6 +9,7 @@ import { ModeStatusBar } from '@/components/mode-status-bar'
 import { BrandLogo } from '@/components/brand-logo'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth'
+import { isPublicAuthPath } from '@/lib/auth-routes'
 import { cn } from '@/lib/utils'
 
 const navItems = [
@@ -39,9 +40,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const { user, loading, logout } = useAuth()
-  const isLoginPage = pathname === '/login'
+  const isPublicAuthPage = isPublicAuthPath(pathname)
   const isHomePage = pathname === '/'
-  const isPublicPage = isLoginPage || isHomePage
+  const isPublicPage = isPublicAuthPage || isHomePage
 
   useEffect(() => {
     if (!loading && !user && !isPublicPage) {
@@ -49,7 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [isPublicPage, loading, router, user])
 
-  if (isLoginPage || isHomePage) {
+  if (isPublicAuthPage || isHomePage) {
     return <main className="min-h-svh bg-background">{children}</main>
   }
 

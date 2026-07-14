@@ -7,6 +7,7 @@ import com.codeiy.im.model.IMChannel
 import com.codeiy.im.model.ManualReplyRequest
 import com.codeiy.im.model.Opportunity
 import com.codeiy.im.model.OpportunityStatus
+import com.codeiy.im.model.PasswordResetConfirmRequest
 import com.codeiy.im.model.Priority
 import com.codeiy.im.model.RadarJson
 import kotlinx.serialization.json.JsonObject
@@ -92,10 +93,28 @@ class ModelsDecodingTest {
         val json = """
         {"accessToken": "jwt", "tokenType": "bearer",
          "user": {"id": "1b6a4f5e-8f9f-4a1a-9d3e-3a2b1c0d9e8f", "email": "a@b.c",
-                  "displayName": "Bruce", "avatarUrl": "", "isAdmin": false}}
+                  "displayName": "Bruce", "avatarUrl": "", "isAdmin": false,
+                  "hasPassword": true}}
         """.trimIndent()
         val token = RadarJson.decodeFromString(AuthToken.serializer(), json)
         assertEquals("jwt", token.accessToken)
         assertEquals("Bruce", token.user.displayName)
+        assertTrue(token.user.hasPassword)
+    }
+
+    @Test
+    fun passwordResetRequestEncodingDoesNotIncludeTokenForCodeFlow() {
+        val body = RadarJson.encodeToString(
+            PasswordResetConfirmRequest.serializer(),
+            PasswordResetConfirmRequest(
+                newPassword = "new-password-123",
+                email = "member@example.com",
+                code = "ABCDEFGH23",
+            ),
+        )
+        val obj = RadarJson.parseToJsonElement(body) as JsonObject
+        assertEquals("member@example.com", (obj["email"] as JsonPrimitive).content)
+        assertEquals("ABCDEFGH23", (obj["code"] as JsonPrimitive).content)
+        assertTrue(obj["token"] == null || obj["token"].toString() == "null")
     }
 }

@@ -1,5 +1,6 @@
 import type {
   AuthUser,
+  AuthTokenResponse,
   AgentAction,
   AgentAnalysisStatus,
   ExtractedContacts,
@@ -27,6 +28,7 @@ import type {
   WeComConnectionCreate,
   WeComArchiveConnection,
   WeComArchiveConnectionCreate,
+  PasswordActionResponse,
 } from './types'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? ''
@@ -265,6 +267,42 @@ export async function fetchOAuthAuthorizeUrl(provider: OAuthProvider): Promise<s
 
 export async function fetchMe(): Promise<AuthUser> {
   return fetchJson<AuthUser>('/api/v1/auth/me')
+}
+
+export async function passwordLogin(email: string, password: string): Promise<AuthTokenResponse> {
+  return fetchJson<AuthTokenResponse>('/api/v1/auth/password/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  })
+}
+
+export async function requestPasswordReset(email: string): Promise<PasswordActionResponse> {
+  return fetchJson<PasswordActionResponse>('/api/v1/auth/password/reset/request', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+}
+
+export async function confirmPasswordReset(payload: {
+  newPassword: string
+  token?: string
+  email?: string
+  code?: string
+}): Promise<PasswordActionResponse> {
+  return fetchJson<PasswordActionResponse>('/api/v1/auth/password/reset/confirm', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<PasswordActionResponse> {
+  return fetchJson<PasswordActionResponse>('/api/v1/auth/password/change', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword, newPassword }),
+  })
 }
 
 export async function fetchTelegramUserConfig(): Promise<TelegramUserConfig> {

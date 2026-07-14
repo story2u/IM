@@ -9,6 +9,18 @@ logger = structlog.get_logger(__name__)
 
 
 class CeleryTaskQueue:
+    def enqueue_password_reset(self, email: str) -> bool:
+        try:
+            celery_app.send_task(
+                "auth.prepare_password_reset",
+                args=[email],
+                argsrepr="(<email redacted>)",
+            )
+        except Exception:
+            logger.exception("auth.password_reset_enqueue_failed")
+            return False
+        return True
+
     def enqueue_ai_reply(self, opportunity_id: UUID) -> None:
         celery_app.send_task("ai.generate_and_send_reply", args=[str(opportunity_id)])
 

@@ -106,12 +106,17 @@ export interface AuthUser {
   displayName: string
   avatarUrl: string
   isAdmin: boolean
+  hasPassword: boolean
 }
 
 export interface AuthTokenResponse {
   accessToken: string
   tokenType: string
   user: AuthUser
+}
+
+export interface PasswordActionResponse {
+  message: string
 }
 
 export type OAuthProvider = 'google' | 'apple'

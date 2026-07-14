@@ -18,6 +18,9 @@
 - 每个用户资源查询必须在 repository/API 层带 `owner_user_id`，不能先按 ID 获取后默认信任。
 - OAuth 必须校验 state；redirect URI 使用配置白名单；provider profile 不应覆盖已验证身份边界。
 - localStorage token 是当前既有选择，新增功能不得把 token 放进 URL、日志或第三方请求。
+- 密码重置不得泄露邮箱是否存在。公开请求只排队，账户查询在 worker；token/code 只存带服务端密钥的
+  摘要，必须短时、单次、限错、限流。成功修改密码递增 `auth_version`，所有旧 JWT 必须失效。
+- OAuth 无密码用户设置密码前必须验证登录邮箱；仅持有一个长期登录 token 不足以跳过该验证。
 
 ## 外部输入与 webhook
 

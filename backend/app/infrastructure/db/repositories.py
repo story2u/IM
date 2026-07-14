@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 import structlog
-from sqlalchemy import String, cast, func
+from sqlalchemy import String, cast, func, update
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlmodel import col, select
@@ -58,6 +58,7 @@ from app.infrastructure.db.models import (
     Message,
     Opportunity,
     OpportunityArchiveEvent,
+    PasswordResetChallenge,
     ReplyTemplate,
     Rule,
     SubscriptionAccount,
@@ -254,6 +255,113 @@ class UserRepository:
         user.last_login_at = utc_now()
         user.updated_at = utc_now()
         self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
+
+class PasswordResetRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def create(
+        self,
+        *,
+        user_id: UUID,
+        token_digest: str,
+        code_digest: str,
+        expires_at: datetime,
+    ) -> PasswordResetChallenge:
+        now = utc_now()
+        await self.session.exec(
+            update(PasswordResetChallenge)
+            .where(
+                PasswordResetChallenge.user_id == user_id,
+                PasswordResetChallenge.used_at.is_(None),
+            )
+            .values(used_at=now, updated_at=now)
+        )
+        challenge = PasswordResetChallenge(
+            user_id=user_id,
+            token_digest=token_digest,
+            code_digest=code_digest,
+            expires_at=expires_at,
+        )
+        self.session.add(challenge)
+        await self.session.commit()
+        await self.session.refresh(challenge)
+        return challenge
+
+    async def active_by_token(self, token_digest: str) -> PasswordResetChallenge | None:
+        result = await self.session.exec(
+            select(PasswordResetChallenge)
+            .where(
+                PasswordResetChallenge.token_digest == token_digest,
+                PasswordResetChallenge.used_at.is_(None),
+                PasswordResetChallenge.expires_at > utc_now(),
+            )
+            .with_for_update()
+        )
+        return result.first()
+
+    async def latest_active_for_email(
+        self, email: str
+    ) -> tuple[PasswordResetChallenge, User] | None:
+        result = await self.session.exec(
+            select(PasswordResetChallenge, User)
+            .join(User, User.id == PasswordResetChallenge.user_id)
+            .where(
+                User.email == email.lower().strip(),
+                User.is_active.is_(True),
+                PasswordResetChallenge.used_at.is_(None),
+                PasswordResetChallenge.expires_at > utc_now(),
+            )
+            .order_by(col(PasswordResetChallenge.created_at).desc())
+            .with_for_update()
+        )
+        return result.first()
+
+    async def user_for_challenge(self, challenge: PasswordResetChallenge) -> User | None:
+        return await self.session.get(User, challenge.user_id)
+
+    async def register_failed_attempt(
+        self, challenge: PasswordResetChallenge, *, max_attempts: int
+    ) -> None:
+        now = utc_now()
+        challenge.failed_attempts += 1
+        challenge.updated_at = now
+        if challenge.failed_attempts >= max_attempts:
+            challenge.used_at = now
+        self.session.add(challenge)
+        await self.session.commit()
+
+    async def invalidate(self, challenge: PasswordResetChallenge) -> None:
+        challenge.used_at = utc_now()
+        challenge.updated_at = utc_now()
+        self.session.add(challenge)
+        await self.session.commit()
+
+    async def replace_password(
+        self,
+        *,
+        user: User,
+        password_hash: str,
+        challenge: PasswordResetChallenge | None = None,
+    ) -> User:
+        now = utc_now()
+        user.password_hash = password_hash
+        user.auth_version += 1
+        user.updated_at = now
+        self.session.add(user)
+        if challenge:
+            await self.session.exec(
+                update(PasswordResetChallenge)
+                .where(
+                    PasswordResetChallenge.user_id == user.id,
+                    PasswordResetChallenge.used_at.is_(None),
+                )
+                .values(used_at=now, updated_at=now)
+            )
         await self.session.commit()
         await self.session.refresh(user)
         return user

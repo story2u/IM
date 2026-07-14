@@ -9,6 +9,7 @@ import com.codeiy.im.core.network.api
 import com.codeiy.im.model.AuthUser
 import com.codeiy.im.model.NativeLoginRequest
 import com.codeiy.im.model.PasswordLoginRequest
+import com.codeiy.im.model.PasswordChangeRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -81,6 +82,11 @@ class SessionStore(private val tokens: TokenStore, val billing: BillingService) 
         tokens.token = null
         _state.value = SessionState.LoggedOut
         viewModelScope.launch { billing.clearIdentity() }
+    }
+
+    suspend fun changePassword(currentPassword: String, newPassword: String) {
+        api { api.service.changePassword(PasswordChangeRequest(currentPassword, newPassword)) }
+        logout()
     }
 
     private suspend fun identifyBilling(user: AuthUser) {
