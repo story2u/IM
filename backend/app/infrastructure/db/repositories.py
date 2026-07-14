@@ -3064,11 +3064,11 @@ class WeComArchiveRepository:
             status=WeComEventStatus.PROCESSING,
             attempt_count=1,
         )
-        self.session.add(event)
         try:
-            await self.session.commit()
+            async with self.session.begin_nested():
+                self.session.add(event)
+                await self.session.flush()
         except IntegrityError:
-            await self.session.rollback()
             result = await self.session.exec(
                 select(WeComArchiveEvent).where(
                     WeComArchiveEvent.connection_id == connection_id,
@@ -3086,6 +3086,7 @@ class WeComArchiveRepository:
             await self.session.commit()
             await self.session.refresh(existing)
             return existing, True
+        await self.session.commit()
         await self.session.refresh(event)
         return event, True
 
