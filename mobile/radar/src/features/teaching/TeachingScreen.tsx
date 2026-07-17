@@ -81,6 +81,7 @@ export default function TeachingScreen() {
     annotate,
     apply,
     applied,
+    canObserve,
     begin,
     capture,
     cards,
@@ -88,6 +89,8 @@ export default function TeachingScreen() {
     currentCard,
     lastExampleId,
     proposal,
+    observe,
+    observed,
     preparing,
     setDragging,
     state,
@@ -216,6 +219,16 @@ export default function TeachingScreen() {
               {!applied ? (
                 <Pressable accessibilityRole="button" onPress={() => setApplyConfirmVisible(true)} style={styles.primaryButton}>
                   <Text style={styles.primaryButtonText}>{t('teaching.preview.apply')}</Text>
+                </Pressable>
+              ) : null}
+              {!applied && canObserve && !observed ? (
+                <Pressable accessibilityRole="button" onPress={() => void observe()} style={styles.shadowButton}>
+                  <Text style={styles.shadowButtonText}>{t('teaching.preview.observe')}</Text>
+                </Pressable>
+              ) : null}
+              {observed ? (
+                <Pressable accessibilityRole="button" onPress={() => router.push('/intent-map' as never)} style={styles.shadowStarted}>
+                  <Text style={styles.shadowStartedText}>{t('teaching.preview.observing')}</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -412,6 +425,10 @@ const styles = StyleSheet.create({
   previewStat: { minWidth: '29%', flexGrow: 1, borderRadius: 13, backgroundColor: colors.card, padding: 10 },
   previewCount: { color: colors.text, fontSize: 20, fontWeight: '900', fontVariant: ['tabular-nums'] },
   previewLabel: { marginTop: 2, color: colors.mutedText, fontSize: 10, fontWeight: '700' },
+  shadowButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 15, borderWidth: 1, borderColor: '#6d5ca5', backgroundColor: '#211d3b' },
+  shadowButtonText: { color: '#ddd6fe', fontSize: 13, fontWeight: '900' },
+  shadowStarted: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 15, backgroundColor: '#352d5c' },
+  shadowStartedText: { color: '#ede9fe', fontSize: 12, fontWeight: '900' },
   confirmBackdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(2, 8, 23, 0.78)', padding: 24 },
   confirmCard: { width: '100%', maxWidth: 440, gap: 16, borderRadius: 24, backgroundColor: colors.card, padding: 22 },
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(2, 8, 23, 0.72)' },

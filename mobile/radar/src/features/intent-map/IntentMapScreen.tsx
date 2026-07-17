@@ -24,6 +24,7 @@ export default function IntentMapScreen() {
   const { t } = useI18n();
   const { error, load, loading, model } = useIntentMap();
   const [selected, setSelected] = useState<IntentMapNode | null>(null);
+  const [showCandidate, setShowCandidate] = useState(false);
   const now = new Date();
   const [selectedMinute, setSelectedMinute] = useState<number>(() => {
     const minute = now.getHours() * 60 + now.getMinutes();
@@ -32,8 +33,11 @@ export default function IntentMapScreen() {
     ), timelineMinutes[0]);
   });
   const day = now.getDay() === 0 ? 7 : now.getDay();
-  const selectedWindow = model?.preference
-    ? scheduleWindowAt(model.preference.schedule, selectedMinute, day)
+  const shownModel = showCandidate && model?.candidate
+    ? { ...model, ...model.candidate }
+    : model;
+  const selectedWindow = shownModel?.preference
+    ? scheduleWindowAt(shownModel.preference.schedule, selectedMinute, day)
     : null;
   const activeIntentIds = selectedWindow ? new Set(selectedWindow.activeIntentIds) : null;
   return (
@@ -57,8 +61,21 @@ export default function IntentMapScreen() {
         ) : null}
         {!loading && !error && model?.preference ? (
           <>
+            {model.shadow && model.candidate ? (
+              <View style={styles.shadowCard}>
+                <View style={styles.shadowHeader}>
+                  <View><Text style={styles.shadowEyebrow}>{t('intentMap.shadow.eyebrow')}</Text><Text style={styles.shadowTitle}>{t('intentMap.shadow.title')}</Text></View>
+                  <Text style={styles.shadowRemaining}>{t('intentMap.shadow.until', { time: new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date(model.shadow.endsAt)) })}</Text>
+                </View>
+                <Text style={styles.shadowRisk}>{model.shadow.diffSummary.riskSummary}</Text>
+                <View style={styles.segmented}>
+                  <Pressable accessibilityRole="button" accessibilityState={{ selected: !showCandidate }} onPress={() => setShowCandidate(false)} style={[styles.segment, !showCandidate && styles.segmentActive]}><Text style={styles.segmentText}>{t('intentMap.shadow.current')}</Text></Pressable>
+                  <Pressable accessibilityRole="button" accessibilityState={{ selected: showCandidate }} onPress={() => setShowCandidate(true)} style={[styles.segment, showCandidate && styles.segmentActive]}><Text style={styles.segmentText}>{t('intentMap.shadow.candidate')}</Text></Pressable>
+                </View>
+              </View>
+            ) : null}
             <View style={styles.mapFrame}>
-              <IntentMapCanvas activeIntentIds={activeIntentIds} model={model} onNodePress={setSelected} t={t} />
+              {shownModel ? <IntentMapCanvas activeIntentIds={activeIntentIds} model={shownModel} onNodePress={setSelected} t={t} /> : null}
               <View pointerEvents="none" style={styles.reduceLabel}>
                 <Text style={styles.reduceText}>· · · {t('intentMap.reduceZone')} · · ·</Text>
               </View>
@@ -67,7 +84,7 @@ export default function IntentMapScreen() {
                 onSelect={setSelectedMinute}
                 selectedMinute={selectedMinute}
                 t={t}
-                windows={model.preference.schedule}
+                windows={shownModel?.preference?.schedule ?? model.preference.schedule}
               />
             </View>
             <View style={styles.impactCard}>
@@ -75,10 +92,10 @@ export default function IntentMapScreen() {
               <Text style={styles.sectionMeta}>{t('home.flow.total', { count: model.stats.total })}</Text>
               <View style={styles.impactRow}>
                 {([
-                  ['immediate', model.stats.immediate, '#fbbf24'],
-                  ['inbox', model.stats.inbox, '#38bdf8'],
-                  ['digest', model.stats.digest, '#818cf8'],
-                  ['suppress', model.stats.suppress, '#94a3b8'],
+                  ['immediate', shownModel?.stats.immediate ?? 0, '#fbbf24'],
+                  ['inbox', shownModel?.stats.inbox ?? 0, '#38bdf8'],
+                  ['digest', shownModel?.stats.digest ?? 0, '#818cf8'],
+                  ['suppress', shownModel?.stats.suppress ?? 0, '#94a3b8'],
                 ] as const).map(([key, count, color]) => (
                   <View key={key} style={styles.impactStat}>
                     <Text style={[styles.impactCount, { color }]}>{count}</Text>
@@ -159,6 +176,16 @@ const styles = StyleSheet.create({
   mapFrame: { overflow: 'hidden', borderRadius: 26, borderWidth: 1, borderColor: '#24435d' },
   reduceLabel: { position: 'absolute', right: 0, bottom: 11, left: 0, alignItems: 'center' },
   reduceText: { color: '#9f6479', fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  shadowCard: { gap: 11, borderRadius: 20, borderWidth: 1, borderColor: '#5b4b89', backgroundColor: '#18152c', padding: 15 },
+  shadowHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
+  shadowEyebrow: { color: '#c4b5fd', fontSize: 9, fontWeight: '900', letterSpacing: 1.2 },
+  shadowTitle: { marginTop: 3, color: colors.text, fontSize: 16, fontWeight: '900' },
+  shadowRemaining: { color: '#a78bfa', fontSize: 10, fontWeight: '800' },
+  shadowRisk: { color: colors.mutedText, fontSize: 11, lineHeight: 17 },
+  segmented: { flexDirection: 'row', gap: 4, borderRadius: 12, backgroundColor: '#0d1020', padding: 4 },
+  segment: { flex: 1, minHeight: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 9 },
+  segmentActive: { backgroundColor: '#463b72' },
+  segmentText: { color: '#ede9fe', fontSize: 11, fontWeight: '900' },
   impactCard: { gap: 5, borderRadius: 22, backgroundColor: colors.card, padding: 16 },
   sectionTitle: { color: colors.text, fontSize: 17, fontWeight: '900' },
   sectionMeta: { color: colors.mutedText, fontSize: 11 },

@@ -12,6 +12,7 @@ import {
   applyPreferenceVersion,
   proposeAppetiteFromTeaching,
   simulatePreferenceVersion,
+  startPreferenceShadow,
 } from '../../attention/appetiteService';
 import type {
   AppetiteSimulationSummary,
@@ -24,6 +25,7 @@ import {
 import { useSession } from '../../auth/SessionProvider';
 import { currentDeviceIdStore } from '../../device/deviceSessionStorage';
 import { initializeRadarDatabase } from '../../storage/database';
+import { readActivePreference } from '../../attention/signalAppetiteStore';
 import {
   initialTeachingMachineState,
   teachingReducer,
@@ -40,6 +42,8 @@ export function useTeachingSession() {
   const [simulation, setSimulation] = useState<AppetiteSimulationSummary | null>(null);
   const [lastExampleId, setLastExampleId] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
+  const [canObserve, setCanObserve] = useState(false);
+  const [observed, setObserved] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const mounted = useRef(true);
 
@@ -70,6 +74,8 @@ export function useTeachingSession() {
       setSimulation(null);
       setLastExampleId(null);
       setApplied(false);
+      setCanObserve(false);
+      setObserved(false);
       setPreparing(false);
       dispatch({ type: 'READY' });
     } catch (error) {
@@ -102,6 +108,7 @@ export function useTeachingSession() {
         currentDeviceIdStore.read(),
       ]);
       if (!deviceId) throw new Error('teaching_device_unavailable');
+      const activePreference = await readActivePreference(database, ownerId);
       const result = await completeTeachingSession(database, {
         ownerId,
         deviceId,
@@ -121,6 +128,7 @@ export function useTeachingSession() {
       setSummary({ increase: [...result.increase], reduce: [...result.reduce] });
       setProposal(candidate.preference);
       setSimulation(preview);
+      setCanObserve(activePreference !== null);
       dispatch({ type: 'COMPLETE' });
     } catch (error) {
       if (mounted.current) fail(error);
@@ -215,6 +223,26 @@ export function useTeachingSession() {
     }
   }, [fail, ownerId, proposal]);
 
+  const observe = useCallback(async () => {
+    if (!ownerId || !proposal || !canObserve) return;
+    try {
+      const [database, deviceId] = await Promise.all([
+        initializeRadarDatabase(),
+        currentDeviceIdStore.read(),
+      ]);
+      if (!deviceId) throw new Error('teaching_device_unavailable');
+      await startPreferenceShadow(database, {
+        ownerId,
+        deviceId,
+        candidateVersion: proposal.version,
+        durationHours: 24,
+      });
+      if (mounted.current) setObserved(true);
+    } catch (error) {
+      if (mounted.current) fail(error);
+    }
+  }, [canObserve, fail, ownerId, proposal]);
+
   const setDragging = useCallback((direction: 'left' | 'right' | null) => {
     dispatch(direction
       ? { type: 'DRAG', direction }
@@ -226,12 +254,15 @@ export function useTeachingSession() {
     annotate,
     apply,
     applied,
+    canObserve,
     capture,
     cards,
     complete,
     currentCard: cards[state.cardIndex] ?? null,
     lastExampleId,
     proposal,
+    observe,
+    observed,
     preparing,
     sessionId,
     state,

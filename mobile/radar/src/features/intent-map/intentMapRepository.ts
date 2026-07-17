@@ -7,6 +7,7 @@ import type {
 import {
   readActivePreference,
   readMessageFilterDecisions,
+  readPreferenceVersion,
   readPreferenceIntents,
   type SignalAppetiteStoreExecutor,
 } from '../../attention/signalAppetiteStore';
@@ -73,5 +74,36 @@ export async function readIntentMapModel(
     diffSummary: JSON.parse(shadowRow.diff_summary_json) as AppetiteSimulationSummary,
     status: shadowRow.status,
   } : null;
-  return buildIntentMapModel({ preference, intents, decisions, temporaryFocuses, shadow });
+  const model = buildIntentMapModel({ preference, intents, decisions, temporaryFocuses, shadow });
+  if (!shadow) return model;
+  const candidatePreference = await readPreferenceVersion(database, ownerId, shadow.candidateVersion);
+  if (!candidatePreference) return model;
+  const candidateIntents = await readPreferenceIntents(
+    database,
+    ownerId,
+    candidatePreference.id,
+    candidatePreference.version,
+  );
+  const candidateModel = buildIntentMapModel({
+    preference: candidatePreference,
+    intents: candidateIntents,
+    decisions,
+    temporaryFocuses,
+    shadow,
+  });
+  return {
+    ...model,
+    candidate: {
+      nodes: candidateModel.nodes,
+      edges: candidateModel.edges,
+      preference: candidatePreference,
+      stats: {
+        immediate: shadow.diffSummary.immediateCount,
+        inbox: shadow.diffSummary.inboxCount,
+        digest: shadow.diffSummary.digestCount,
+        suppress: shadow.diffSummary.suppressCount,
+        total: shadow.diffSummary.originalCount,
+      },
+    },
+  };
 }

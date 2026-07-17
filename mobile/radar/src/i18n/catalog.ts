@@ -622,6 +622,7 @@ const zhCN = {
   'home.flow.suppress': '条已经安静收起',
   'home.quietZone.title': '打开安静区',
   'home.quietZone.detail': '抽查被收起的消息和 Pi 的判断依据',
+  'home.shadow.running': '新信息胃口正在影子观察中 · 查看前后对比',
   'quietZone.title': '安静区',
   'quietZone.subtitle': '被降低关注的消息仍保留在本机，随时可以抽查和纠正。',
   'quietZone.safety': '默认只安静收起，不立即删除。这里展示可解释依据，不展示模型私有推理。',
@@ -642,6 +643,8 @@ const zhCN = {
   'quietZone.evidence': '可核验依据',
   'quietZone.privateReasoning': '为保护隐私与安全，这里只显示结论依据，不保存或展示模型的内部思维过程。',
   'quietZone.correct': '告诉 Pi 这次判断不对',
+  'teaching.preview.observe': '先影子观察 24 小时',
+  'teaching.preview.observing': '已开始观察 · 打开前后对比 ›',
   'intentMap.title': '当前信息胃口',
   'intentMap.subtitle': '关注目标、降低项和临时模式都来自可回滚的本地偏好事件。',
   'intentMap.self': '现在的我',
@@ -660,6 +663,11 @@ const zhCN = {
   'intentMap.timeline.fallback': '使用默认节奏',
   'intentMap.timeline.hour': '查看 {hour} 点的信息胃口',
   'intentMap.timeline.accessibility': '一天时间轴。选择时间可查看当时生效的信息胃口。',
+  'intentMap.shadow.eyebrow': 'SHADOW · 不影响当前过滤',
+  'intentMap.shadow.title': '新胃口正在观察',
+  'intentMap.shadow.until': '观察至 {time}',
+  'intentMap.shadow.current': '当前胃口',
+  'intentMap.shadow.candidate': '候选预览',
 } as const;
 
 export type MessageKey = keyof typeof zhCN;
@@ -1283,6 +1291,7 @@ const en: Catalog = {
   'home.flow.suppress': 'were quietly tucked away',
   'home.quietZone.title': 'Open Quiet Zone',
   'home.quietZone.detail': 'Review tucked-away messages and Pi’s evidence',
+  'home.shadow.running': 'A new appetite is observing in shadow · compare versions',
   'quietZone.title': 'Quiet Zone',
   'quietZone.subtitle': 'Reduced-attention messages remain on this device for review and correction.',
   'quietZone.safety': 'Messages are tucked away, not immediately deleted. Explanations show reviewable evidence, never private model reasoning.',
@@ -1303,6 +1312,8 @@ const en: Catalog = {
   'quietZone.evidence': 'Reviewable evidence',
   'quietZone.privateReasoning': 'For privacy and safety, this view stores and displays decision evidence—not a model’s private chain of thought.',
   'quietZone.correct': 'Tell Pi this decision was wrong',
+  'teaching.preview.observe': 'Observe in shadow for 24 hours',
+  'teaching.preview.observing': 'Shadow started · open comparison ›',
   'intentMap.title': 'Current Signal Appetite',
   'intentMap.subtitle': 'Focus, reduction, and temporary modes all come from rollback-safe local preference events.',
   'intentMap.self': 'Me, now',
@@ -1321,6 +1332,11 @@ const en: Catalog = {
   'intentMap.timeline.fallback': 'Default rhythm',
   'intentMap.timeline.hour': 'View Signal Appetite at {hour}:00',
   'intentMap.timeline.accessibility': 'Day timeline. Select a time to inspect the Signal Appetite active then.',
+  'intentMap.shadow.eyebrow': 'SHADOW · current filtering unchanged',
+  'intentMap.shadow.title': 'A new appetite is observing',
+  'intentMap.shadow.until': 'Observing until {time}',
+  'intentMap.shadow.current': 'Current appetite',
+  'intentMap.shadow.candidate': 'Candidate preview',
 };
 
 export const catalogs: Readonly<Record<AppLocale, Catalog>> = {

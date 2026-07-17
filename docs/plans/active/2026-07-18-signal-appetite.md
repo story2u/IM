@@ -68,7 +68,7 @@
 - [x] S3：增加偏好事件服务端持久化/同步契约、API client、owner/幂等/版本/迁移测试与 capability。
 - [x] S4：扩展 Pi Agent tools、Host registry 与明确 apply 审批；补 faux provider/tool loop 测试。
 - [x] S5：实现首次教学、卡片栈、左右滑 UI-thread 动效、haptic、原因、撤销和 Session 总结。
-- [ ] S6：实现首页注意力控制台、意图地图、时间线、预览/Shadow、安静区和消息解释。
+- [x] S6：实现首页注意力控制台、意图地图、时间线、预览/Shadow、安静区和消息解释。
 - [ ] S7：补自然语言入口、详情“教 Pi”、本地化、无障碍、Reduce Motion、键盘与无正文埋点。
 - [ ] S8：Golden/性能/双平台构建与分层检查；更新架构、功能地图、命令、ADR/计划并归档。
 
@@ -96,6 +96,9 @@
 - 2026-07-18：完成安静区切片。首页新增抽查入口，页面从 owner-scoped 本地消息与过滤决定投影读取 suppress
   消息，保留正文副本并显示原因摘要、证据、处理位置、置信度和 evaluator；纠正入口回到 Pi，界面明确不展示
   私有推理。Shadow 与前后预览仍留在 S6 后续切片。
+- 2026-07-18：完成 S6。已有稳定版本时，教学候选可选择 24 小时影子观察；当前过滤不变，首页显示观察状态，
+  意图地图可切换当前/候选节点、时间窗口与四类投递模拟结果，并展示观察截止时间和风险摘要。首个偏好没有旧版本
+  可对照，因此只保留历史试跑与明确应用路径。
 
 ## 发现日志
 
@@ -134,6 +137,7 @@
 | `pnpm --dir mobile/radar typecheck` | 通过 | 首页、地图、SVG 手势与时间轴类型检查通过 |
 | `pnpm --dir mobile/radar export:ios` | 通过 | 地图切片 Hermes bundle 成功；未替代真机地图手势/FPS 验收 |
 | `pnpm --dir mobile/radar test` | 通过 | 安静区与置信度语义后 53 files / 171 tests |
+| `pnpm --dir mobile/radar typecheck` / `test` | 通过 | S6 Shadow/候选地图完成后类型检查通过，53 files / 171 tests |
 | `pnpm --dir mobile/radar export:ios` / `export:android` | 通过 | Hermes bundle 成功；不等同真机 haptic/FPS 验收 |
 | `make backend-check` | 待运行 | 服务端同步切片后 |
 | 双平台 Hermes export / Release | 待运行 | 不能替代真机手势、haptic 和 FPS |

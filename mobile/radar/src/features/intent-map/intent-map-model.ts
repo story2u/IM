@@ -54,6 +54,12 @@ export interface IntentMapModel {
   preference: AttentionPreference | null;
   shadow: ShadowEvaluation | null;
   simulation: AppetiteSimulationSummary | null;
+  candidate: {
+    nodes: readonly IntentMapNode[];
+    edges: readonly IntentMapEdge[];
+    preference: AttentionPreference;
+    stats: FilteringStats;
+  } | null;
 }
 
 export function scheduleWindowAt(
@@ -165,5 +171,6 @@ export function buildIntentMapModel(snapshot: IntentMapSnapshot): IntentMapModel
     preference: snapshot.preference,
     shadow: snapshot.shadow,
     simulation: snapshot.shadow?.diffSummary ?? null,
+    candidate: null,
   };
 }

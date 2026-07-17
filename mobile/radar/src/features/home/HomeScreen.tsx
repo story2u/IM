@@ -42,6 +42,11 @@ export default function HomeScreen() {
           <Pressable accessibilityRole="button" onPress={() => router.push('/teaching' as Href)} style={styles.teachButton}>
             <Text style={styles.teachText}>{t('home.appetite.teach')}</Text>
           </Pressable>
+          {model?.shadow ? (
+            <Pressable accessibilityRole="button" onPress={() => router.push('/intent-map' as Href)} style={styles.shadowBanner}>
+              <Text style={styles.shadowBannerText}>{t('home.shadow.running')}</Text><Text style={styles.shadowBannerArrow}>›</Text>
+            </Pressable>
+          ) : null}
         </View>
         <View style={styles.flowCard}>
           <Text style={styles.flowTitle}>{t('home.flow.title')}</Text>
@@ -87,6 +92,9 @@ const styles = StyleSheet.create({
   emptyDetail: { color: colors.mutedText, fontSize: 13, lineHeight: 20, textAlign: 'center' },
   teachButton: { minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.button },
   teachText: { color: colors.text, fontSize: 14, fontWeight: '900' },
+  shadowBanner: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 13, backgroundColor: '#2d2750', paddingHorizontal: 13 },
+  shadowBannerText: { color: '#ddd6fe', fontSize: 11, fontWeight: '900' },
+  shadowBannerArrow: { color: '#c4b5fd', fontSize: 22 },
   flowCard: { gap: 6, borderRadius: 24, backgroundColor: colors.card, padding: 17 },
   flowTitle: { color: colors.text, fontSize: 20, fontWeight: '900' },
   flowTotal: { color: colors.mutedText, fontSize: 12 },
