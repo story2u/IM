@@ -38,6 +38,8 @@ interface EventRow {
   schema_version: 1;
   payload_json: string;
   occurred_at: string;
+  sync_status: 'pending' | 'synced' | 'error';
+  server_cursor: number | null;
 }
 
 interface TeachingSessionRow {
@@ -569,6 +571,128 @@ export async function readSignalAppetiteEvents(
     limit,
   );
   return rows.map(eventFromRow);
+}
+
+export async function readPendingSignalAppetiteEvents(
+  database: SignalAppetiteStoreExecutor,
+  ownerId: string,
+  limit = 100,
+) {
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+    throw new SignalAppetiteStoreError('invalid_attention_event_limit');
+  }
+  const rows = await database.getAllAsync<EventRow>(
+    `SELECT * FROM attention_events
+     WHERE owner_id = ? AND sync_status IN ('pending', 'error')
+     ORDER BY local_sequence LIMIT ?`,
+    requireUuid(ownerId, 'owner_id'),
+    limit,
+  );
+  return rows.map(eventFromRow);
+}
+
+export async function markSignalAppetiteEventsSynced(
+  database: SignalAppetiteStoreExecutor,
+  ownerId: string,
+  cursors: ReadonlyMap<string, number>,
+) {
+  const normalizedOwner = requireUuid(ownerId, 'owner_id');
+  for (const [eventId, cursor] of cursors) {
+    if (!Number.isSafeInteger(cursor) || cursor < 1) {
+      throw new SignalAppetiteStoreError('invalid_attention_server_cursor');
+    }
+    await database.runAsync(
+      `UPDATE attention_events SET sync_status = 'synced', server_cursor = ?
+       WHERE owner_id = ? AND event_id = ?`,
+      cursor,
+      normalizedOwner,
+      requireUuid(eventId, 'event_id'),
+    );
+  }
+}
+
+export interface SyncedSignalAppetiteEventInput {
+  eventId: string;
+  ownerId: string;
+  deviceId: string;
+  cursor: number;
+  aggregateId: string;
+  aggregateVersion: number;
+  schemaVersion: 1;
+  occurredAt: string;
+  type: SignalAppetiteEventType;
+  payload: unknown;
+}
+
+export async function ingestSyncedSignalAppetiteEvent(
+  database: SignalAppetiteStoreDatabase,
+  input: SyncedSignalAppetiteEventInput,
+): Promise<SignalAppetiteEvent> {
+  const ownerId = requireUuid(input.ownerId, 'owner_id');
+  const eventId = requireUuid(input.eventId, 'event_id');
+  const deviceId = requireUuid(input.deviceId, 'device_id');
+  const aggregateId = requireUuid(input.aggregateId, 'aggregate_id');
+  if (!Number.isSafeInteger(input.cursor) || input.cursor < 1) {
+    throw new SignalAppetiteStoreError('invalid_attention_server_cursor');
+  }
+  if (!eventTypes.has(input.type) || input.schemaVersion !== 1) {
+    throw new SignalAppetiteStoreError('invalid_attention_event');
+  }
+  const payloadJson = serializePayload(input.payload);
+  let result: SignalAppetiteEvent | null = null;
+  await database.withExclusiveTransactionAsync(async (transaction) => {
+    const existing = await transaction.getFirstAsync<EventRow>(
+      'SELECT * FROM attention_events WHERE owner_id = ? AND event_id = ?',
+      ownerId,
+      eventId,
+    );
+    if (existing) {
+      if (
+        existing.device_id !== deviceId || existing.event_type !== input.type ||
+        existing.aggregate_id !== aggregateId ||
+        existing.aggregate_version !== input.aggregateVersion ||
+        existing.schema_version !== input.schemaVersion ||
+        existing.payload_json !== payloadJson || existing.occurred_at !== input.occurredAt
+      ) {
+        throw new SignalAppetiteStoreError('attention_event_conflict');
+      }
+      await transaction.runAsync(
+        `UPDATE attention_events SET sync_status = 'synced', server_cursor = ?
+         WHERE owner_id = ? AND event_id = ?`,
+        input.cursor,
+        ownerId,
+        eventId,
+      );
+      result = eventFromRow(existing);
+      return;
+    }
+    await transaction.runAsync(
+      `INSERT INTO attention_events (
+        owner_id, event_id, device_id, event_type, aggregate_id, aggregate_version,
+        schema_version, payload_json, occurred_at, sync_status, server_cursor
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'synced', ?)`,
+      ownerId,
+      eventId,
+      deviceId,
+      input.type,
+      aggregateId,
+      input.aggregateVersion,
+      input.schemaVersion,
+      payloadJson,
+      input.occurredAt,
+      input.cursor,
+    );
+    const stored = await transaction.getFirstAsync<EventRow>(
+      'SELECT * FROM attention_events WHERE owner_id = ? AND event_id = ?',
+      ownerId,
+      eventId,
+    );
+    if (!stored) throw new SignalAppetiteStoreError('attention_event_not_persisted');
+    result = eventFromRow(stored);
+    await projectEvent(transaction, result);
+  });
+  if (!result) throw new SignalAppetiteStoreError('attention_event_not_persisted');
+  return result;
 }
 
 export async function readTeachingSession(
