@@ -69,7 +69,7 @@
 - [x] S4：扩展 Pi Agent tools、Host registry 与明确 apply 审批；补 faux provider/tool loop 测试。
 - [x] S5：实现首次教学、卡片栈、左右滑 UI-thread 动效、haptic、原因、撤销和 Session 总结。
 - [x] S6：实现首页注意力控制台、意图地图、时间线、预览/Shadow、安静区和消息解释。
-- [ ] S7：补自然语言入口、详情“教 Pi”、本地化、无障碍、Reduce Motion、键盘与无正文埋点。
+- [x] S7：补自然语言入口、详情“教 Pi”、本地化、无障碍、Reduce Motion、键盘与无正文埋点。
 - [ ] S8：Golden/性能/双平台构建与分层检查；更新架构、功能地图、命令、ADR/计划并归档。
 
 ## 进度日志
@@ -99,6 +99,10 @@
 - 2026-07-18：完成 S6。已有稳定版本时，教学候选可选择 24 小时影子观察；当前过滤不变，首页显示观察状态，
   意图地图可切换当前/候选节点、时间窗口与四类投递模拟结果，并展示观察截止时间和风险摘要。首个偏好没有旧版本
   可对照，因此只保留历史试跑与明确应用路径。
+- 2026-07-18：完成 S7。地图节点、安静区纠正和商机详情均可带本地 ID/概念进入 Pi 的自然语言草稿，不在路由中
+  携带消息正文；Pi 的 `apply_appetite_change` 现在由独立一次性确认卡解锁。设置可重播教学引导；教学动作埋点只含
+  label、计数、布尔值和版本，日志防线额外遮蔽 body/content/message/prompt/raw payload 字段。滑动有按钮和读屏
+  actions 等价路径，Reduce Motion 已用于教学卡及弹层；键盘通过可聚焦原生 Pressable 等价动作，不依赖手势。
 
 ## 发现日志
 
@@ -138,6 +142,7 @@
 | `pnpm --dir mobile/radar export:ios` | 通过 | 地图切片 Hermes bundle 成功；未替代真机地图手势/FPS 验收 |
 | `pnpm --dir mobile/radar test` | 通过 | 安静区与置信度语义后 53 files / 171 tests |
 | `pnpm --dir mobile/radar typecheck` / `test` | 通过 | S6 Shadow/候选地图完成后类型检查通过，53 files / 171 tests |
+| `pnpm --dir mobile/radar typecheck` / `test` | 通过 | S7 自然语言、Agent apply 确认和日志脱敏后，53 files / 172 tests |
 | `pnpm --dir mobile/radar export:ios` / `export:android` | 通过 | Hermes bundle 成功；不等同真机 haptic/FPS 验收 |
 | `make backend-check` | 待运行 | 服务端同步切片后 |
 | 双平台 Hermes export / Release | 待运行 | 不能替代真机手势、haptic 和 FPS |

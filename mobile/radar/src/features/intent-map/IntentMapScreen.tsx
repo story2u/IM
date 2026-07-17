@@ -147,7 +147,8 @@ export default function IntentMapScreen() {
             {selected?.kind !== 'self' ? (
               <Pressable accessibilityRole="button" onPress={() => {
                 setSelected(null);
-                router.push('/(tabs)/agent' as Href);
+                const prompt = t('agent.context.adjustIntent', { concept: selected ? displayConcept(selected.label, t) : '' });
+                router.push(`/(tabs)/agent?prompt=${encodeURIComponent(prompt)}` as Href);
               }} style={styles.primaryButton}>
                 <Text style={styles.primaryText}>{t('intentMap.adjust')}</Text>
               </Pressable>

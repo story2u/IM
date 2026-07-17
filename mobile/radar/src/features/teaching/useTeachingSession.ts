@@ -26,6 +26,7 @@ import { useSession } from '../../auth/SessionProvider';
 import { currentDeviceIdStore } from '../../device/deviceSessionStorage';
 import { initializeRadarDatabase } from '../../storage/database';
 import { readActivePreference } from '../../attention/signalAppetiteStore';
+import { logEvent } from '../../logging/redactedLogger';
 import {
   initialTeachingMachineState,
   teachingReducer,
@@ -77,6 +78,7 @@ export function useTeachingSession() {
       setCanObserve(false);
       setObserved(false);
       setPreparing(false);
+      logEvent('signal_appetite.teaching_started', { targetCount: started.cards.length });
       dispatch({ type: 'READY' });
     } catch (error) {
       if (mounted.current) fail(error);
@@ -129,6 +131,11 @@ export function useTeachingSession() {
       setProposal(candidate.preference);
       setSimulation(preview);
       setCanObserve(activePreference !== null);
+      logEvent('signal_appetite.teaching_completed', {
+        increaseCount: result.increase.length,
+        reduceCount: result.reduce.length,
+        candidateVersion: candidate.preference.version,
+      });
       dispatch({ type: 'COMPLETE' });
     } catch (error) {
       if (mounted.current) fail(error);
@@ -157,6 +164,7 @@ export function useTeachingSession() {
       if (!mounted.current) return;
       const finished = state.cardIndex + 1 >= cards.length;
       setLastExampleId(example.id);
+      logEvent('signal_appetite.example_captured', { label });
       dispatch({ type: 'ADVANCE', finished });
     } catch (error) {
       if (mounted.current) fail(error);
@@ -198,6 +206,10 @@ export function useTeachingSession() {
         reasons,
         freeformReason,
       });
+      logEvent('signal_appetite.example_annotated', {
+        reasonCount: reasons.length,
+        hasFreeformReason: Boolean(freeformReason?.trim()),
+      });
     } catch (error) {
       if (mounted.current) fail(error);
     }
@@ -218,6 +230,7 @@ export function useTeachingSession() {
         confirmed: true,
       });
       if (mounted.current) setApplied(true);
+      logEvent('signal_appetite.preference_applied', { preferenceVersion: proposal.version });
     } catch (error) {
       if (mounted.current) fail(error);
     }
@@ -238,6 +251,10 @@ export function useTeachingSession() {
         durationHours: 24,
       });
       if (mounted.current) setObserved(true);
+      logEvent('signal_appetite.shadow_started', {
+        candidateVersion: proposal.version,
+        durationHours: 24,
+      });
     } catch (error) {
       if (mounted.current) fail(error);
     }

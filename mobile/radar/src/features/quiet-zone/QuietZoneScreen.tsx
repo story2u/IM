@@ -57,7 +57,12 @@ export default function QuietZoneScreen() {
             <Text style={styles.evidenceTitle}>{t('quietZone.evidence')}</Text>
             {selected?.evidence.map((evidence, index) => <Text key={`${evidence.kind}:${index}`} style={styles.evidence}>• {evidence.label.replaceAll('_', ' ')}</Text>)}
             <Text style={styles.privateNote}>{t('quietZone.privateReasoning')}</Text>
-            <Pressable accessibilityRole="button" onPress={() => { setSelected(null); router.push('/(tabs)/agent' as Href); }} style={styles.primaryButton}>
+            <Pressable accessibilityRole="button" onPress={() => {
+              const messageId = selected?.messageId ?? '';
+              setSelected(null);
+              const prompt = t('agent.context.correctDecision', { messageId });
+              router.push(`/(tabs)/agent?prompt=${encodeURIComponent(prompt)}` as Href);
+            }} style={styles.primaryButton}>
               <Text style={styles.primaryText}>{t('quietZone.correct')}</Text>
             </Pressable>
           </Pressable>
@@ -110,4 +115,3 @@ const styles = StyleSheet.create({
   primaryButton: { minHeight: 50, alignItems: 'center', justifyContent: 'center', borderRadius: 15, backgroundColor: colors.button },
   primaryText: { color: colors.text, fontSize: 14, fontWeight: '900' },
 });
-
