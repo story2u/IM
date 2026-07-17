@@ -27,7 +27,7 @@ export function buildDeviceRegistration(
     timezone: runtime.timezone,
     capabilities: {
       'client.reactNative': true,
-      'sqlite.schema': 6,
+      'sqlite.schema': 7,
       'agent.streaming': true,
       'agent.runtime': 'pi-0.80.6',
       'agent.schema': 1,

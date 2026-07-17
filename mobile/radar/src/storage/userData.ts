@@ -6,6 +6,7 @@ export async function clearLocalUserDataInDatabase(
 ) {
   if (!ownerId) throw new Error('ownerId is required to clear local data');
   await database.withExclusiveTransactionAsync(async (transaction) => {
+    await transaction.runAsync('DELETE FROM signal_appetite_ui_state WHERE owner_id = ?', ownerId);
     await transaction.runAsync('DELETE FROM temporary_focuses WHERE owner_id = ?', ownerId);
     await transaction.runAsync('DELETE FROM shadow_evaluations WHERE owner_id = ?', ownerId);
     await transaction.runAsync('DELETE FROM message_filter_decisions WHERE owner_id = ?', ownerId);

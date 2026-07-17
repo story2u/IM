@@ -47,7 +47,7 @@ describe('runRadarMigrations', () => {
     await runRadarMigrations(database);
     await runRadarMigrations(database);
 
-    expect([...database.versions.keys()]).toEqual([1, 2, 3, 4, 5, 6]);
+    expect([...database.versions.keys()]).toEqual([1, 2, 3, 4, 5, 6, 7]);
     const schema = database.statements.join('\n');
     expect(schema).toContain('CREATE TABLE change_inbox');
     expect(schema).toContain('CREATE TABLE opportunity_projection');
@@ -66,6 +66,7 @@ describe('runRadarMigrations', () => {
     expect(schema).toContain('CREATE TABLE agent_entries');
     expect(schema).toContain('REFERENCES agent_sessions (owner_id, id) ON DELETE CASCADE');
     expect(schema).toContain('CREATE TABLE attention_events');
+    expect(schema).toContain('CREATE TABLE signal_appetite_ui_state');
     expect(schema).toContain('CREATE TABLE attention_preferences');
     expect(schema).toContain('CREATE TABLE attention_intents');
     expect(schema).toContain('CREATE TABLE teaching_sessions');

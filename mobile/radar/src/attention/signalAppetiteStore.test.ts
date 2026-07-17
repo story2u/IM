@@ -8,6 +8,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { runRadarMigrations, type MigrationDatabase } from '../storage/migrations';
 import { clearLocalUserDataInDatabase } from '../storage/userData';
 import {
+  hasSeenTeachingOnboarding,
+  setTeachingOnboardingSeen,
+} from './signalAppetiteUiState';
+import {
   appendSignalAppetiteEvent,
   readPreferenceExamples,
   readSignalAppetiteEvents,
@@ -168,9 +172,13 @@ describe('Signal Appetite SQLite event store', () => {
 
     expect(await readSignalAppetiteEvents(database, otherOwnerId)).toEqual([]);
     expect(await readTeachingSession(database, otherOwnerId, sessionId)).toBeNull();
+    await setTeachingOnboardingSeen(database, ownerId, true);
+    expect(await hasSeenTeachingOnboarding(database, ownerId)).toBe(true);
+    expect(await hasSeenTeachingOnboarding(database, otherOwnerId)).toBe(false);
     await clearLocalUserDataInDatabase(database, ownerId);
     expect(await readSignalAppetiteEvents(database, ownerId)).toEqual([]);
     expect(await readTeachingSession(database, ownerId, sessionId)).toBeNull();
+    expect(await hasSeenTeachingOnboarding(database, ownerId)).toBe(false);
     database.close();
   });
 

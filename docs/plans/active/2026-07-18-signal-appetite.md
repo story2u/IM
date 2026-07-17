@@ -83,7 +83,10 @@
   新增 v4 的 15 个严格工具，Host 对 apply 使用一次性内存确认；TS/Python 网关契约有跨运行时一致性测试。
 - 2026-07-18：完成 S3。服务端新增 owner/device 绑定的 content-free append-only 事件流与独立 rollout；RN
   先 push 本地 pending 事件，再按独立 cursor 拉取多设备事件并复用 SQLite fold，重复 event id 内容一致才
-  幂等、内容冲突拒绝。客户端上报 SQLite schema 6，旧客户端继续忽略关闭的 capability。
+  幂等、内容冲突拒绝。客户端当时上报 SQLite schema 6（教学 UI 状态加入后升至 7），旧客户端继续忽略关闭的 capability。
+- 2026-07-18：完成教学卡片 Commit 3 切片。增加 SQLite v7 首次引导状态、真实教学入口和显式状态机；
+  左滑 positive / 右滑 negative 的 UI-thread 手势、分段语义层、阈值 haptic、下一张上浮、按钮/读屏替代、
+  Reduce Motion、跳过、单步/连续撤销和真实 Session 汇总均接入事件日志。原因补充与候选提案留在 Commit 4。
 
 ## 发现日志
 
@@ -117,6 +120,8 @@
 | `pnpm --dir mobile/radar test` | 通过 | S2 后 48 files / 161 tests |
 | `pnpm --dir mobile/radar typecheck` | 通过 | S2/v4 工具类型检查通过 |
 | Signal Appetite sync targeted checks | 通过 | radar-api 14 files / 62 tests；RN 49 files / 163 tests；后端 19 tests |
+| `pnpm --dir mobile/radar test` | 通过 | 教学卡片切片后 50 files / 167 tests |
+| `pnpm --dir mobile/radar export:ios` / `export:android` | 通过 | Hermes bundle 成功；不等同真机 haptic/FPS 验收 |
 | `make backend-check` | 待运行 | 服务端同步切片后 |
 | 双平台 Hermes export / Release | 待运行 | 不能替代真机手势、haptic 和 FPS |
 | 真机 VoiceOver/TalkBack/haptic/FPS | 待运行 | 需要连接授权设备；未运行前不得声明验收 |

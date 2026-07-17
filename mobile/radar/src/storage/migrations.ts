@@ -370,6 +370,15 @@ const signalAppetiteSchema = `
   ) WITHOUT ROWID;
 `;
 
+const signalAppetiteUiSchema = `
+  CREATE TABLE signal_appetite_ui_state (
+    owner_id TEXT NOT NULL PRIMARY KEY,
+    teaching_onboarding_seen INTEGER NOT NULL DEFAULT 0
+      CHECK (teaching_onboarding_seen IN (0, 1)),
+    updated_at TEXT NOT NULL
+  ) WITHOUT ROWID;
+`;
+
 export const radarMigrations: readonly RadarMigration[] = Object.freeze([
   {
     version: 1,
@@ -400,6 +409,11 @@ export const radarMigrations: readonly RadarMigration[] = Object.freeze([
     version: 6,
     name: 'signal_appetite_event_log_and_projections',
     up: (executor) => executor.execAsync(signalAppetiteSchema),
+  },
+  {
+    version: 7,
+    name: 'signal_appetite_local_ui_state',
+    up: (executor) => executor.execAsync(signalAppetiteUiSchema),
   },
 ]);
 
