@@ -4,6 +4,7 @@ import hmac
 import json
 import time
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -186,9 +187,9 @@ class WeComAdapter:
         sender_id = str(body.get("FromUserName") or "")
         if not sender_id or len(sender_id) > 255:
             raise WeComCryptoError("invalid wecom sender")
+        fallback_digest = hashlib.sha256(content.encode()).hexdigest()[:16]
         provider_message_id = str(
-            body.get("MsgId")
-            or f"{sender_id}:{body.get('CreateTime')}:{hashlib.sha256(content.encode()).hexdigest()[:16]}"
+            body.get("MsgId") or f"{sender_id}:{body.get('CreateTime')}:{fallback_digest}"
         )
         prefix = f"wecom:{connection.id}:" if connection else ""
         return InboundMessage(
@@ -206,6 +207,11 @@ class WeComAdapter:
                 "agentId": str(body.get("AgentID") or ""),
                 "createTime": str(body.get("CreateTime") or ""),
             },
+            sent_at=(
+                datetime.fromtimestamp(int(body["CreateTime"]), tz=UTC)
+                if body.get("CreateTime")
+                else None
+            ),
             force_human_review=True,
         )
 
@@ -305,6 +311,7 @@ class WeComAdapter:
             return SendReceipt(
                 provider_message_id=None,
                 raw_response={"dry_run": True, "channel": self.channel, "target": target_user_id},
+                delivered=False,
             )
         token = await self._access_token(credentials, cache_scope=cache_scope)
         try:

@@ -11,20 +11,28 @@ from app.core.security import constant_time_equals, decode_access_token
 from app.core.time_window import WorkTimeConfig, WorkTimeService
 from app.domain.services.detection_policy import OpportunityDetector
 from app.infrastructure.ai.litellm_client import LiteLLMOpportunityClassifier, LiteLLMReplyGenerator
+from app.infrastructure.agent.pi_client import PiAgentClient
 from app.infrastructure.db.models import Opportunity, User
 from app.infrastructure.db.repositories import (
     BillingEventRepository,
     ConfigRepository,
     MessageRepository,
+    JobMessageAuditRepository,
+    JobOpportunityMatchRepository,
+    JobOpportunityRepository,
+    JobSearchProfileRepository,
     OpportunityRepository,
+    PasswordResetRepository,
     ReplyTemplateRepository,
     RuleRepository,
+    SourceFunctionalProfileRepository,
     SubscriptionRepository,
     TelegramConnectionRepository,
     TelegramUserConfigRepository,
     UserRepository,
     UserSettingsRepository,
     WeComConnectionRepository,
+    WeComArchiveRepository,
     WeComDeliveryRepository,
     WeComEventRepository,
 )
@@ -64,6 +72,14 @@ async def _user_from_token(token: str, settings: Settings, session: AsyncSession
     user = await UserRepository(session).get(user_id)
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="inactive user")
+    try:
+        token_version = int(payload.get("ver", 0))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token"
+        ) from exc
+    if token_version != user.auth_version:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token")
     return user
 
 
@@ -91,6 +107,47 @@ def get_message_repo(session: AsyncSession = Depends(get_session)) -> MessageRep
     return MessageRepository(session)
 
 
+def get_job_message_audit_repo(
+    session: AsyncSession = Depends(get_session),
+) -> JobMessageAuditRepository:
+    return JobMessageAuditRepository(session)
+
+
+def get_source_functional_profile_repo(
+    session: AsyncSession = Depends(get_session),
+) -> SourceFunctionalProfileRepository:
+    return SourceFunctionalProfileRepository(session)
+
+
+def get_job_opportunity_repo(
+    session: AsyncSession = Depends(get_session),
+) -> JobOpportunityRepository:
+    return JobOpportunityRepository(session)
+
+
+def get_job_search_profile_repo(
+    session: AsyncSession = Depends(get_session),
+) -> JobSearchProfileRepository:
+    return JobSearchProfileRepository(session)
+
+
+def get_job_opportunity_match_repo(
+    session: AsyncSession = Depends(get_session),
+) -> JobOpportunityMatchRepository:
+    return JobOpportunityMatchRepository(session)
+
+
+def get_pi_agent_client(settings: Settings = Depends(get_settings)) -> PiAgentClient:
+    return PiAgentClient(
+        node_binary=settings.pi_agent_node_binary,
+        runner_path=settings.pi_agent_runner_path,
+        provider=settings.pi_agent_provider,
+        model=settings.pi_agent_model,
+        api_key=settings.effective_pi_agent_api_key,
+        timeout_seconds=settings.pi_agent_timeout_seconds,
+    )
+
+
 def get_opportunity_repo(session: AsyncSession = Depends(get_session)) -> OpportunityRepository:
     return OpportunityRepository(session)
 
@@ -105,6 +162,12 @@ def get_template_repo(session: AsyncSession = Depends(get_session)) -> ReplyTemp
 
 def get_user_repo(session: AsyncSession = Depends(get_session)) -> UserRepository:
     return UserRepository(session)
+
+
+def get_password_reset_repo(
+    session: AsyncSession = Depends(get_session),
+) -> PasswordResetRepository:
+    return PasswordResetRepository(session)
 
 
 def get_subscription_repo(session: AsyncSession = Depends(get_session)) -> SubscriptionRepository:
@@ -135,6 +198,12 @@ def get_wecom_connection_repo(
     session: AsyncSession = Depends(get_session),
 ) -> WeComConnectionRepository:
     return WeComConnectionRepository(session)
+
+
+def get_wecom_archive_repo(
+    session: AsyncSession = Depends(get_session),
+) -> WeComArchiveRepository:
+    return WeComArchiveRepository(session)
 
 
 def get_wecom_event_repo(
@@ -171,12 +240,13 @@ def get_detector(settings: Settings = Depends(get_settings)) -> OpportunityDetec
 def get_adapter_registry(
     settings: Settings = Depends(get_settings),
     redis: Redis = Depends(get_redis_client),
+    telegram_connection_repo: TelegramConnectionRepository = Depends(get_telegram_connection_repo),
     wecom_connection_repo: WeComConnectionRepository = Depends(get_wecom_connection_repo),
     wecom_delivery_repo: WeComDeliveryRepository = Depends(get_wecom_delivery_repo),
 ) -> AdapterRegistry:
     return AdapterRegistry(
         [
-            TelegramAdapter(settings),
+            TelegramAdapter(settings, connection_repo=telegram_connection_repo),
             WeComAdapter(
                 settings,
                 redis=redis,

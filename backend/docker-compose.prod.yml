@@ -11,6 +11,22 @@ x-app-env: &app-env
   ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-10080}
   PASSWORD_LOGIN_MAX_ATTEMPTS: ${PASSWORD_LOGIN_MAX_ATTEMPTS:-5}
   PASSWORD_LOGIN_WINDOW_SECONDS: ${PASSWORD_LOGIN_WINDOW_SECONDS:-300}
+  PASSWORD_RESET_ENABLED: ${PASSWORD_RESET_ENABLED:-true}
+  PASSWORD_RESET_TTL_MINUTES: ${PASSWORD_RESET_TTL_MINUTES:-15}
+  PASSWORD_RESET_MAX_ATTEMPTS: ${PASSWORD_RESET_MAX_ATTEMPTS:-5}
+  PASSWORD_RESET_REQUEST_LIMIT: ${PASSWORD_RESET_REQUEST_LIMIT:-3}
+  PASSWORD_RESET_REQUEST_WINDOW_SECONDS: ${PASSWORD_RESET_REQUEST_WINDOW_SECONDS:-900}
+  PASSWORD_RESET_VERIFY_LIMIT: ${PASSWORD_RESET_VERIFY_LIMIT:-10}
+  PASSWORD_RESET_VERIFY_WINDOW_SECONDS: ${PASSWORD_RESET_VERIFY_WINDOW_SECONDS:-900}
+  SMTP_HOST: ${SMTP_HOST:-}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_USERNAME: ${SMTP_USERNAME:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-}
+  SMTP_FROM_NAME: ${SMTP_FROM_NAME:-商机雷达}
+  SMTP_STARTTLS: ${SMTP_STARTTLS:-true}
+  SMTP_USE_TLS: ${SMTP_USE_TLS:-false}
+  SMTP_TIMEOUT_SECONDS: ${SMTP_TIMEOUT_SECONDS:-10}
   FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-https://im.story2u.xyz}
   CORS_ORIGINS: ${CORS_ORIGINS:-["https://im.story2u.xyz","http://localhost:3000"]}
   GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
@@ -27,7 +43,7 @@ x-app-env: &app-env
   DEFAULT_WORK_START: ${DEFAULT_WORK_START:-09:00}
   DEFAULT_WORK_END: ${DEFAULT_WORK_END:-18:30}
   PENDING_HUMAN_SLA_MINUTES: ${PENDING_HUMAN_SLA_MINUTES:-30}
-  IM_SEND_ENABLED: ${IM_SEND_ENABLED:-false}
+  IM_SEND_ENABLED: ${IM_SEND_ENABLED:-true}
   TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-change-me}
   TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-change-me}
   TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
@@ -43,8 +59,21 @@ x-app-env: &app-env
   WECOM_SECRET: ${WECOM_SECRET:-change-me}
   WECOM_TOKEN: ${WECOM_TOKEN:-change-me}
   WECOM_AES_KEY: ${WECOM_AES_KEY:-change-me}
-  AI_ENABLED: ${AI_ENABLED:-false}
+  WECOM_ARCHIVE_ENABLED: ${WECOM_ARCHIVE_ENABLED:-false}
+  WECOM_ARCHIVE_SDK_PATH: ${WECOM_ARCHIVE_SDK_PATH:-/opt/wecom-finance-sdk/libWeWorkFinanceSdk_C.so}
+  LD_LIBRARY_PATH: /opt/wecom-finance-sdk
+  WECOM_ARCHIVE_POLL_INTERVAL_SECONDS: ${WECOM_ARCHIVE_POLL_INTERVAL_SECONDS:-10}
+  WECOM_ARCHIVE_BATCH_SIZE: ${WECOM_ARCHIVE_BATCH_SIZE:-100}
+  WECOM_ARCHIVE_SDK_TIMEOUT_SECONDS: ${WECOM_ARCHIVE_SDK_TIMEOUT_SECONDS:-5}
+  WECOM_ARCHIVE_LEASE_SECONDS: ${WECOM_ARCHIVE_LEASE_SECONDS:-120}
+  AI_ENABLED: ${AI_ENABLED:-true}
   LITELLM_MODEL: ${LITELLM_MODEL:-openai/gpt-4o-mini}
+  AI_AUTO_REPLY_ENABLED: ${AI_AUTO_REPLY_ENABLED:-true}
+  AI_AUTO_REPLY_MIN_CONFIDENCE: ${AI_AUTO_REPLY_MIN_CONFIDENCE:-0.85}
+  AI_AUTO_REPLY_COOLDOWN_MINUTES: ${AI_AUTO_REPLY_COOLDOWN_MINUTES:-720}
+  AI_AUTO_REPLY_WINDOW_HOURS: ${AI_AUTO_REPLY_WINDOW_HOURS:-24}
+  AI_AUTO_REPLY_MAX_PER_WINDOW: ${AI_AUTO_REPLY_MAX_PER_WINDOW:-1}
+  AI_AUTO_REPLY_MAX_CHARS: ${AI_AUTO_REPLY_MAX_CHARS:-240}
   OPENAI_API_KEY: ${OPENAI_API_KEY:-change-me}
   DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
   PI_AGENT_ENABLED: ${PI_AGENT_ENABLED:-true}
@@ -120,6 +149,8 @@ services:
     environment: *app-env
     ports:
       - "${API_PORT:-8000}:8000"
+    volumes:
+      - ${WECOM_ARCHIVE_SDK_DIR:-./vendor/wecom-finance-sdk}:/opt/wecom-finance-sdk:ro
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -138,6 +169,17 @@ services:
     restart: unless-stopped
     command: celery -A app.worker.celery_app:celery_app beat -l INFO --schedule=/tmp/celerybeat-schedule
     environment: *app-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  wecom_archive_worker:
+    image: ${BACKEND_IMAGE:-ghcr.io/story2u/im-backend:latest}
+    restart: unless-stopped
+    command: celery -A app.worker.celery_app:celery_app worker -l INFO -Q wecom_archive --concurrency=1
+    environment: *app-env
+    volumes:
+      - ${WECOM_ARCHIVE_SDK_DIR:-./vendor/wecom-finance-sdk}:/opt/wecom-finance-sdk:ro
     depends_on:
       migrate:
         condition: service_completed_successfully

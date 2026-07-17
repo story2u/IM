@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import structlog
-from sqlalchemy import String, cast, func
+from sqlalchemy import String, cast, func, or_, update
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlmodel import col, select
@@ -13,6 +13,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.domain.enums import (
     AgentAnalysisStatus,
+    AutoReplyDecisionReason,
+    AutoReplyDeliveryStatus,
     BillingEventStatus,
     BillingInterval,
     BillingProvider,
@@ -20,13 +22,17 @@ from app.domain.enums import (
     BillingSubscriptionStatus,
     FrontendOpportunityStatus,
     IMChannel,
+    JobFeedbackType,
+    JobMessageClassification,
     MessageDirection,
     MessageSource,
     OpportunityArchiveAction,
     OpportunityArchiveScope,
     OpportunityStatus,
+    OpportunityType,
     PlanCode,
     Priority,
+    SourcePrimaryFunction,
     SubscriptionStatus,
     TelegramConnectionAttemptStatus,
     TelegramConnectionStatus,
@@ -42,6 +48,7 @@ from app.domain.enums import (
     WeComSourceType,
 )
 from app.domain.ports import AgentAnalysisProjection, DetectionRule, InboundMessage
+from app.domain.services.opportunity_state import InvalidOpportunityTransition
 from app.domain.services.subscription_policy import (
     BillingPeriod,
     PlanEntitlements,
@@ -53,13 +60,22 @@ from app.domain.services.subscription_policy import (
 from app.infrastructure.db.models import (
     AppConfig,
     AuthAccount,
+    AutoReplyDelivery,
     BillingEvent,
     BillingSubscription,
+    JobMessageAudit,
+    JobOpportunityDetail,
+    JobOpportunityFeedback,
+    JobOpportunityMatch,
+    JobOpportunitySource,
+    JobSearchProfile,
     Message,
     Opportunity,
     OpportunityArchiveEvent,
+    PasswordResetChallenge,
     ReplyTemplate,
     Rule,
+    SourceFunctionalProfile,
     SubscriptionAccount,
     TelegramConnection,
     TelegramConnectionAttempt,
@@ -72,6 +88,10 @@ from app.infrastructure.db.models import (
     UserDetectionPreference,
     UserNotificationPreference,
     UserWorkSchedule,
+    WeComArchiveConnection,
+    WeComArchiveCursor,
+    WeComArchiveEvent,
+    WeComArchiveMemberBinding,
     WeComConnection,
     WeComOutboundDelivery,
     WeComSource,
@@ -80,6 +100,22 @@ from app.infrastructure.db.models import (
 )
 
 logger = structlog.get_logger(__name__)
+
+
+async def _count_active_wecom_group_sources(session: AsyncSession, owner_user_id: UUID) -> int:
+    result = await session.exec(
+        select(func.count())
+        .select_from(WeComSource)
+        .where(
+            WeComSource.owner_user_id == owner_user_id,
+            WeComSource.enabled.is_(True),
+            WeComSource.quota_paused.is_(False),
+            WeComSource.source_type.in_(
+                [WeComSourceType.INTERNAL_GROUP, WeComSourceType.EXTERNAL_GROUP]
+            ),
+        )
+    )
+    return int(result.one())
 
 
 FRONTEND_STATUS_MAP: dict[FrontendOpportunityStatus, set[OpportunityStatus]] = {
@@ -232,6 +268,113 @@ class UserRepository:
         user.last_login_at = utc_now()
         user.updated_at = utc_now()
         self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
+
+class PasswordResetRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def create(
+        self,
+        *,
+        user_id: UUID,
+        token_digest: str,
+        code_digest: str,
+        expires_at: datetime,
+    ) -> PasswordResetChallenge:
+        now = utc_now()
+        await self.session.exec(
+            update(PasswordResetChallenge)
+            .where(
+                PasswordResetChallenge.user_id == user_id,
+                PasswordResetChallenge.used_at.is_(None),
+            )
+            .values(used_at=now, updated_at=now)
+        )
+        challenge = PasswordResetChallenge(
+            user_id=user_id,
+            token_digest=token_digest,
+            code_digest=code_digest,
+            expires_at=expires_at,
+        )
+        self.session.add(challenge)
+        await self.session.commit()
+        await self.session.refresh(challenge)
+        return challenge
+
+    async def active_by_token(self, token_digest: str) -> PasswordResetChallenge | None:
+        result = await self.session.exec(
+            select(PasswordResetChallenge)
+            .where(
+                PasswordResetChallenge.token_digest == token_digest,
+                PasswordResetChallenge.used_at.is_(None),
+                PasswordResetChallenge.expires_at > utc_now(),
+            )
+            .with_for_update()
+        )
+        return result.first()
+
+    async def latest_active_for_email(
+        self, email: str
+    ) -> tuple[PasswordResetChallenge, User] | None:
+        result = await self.session.exec(
+            select(PasswordResetChallenge, User)
+            .join(User, User.id == PasswordResetChallenge.user_id)
+            .where(
+                User.email == email.lower().strip(),
+                User.is_active.is_(True),
+                PasswordResetChallenge.used_at.is_(None),
+                PasswordResetChallenge.expires_at > utc_now(),
+            )
+            .order_by(col(PasswordResetChallenge.created_at).desc())
+            .with_for_update()
+        )
+        return result.first()
+
+    async def user_for_challenge(self, challenge: PasswordResetChallenge) -> User | None:
+        return await self.session.get(User, challenge.user_id)
+
+    async def register_failed_attempt(
+        self, challenge: PasswordResetChallenge, *, max_attempts: int
+    ) -> None:
+        now = utc_now()
+        challenge.failed_attempts += 1
+        challenge.updated_at = now
+        if challenge.failed_attempts >= max_attempts:
+            challenge.used_at = now
+        self.session.add(challenge)
+        await self.session.commit()
+
+    async def invalidate(self, challenge: PasswordResetChallenge) -> None:
+        challenge.used_at = utc_now()
+        challenge.updated_at = utc_now()
+        self.session.add(challenge)
+        await self.session.commit()
+
+    async def replace_password(
+        self,
+        *,
+        user: User,
+        password_hash: str,
+        challenge: PasswordResetChallenge | None = None,
+    ) -> User:
+        now = utc_now()
+        user.password_hash = password_hash
+        user.auth_version += 1
+        user.updated_at = now
+        self.session.add(user)
+        if challenge:
+            await self.session.exec(
+                update(PasswordResetChallenge)
+                .where(
+                    PasswordResetChallenge.user_id == user.id,
+                    PasswordResetChallenge.used_at.is_(None),
+                )
+                .values(used_at=now, updated_at=now)
+            )
         await self.session.commit()
         await self.session.refresh(user)
         return user
@@ -586,7 +729,7 @@ class SubscriptionRepository:
         self,
         *,
         user_id: UUID,
-        message_id: UUID,
+        message_id: UUID | None,
         idempotency_key: str,
         now: datetime | None = None,
     ) -> UsageReservation:
@@ -737,11 +880,34 @@ class MessageRepository:
             group_name=inbound.group_name,
             raw_message_links=inbound.raw_message_links,
             raw_payload=inbound.raw_payload,
+            sent_at=inbound.sent_at or utc_now(),
         )
         self.session.add(message)
         await self.session.commit()
         await self.session.refresh(message)
         return message
+
+    async def list_recent_source_samples(
+        self,
+        *,
+        owner_user_id: UUID,
+        channel: IMChannel,
+        conversation_id: str,
+        limit: int = 20,
+    ) -> list[str]:
+        result = await self.session.exec(
+            select(Message.text)
+            .where(
+                Message.owner_user_id == owner_user_id,
+                Message.channel == channel,
+                Message.conversation_id == conversation_id,
+                Message.direction == MessageDirection.INCOMING,
+                Message.text.is_not(None),
+            )
+            .order_by(col(Message.sent_at).desc())
+            .limit(min(limit, 50))
+        )
+        return [text for text in result.all() if text]
 
     async def mark_agent_queued(self, message_id: UUID, *, force: bool = False) -> Message | None:
         message = await self.session.get(Message, message_id)
@@ -852,17 +1018,18 @@ class MessageRepository:
         conversation_id: str,
         text: str,
         source: MessageSource,
-        opportunity_id: UUID,
+        opportunity_id: UUID | None,
         external_message_id: str,
         raw_payload: dict,
         owner_user_id: UUID | None = None,
+        sender_display_name: str = "商机助手",
     ) -> Message:
         message = Message(
             owner_user_id=owner_user_id,
             channel=channel,
             external_message_id=external_message_id,
             conversation_id=conversation_id,
-            sender_display_name="商机助手",
+            sender_display_name=sender_display_name,
             direction=MessageDirection.OUTGOING,
             source=source,
             text=text,
@@ -921,6 +1088,240 @@ class MessageRepository:
         )
         result = await self.session.exec(statement)
         return list(reversed(result.all()))
+
+
+class AutoReplyDeliveryRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def reserve(
+        self,
+        *,
+        owner_user_id: UUID,
+        opportunity_id: UUID,
+        source_message_id: UUID,
+        channel: IMChannel,
+        conversation_id: str,
+        idempotency_key: str,
+    ) -> tuple[AutoReplyDelivery, bool]:
+        existing = await self._get_by_key(owner_user_id, idempotency_key)
+        if existing:
+            return existing, False
+        delivery = AutoReplyDelivery(
+            owner_user_id=owner_user_id,
+            opportunity_id=opportunity_id,
+            source_message_id=source_message_id,
+            channel=channel,
+            conversation_id=conversation_id,
+            idempotency_key=idempotency_key,
+        )
+        self.session.add(delivery)
+        try:
+            await self.session.commit()
+        except IntegrityError:
+            await self.session.rollback()
+            existing = await self._get_by_key(owner_user_id, idempotency_key)
+            if existing:
+                return existing, False
+            raise
+        await self.session.refresh(delivery)
+        return delivery, True
+
+    async def claim_candidate(self, delivery_id: UUID) -> AutoReplyDelivery | None:
+        delivery = await self.session.get(AutoReplyDelivery, delivery_id, with_for_update=True)
+        if not delivery or delivery.status != AutoReplyDeliveryStatus.CANDIDATE:
+            return None
+        now = utc_now()
+        delivery.status = AutoReplyDeliveryStatus.GENERATING
+        delivery.attempt_count += 1
+        delivery.updated_at = now
+        self.session.add(delivery)
+        await self.session.commit()
+        await self.session.refresh(delivery)
+        return delivery
+
+    async def mark_blocked(
+        self,
+        delivery: AutoReplyDelivery,
+        reason: AutoReplyDecisionReason,
+    ) -> AutoReplyDelivery:
+        return await self._mark(
+            delivery,
+            status=AutoReplyDeliveryStatus.BLOCKED,
+            reason=reason,
+        )
+
+    async def mark_ready(
+        self,
+        delivery: AutoReplyDelivery,
+        *,
+        content_hash: str,
+    ) -> AutoReplyDelivery:
+        return await self._mark(
+            delivery,
+            status=AutoReplyDeliveryStatus.READY,
+            reason=AutoReplyDecisionReason.ELIGIBLE,
+            content_hash=content_hash,
+            ready_at=utc_now(),
+        )
+
+    async def mark_sending(self, delivery: AutoReplyDelivery) -> AutoReplyDelivery:
+        current = await self.session.get(AutoReplyDelivery, delivery.id, with_for_update=True)
+        if not current or current.status != AutoReplyDeliveryStatus.READY:
+            raise ValueError("auto reply delivery is not ready")
+        return await self._mark(
+            current,
+            status=AutoReplyDeliveryStatus.SENDING,
+            reason=AutoReplyDecisionReason.ELIGIBLE,
+            sending_at=utc_now(),
+        )
+
+    async def claim_ready_for_send(
+        self, delivery: AutoReplyDelivery
+    ) -> tuple[AutoReplyDelivery, Opportunity] | None:
+        current = await self.session.get(AutoReplyDelivery, delivery.id, with_for_update=True)
+        if not current or current.status != AutoReplyDeliveryStatus.READY:
+            return None
+        opportunity = await self.session.get(
+            Opportunity,
+            current.opportunity_id,
+            with_for_update=True,
+        )
+        if (
+            not opportunity
+            or opportunity.status != OpportunityStatus.AI_AUTO_REPLY
+            or opportunity.archived_at is not None
+            or opportunity.assigned_to
+        ):
+            return None
+        now = utc_now()
+        opportunity.assigned_to = "ai:auto_reply"
+        opportunity.updated_at = now
+        current.status = AutoReplyDeliveryStatus.SENDING
+        current.decision_reason = AutoReplyDecisionReason.ELIGIBLE
+        current.sending_at = now
+        current.updated_at = now
+        self.session.add(opportunity)
+        self.session.add(current)
+        await self.session.commit()
+        await self.session.refresh(current)
+        await self.session.refresh(opportunity)
+        return current, opportunity
+
+    async def mark_sent(
+        self,
+        delivery: AutoReplyDelivery,
+        *,
+        provider_message_id: str,
+    ) -> AutoReplyDelivery:
+        return await self._mark(
+            delivery,
+            status=AutoReplyDeliveryStatus.SENT,
+            reason=AutoReplyDecisionReason.ELIGIBLE,
+            provider_message_id=provider_message_id,
+            sent_at=utc_now(),
+        )
+
+    async def mark_dry_run(self, delivery: AutoReplyDelivery) -> AutoReplyDelivery:
+        return await self._mark(
+            delivery,
+            status=AutoReplyDeliveryStatus.DRY_RUN,
+            reason=AutoReplyDecisionReason.DELIVERY_DRY_RUN,
+        )
+
+    async def mark_failed(self, delivery: AutoReplyDelivery, error: str) -> AutoReplyDelivery:
+        await self.session.rollback()
+        current = await self.session.get(AutoReplyDelivery, delivery.id)
+        if not current:
+            return delivery
+        return await self._mark(
+            current,
+            status=AutoReplyDeliveryStatus.FAILED,
+            reason=AutoReplyDecisionReason.PROVIDER_ERROR,
+            error=error[:500],
+        )
+
+    async def mark_sending_uncertain(
+        self, delivery: AutoReplyDelivery, error: str
+    ) -> AutoReplyDelivery:
+        await self.session.rollback()
+        current = await self.session.get(AutoReplyDelivery, delivery.id)
+        if not current:
+            return delivery
+        return await self._mark(
+            current,
+            status=AutoReplyDeliveryStatus.SENDING,
+            reason=AutoReplyDecisionReason.PROVIDER_ERROR,
+            error=error[:500],
+        )
+
+    async def reload_after_rollback(self, delivery_id: UUID) -> AutoReplyDelivery | None:
+        await self.session.rollback()
+        return await self.session.get(AutoReplyDelivery, delivery_id)
+
+    async def count_sent_since(
+        self,
+        *,
+        owner_user_id: UUID,
+        channel: IMChannel,
+        conversation_id: str,
+        since: datetime,
+    ) -> int:
+        result = await self.session.exec(
+            select(func.count())
+            .select_from(AutoReplyDelivery)
+            .where(
+                AutoReplyDelivery.owner_user_id == owner_user_id,
+                AutoReplyDelivery.channel == channel,
+                AutoReplyDelivery.conversation_id == conversation_id,
+                AutoReplyDelivery.status == AutoReplyDeliveryStatus.SENT,
+                AutoReplyDelivery.sent_at >= since,
+            )
+        )
+        return int(result.one())
+
+    async def _get_by_key(
+        self, owner_user_id: UUID, idempotency_key: str
+    ) -> AutoReplyDelivery | None:
+        result = await self.session.exec(
+            select(AutoReplyDelivery).where(
+                AutoReplyDelivery.owner_user_id == owner_user_id,
+                AutoReplyDelivery.idempotency_key == idempotency_key,
+            )
+        )
+        return result.first()
+
+    async def _mark(
+        self,
+        delivery: AutoReplyDelivery,
+        *,
+        status: AutoReplyDeliveryStatus,
+        reason: AutoReplyDecisionReason,
+        content_hash: str | None = None,
+        provider_message_id: str | None = None,
+        ready_at: datetime | None = None,
+        sending_at: datetime | None = None,
+        sent_at: datetime | None = None,
+        error: str | None = None,
+    ) -> AutoReplyDelivery:
+        delivery.status = status
+        delivery.decision_reason = reason
+        if content_hash is not None:
+            delivery.content_hash = content_hash
+        if provider_message_id is not None:
+            delivery.provider_message_id = provider_message_id
+        if ready_at is not None:
+            delivery.ready_at = ready_at
+        if sending_at is not None:
+            delivery.sending_at = sending_at
+        if sent_at is not None:
+            delivery.sent_at = sent_at
+        delivery.error = error
+        delivery.updated_at = utc_now()
+        self.session.add(delivery)
+        await self.session.commit()
+        await self.session.refresh(delivery)
+        return delivery
 
 
 class OpportunityRepository:
@@ -1034,7 +1435,9 @@ class OpportunityRepository:
         limit: int = 100,
         offset: int = 0,
     ) -> list[Opportunity]:
-        statement = select(Opportunity)
+        statement = select(Opportunity).where(
+            Opportunity.opportunity_type == OpportunityType.BUSINESS
+        )
         if frontend_status:
             statement = statement.where(
                 Opportunity.status.in_(FRONTEND_STATUS_MAP[frontend_status])
@@ -1071,6 +1474,7 @@ class OpportunityRepository:
 
         clauses = [
             Opportunity.owner_user_id == owner_user_id,
+            Opportunity.opportunity_type == OpportunityType.BUSINESS,
             Opportunity.archived_at.is_(None),
         ]
         if frontend_status:
@@ -1158,6 +1562,7 @@ class OpportunityRepository:
             .select_from(Opportunity)
             .where(
                 Opportunity.owner_user_id == owner_user_id,
+                Opportunity.opportunity_type == OpportunityType.BUSINESS,
                 Opportunity.archived_at.is_(None),
                 Opportunity.status.in_(FRONTEND_STATUS_MAP[FrontendOpportunityStatus.PENDING]),
             )
@@ -1170,6 +1575,7 @@ class OpportunityRepository:
             select(Opportunity)
             .where(
                 Opportunity.owner_user_id == owner_user_id,
+                Opportunity.opportunity_type == OpportunityType.BUSINESS,
                 Opportunity.archived_at.is_(None),
                 Opportunity.attention_required.is_(True),
                 Opportunity.status.in_(FRONTEND_STATUS_MAP[FrontendOpportunityStatus.PENDING]),
@@ -1184,6 +1590,7 @@ class OpportunityRepository:
         """当前用户真实商机里出现过的关键词并集（用于筛选面板选项）。"""
         statement = select(Opportunity.matched_keywords).where(
             Opportunity.owner_user_id == owner_user_id,
+            Opportunity.opportunity_type == OpportunityType.BUSINESS,
             Opportunity.archived_at.is_(None),
             func.jsonb_array_length(col(Opportunity.matched_keywords)) > 0,
         )
@@ -1291,6 +1698,7 @@ class OpportunityRepository:
         *,
         final_reply: str | None = None,
         assigned_to: str | None = None,
+        clear_assignment: bool = False,
     ) -> Opportunity:
         opportunity.status = status
         if final_reply is not None:
@@ -1299,6 +1707,29 @@ class OpportunityRepository:
             opportunity.last_message_at = utc_now()
         if assigned_to is not None:
             opportunity.assigned_to = assigned_to
+        elif clear_assignment:
+            opportunity.assigned_to = None
+        opportunity.updated_at = utc_now()
+        self.session.add(opportunity)
+        await self.session.commit()
+        await self.session.refresh(opportunity)
+        return opportunity
+
+    async def claim_for_manual_reply(
+        self,
+        *,
+        opportunity_id: UUID,
+        operator_id: str,
+    ) -> Opportunity:
+        opportunity = await self.session.get(Opportunity, opportunity_id, with_for_update=True)
+        if not opportunity:
+            raise LookupError("opportunity not found")
+        if (
+            opportunity.assigned_to == "ai:auto_reply"
+            and opportunity.status == OpportunityStatus.AI_AUTO_REPLY
+        ):
+            raise InvalidOpportunityTransition("automatic reply delivery is already in progress")
+        opportunity.assigned_to = operator_id
         opportunity.updated_at = utc_now()
         self.session.add(opportunity)
         await self.session.commit()
@@ -1327,7 +1758,7 @@ class OpportunityRepository:
         return opportunity
 
     async def pending_human_older_than(self, minutes: int) -> list[Opportunity]:
-        cutoff = datetime.now(timezone.utc) - timedelta(minutes=minutes)
+        cutoff = datetime.now(UTC) - timedelta(minutes=minutes)
         statement = select(Opportunity).where(
             Opportunity.status == OpportunityStatus.PENDING_HUMAN,
             Opportunity.archived_at.is_(None),
@@ -1651,7 +2082,7 @@ class TelegramUserConfigRepository:
         enabled: bool,
         backfill_limit: int,
         entitlements: PlanEntitlements,
-        enabled_wecom_groups: int = 0,
+        enabled_wecom_groups: int | None = None,
     ) -> list[TelegramMonitor]:
         user = await self.session.get(User, user_id, with_for_update=True)
         if not user or not user.is_active:
@@ -1666,6 +2097,8 @@ class TelegramUserConfigRepository:
             if monitor.enabled and not monitor.quota_paused
         }
         active_selection_changed = set(desired_chat_ids) != current_active_chat_ids
+        if enabled_wecom_groups is None:
+            enabled_wecom_groups = await _count_active_wecom_group_sources(self.session, user_id)
         ensure_group_quota(
             entitlements=entitlements,
             telegram_groups=len(desired_chat_ids) if enabled else 0,
@@ -1945,12 +2378,13 @@ class TelegramConnectionRepository:
         )
         source = result.first()
         if not source:
+            wecom_groups = await _count_active_wecom_group_sources(self.session, owner_user_id)
             ensure_group_quota(
                 entitlements=entitlements,
                 telegram_groups=legacy_active_count
                 + await self.count_active_sources_by_user(owner_user_id)
                 + 1,
-                wecom_groups=0,
+                wecom_groups=wecom_groups,
             )
             source = TelegramSource(
                 owner_user_id=owner_user_id,
@@ -2036,6 +2470,94 @@ class TelegramConnectionRepository:
         )
         result = await self.session.exec(statement)
         return list(result.all())
+
+    async def ensure_business_source(
+        self,
+        *,
+        connection: TelegramConnection,
+        external_chat_id: str,
+        display_name: str,
+    ) -> TelegramSource:
+        if connection.connection_type != TelegramConnectionType.BUSINESS:
+            raise ValueError("Telegram Business connection is required")
+        result = await self.session.exec(
+            select(TelegramSource).where(
+                TelegramSource.connection_id == connection.id,
+                TelegramSource.external_chat_id == external_chat_id,
+            )
+        )
+        source = result.first()
+        if not source:
+            source = TelegramSource(
+                owner_user_id=connection.owner_user_id,
+                connection_id=connection.id,
+                source_type=TelegramSourceType.PRIVATE,
+                external_chat_id=external_chat_id,
+                display_name=display_name[:255] or "Telegram Business 私聊",
+                auto_reply_enabled=False,
+            )
+        else:
+            source.display_name = display_name[:255] or source.display_name
+            source.source_type = TelegramSourceType.PRIVATE
+            source.updated_at = utc_now()
+        self.session.add(source)
+        await self.session.commit()
+        await self.session.refresh(source)
+        return source
+
+    async def get_auto_reply_source(
+        self,
+        *,
+        owner_user_id: UUID,
+        conversation_id: str,
+    ) -> tuple[TelegramSource, TelegramConnection] | None:
+        result = await self.session.exec(
+            select(TelegramSource, TelegramConnection)
+            .join(TelegramConnection, TelegramConnection.id == TelegramSource.connection_id)
+            .where(
+                TelegramSource.owner_user_id == owner_user_id,
+                TelegramSource.external_chat_id == conversation_id,
+                TelegramConnection.owner_user_id == owner_user_id,
+                TelegramConnection.connection_type == TelegramConnectionType.BUSINESS,
+                TelegramSource.source_type == TelegramSourceType.PRIVATE,
+            )
+        )
+        return result.first()
+
+    async def set_source_auto_reply_enabled(
+        self,
+        *,
+        owner_user_id: UUID,
+        source_id: UUID,
+        enabled: bool,
+    ) -> tuple[TelegramSource, TelegramConnection] | None:
+        result = await self.session.exec(
+            select(TelegramSource, TelegramConnection)
+            .join(TelegramConnection, TelegramConnection.id == TelegramSource.connection_id)
+            .where(
+                TelegramSource.id == source_id,
+                TelegramSource.owner_user_id == owner_user_id,
+                TelegramConnection.owner_user_id == owner_user_id,
+            )
+        )
+        row = result.first()
+        if not row:
+            return None
+        source, connection = row
+        if enabled and (
+            connection.connection_type != TelegramConnectionType.BUSINESS
+            or source.source_type != TelegramSourceType.PRIVATE
+            or connection.capabilities.get("can_reply") is not True
+        ):
+            raise ValueError(
+                "automatic replies require a Telegram Business private chat with reply permission"
+            )
+        source.auto_reply_enabled = enabled
+        source.updated_at = utc_now()
+        self.session.add(source)
+        await self.session.commit()
+        await self.session.refresh(source)
+        return source, connection
 
     async def list_listenable_mtproto_connections(
         self,
@@ -2212,10 +2734,13 @@ class TelegramConnectionRepository:
         source = source_result.first()
         if not source:
             current_sources = await self.count_active_sources_by_user(attempt.owner_user_id)
+            wecom_groups = await _count_active_wecom_group_sources(
+                self.session, attempt.owner_user_id
+            )
             ensure_group_quota(
                 entitlements=entitlements,
                 telegram_groups=legacy_active_count + current_sources + 1,
-                wecom_groups=0,
+                wecom_groups=wecom_groups,
             )
             source = TelegramSource(
                 owner_user_id=attempt.owner_user_id,
@@ -2804,6 +3329,1131 @@ class WeComDeliveryRepository:
         delivery.updated_at = utc_now()
         self.session.add(delivery)
         await self.session.commit()
+
+
+class WeComArchiveRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def list_for_owner(self, owner_user_id: UUID) -> list[WeComArchiveConnection]:
+        result = await self.session.exec(
+            select(WeComArchiveConnection)
+            .where(
+                WeComArchiveConnection.owner_user_id == owner_user_id,
+                WeComArchiveConnection.enabled.is_(True),
+            )
+            .order_by(col(WeComArchiveConnection.created_at).desc())
+        )
+        return list(result.all())
+
+    async def count_enabled_for_owner(self, owner_user_id: UUID) -> int:
+        result = await self.session.exec(
+            select(func.count())
+            .select_from(WeComArchiveConnection)
+            .where(
+                WeComArchiveConnection.owner_user_id == owner_user_id,
+                WeComArchiveConnection.enabled.is_(True),
+            )
+        )
+        return int(result.one())
+
+    async def get(self, connection_id: UUID) -> WeComArchiveConnection | None:
+        return await self.session.get(WeComArchiveConnection, connection_id)
+
+    async def get_for_owner(
+        self, connection_id: UUID, owner_user_id: UUID
+    ) -> WeComArchiveConnection | None:
+        result = await self.session.exec(
+            select(WeComArchiveConnection).where(
+                WeComArchiveConnection.id == connection_id,
+                WeComArchiveConnection.owner_user_id == owner_user_id,
+            )
+        )
+        return result.first()
+
+    async def create_with_owner_binding(
+        self,
+        *,
+        connection: WeComArchiveConnection,
+        wecom_user_id: str,
+        member_display_name: str,
+    ) -> tuple[WeComArchiveConnection, WeComArchiveMemberBinding, WeComArchiveCursor]:
+        existing_result = await self.session.exec(
+            select(WeComArchiveConnection).where(
+                WeComArchiveConnection.owner_user_id == connection.owner_user_id,
+                WeComArchiveConnection.corp_id == connection.corp_id,
+            )
+        )
+        existing = existing_result.first()
+        if existing:
+            if existing.enabled:
+                raise ValueError("WeCom archive connection already exists")
+            existing.display_name = connection.display_name
+            existing.secret_encrypted = connection.secret_encrypted
+            existing.private_key_encrypted = connection.private_key_encrypted
+            existing.public_key_version = connection.public_key_version
+            existing.status = WeComConnectionStatus.PENDING
+            existing.enabled = True
+            existing.last_error = None
+            existing.updated_at = utc_now()
+            binding_result = await self.session.exec(
+                select(WeComArchiveMemberBinding).where(
+                    WeComArchiveMemberBinding.connection_id == existing.id,
+                    WeComArchiveMemberBinding.user_id == existing.owner_user_id,
+                )
+            )
+            binding = binding_result.first()
+            if not binding:
+                binding = WeComArchiveMemberBinding(
+                    connection_id=existing.id,
+                    user_id=existing.owner_user_id,
+                    wecom_user_id=wecom_user_id,
+                    display_name=member_display_name,
+                )
+            else:
+                binding.wecom_user_id = wecom_user_id
+                binding.display_name = member_display_name
+                binding.enabled = True
+                binding.updated_at = utc_now()
+            cursor = await self.cursor_for_connection(existing.id)
+            if not cursor:
+                cursor = WeComArchiveCursor(connection_id=existing.id)
+            cursor.lease_expires_at = None
+            self.session.add(existing)
+            self.session.add(binding)
+            self.session.add(cursor)
+            try:
+                await self.session.commit()
+            except IntegrityError as exc:
+                await self.session.rollback()
+                raise ValueError(
+                    "WeCom archive connection or member binding already exists"
+                ) from exc
+            for record in (existing, binding, cursor):
+                await self.session.refresh(record)
+            return existing, binding, cursor
+
+        binding = WeComArchiveMemberBinding(
+            connection_id=connection.id,
+            user_id=connection.owner_user_id,
+            wecom_user_id=wecom_user_id,
+            display_name=member_display_name,
+        )
+        cursor = WeComArchiveCursor(connection_id=connection.id)
+        self.session.add(connection)
+        self.session.add(binding)
+        self.session.add(cursor)
+        try:
+            await self.session.commit()
+        except IntegrityError as exc:
+            await self.session.rollback()
+            raise ValueError("WeCom archive connection or member binding already exists") from exc
+        for record in (connection, binding, cursor):
+            await self.session.refresh(record)
+        return connection, binding, cursor
+
+    async def binding_for_user(
+        self, connection_id: UUID, user_id: UUID
+    ) -> WeComArchiveMemberBinding | None:
+        result = await self.session.exec(
+            select(WeComArchiveMemberBinding).where(
+                WeComArchiveMemberBinding.connection_id == connection_id,
+                WeComArchiveMemberBinding.user_id == user_id,
+            )
+        )
+        return result.first()
+
+    async def active_bindings_for_participants(
+        self, connection_id: UUID, participant_ids: set[str]
+    ) -> list[WeComArchiveMemberBinding]:
+        if not participant_ids:
+            return []
+        result = await self.session.exec(
+            select(WeComArchiveMemberBinding).where(
+                WeComArchiveMemberBinding.connection_id == connection_id,
+                WeComArchiveMemberBinding.enabled.is_(True),
+                col(WeComArchiveMemberBinding.wecom_user_id).in_(participant_ids),
+            )
+        )
+        return list(result.all())
+
+    async def mark_binding_matched(self, binding: WeComArchiveMemberBinding) -> None:
+        binding.last_matched_at = utc_now()
+        binding.updated_at = utc_now()
+        self.session.add(binding)
+        await self.session.commit()
+
+    async def list_sources_for_owner(self, owner_user_id: UUID) -> list[WeComSource]:
+        result = await self.session.exec(
+            select(WeComSource)
+            .where(
+                WeComSource.owner_user_id == owner_user_id,
+                WeComSource.archive_connection_id.is_not(None),
+            )
+            .order_by(col(WeComSource.last_message_at).desc().nullslast())
+        )
+        return list(result.all())
+
+    async def cursor_for_connection(self, connection_id: UUID) -> WeComArchiveCursor | None:
+        result = await self.session.exec(
+            select(WeComArchiveCursor).where(WeComArchiveCursor.connection_id == connection_id)
+        )
+        return result.first()
+
+    async def acquire_poll_lease(
+        self, connection_id: UUID, *, lease_seconds: int
+    ) -> WeComArchiveCursor | None:
+        now = utc_now()
+        result = await self.session.exec(
+            select(WeComArchiveCursor)
+            .where(
+                WeComArchiveCursor.connection_id == connection_id,
+                (WeComArchiveCursor.lease_expires_at.is_(None))
+                | (WeComArchiveCursor.lease_expires_at <= now),
+            )
+            .with_for_update(skip_locked=True)
+        )
+        cursor = result.first()
+        if not cursor:
+            return None
+        cursor.lease_expires_at = now + timedelta(seconds=lease_seconds)
+        cursor.updated_at = now
+        self.session.add(cursor)
+        await self.session.commit()
+        await self.session.refresh(cursor)
+        return cursor
+
+    async def active_connection_ids(self, *, limit: int) -> list[UUID]:
+        result = await self.session.exec(
+            select(WeComArchiveConnection.id)
+            .where(
+                WeComArchiveConnection.enabled.is_(True),
+                WeComArchiveConnection.status == WeComConnectionStatus.ACTIVE,
+            )
+            .order_by(col(WeComArchiveConnection.last_polled_at).asc().nullsfirst())
+            .limit(limit)
+        )
+        return list(result.all())
+
+    async def reserve_event(
+        self,
+        *,
+        connection_id: UUID,
+        provider_message_id: str,
+        sequence: int,
+        message_type: str,
+        payload_hash: str,
+    ) -> tuple[WeComArchiveEvent, bool]:
+        event = WeComArchiveEvent(
+            connection_id=connection_id,
+            provider_message_id=provider_message_id,
+            sequence=sequence,
+            message_type=message_type,
+            payload_hash=payload_hash,
+            status=WeComEventStatus.PROCESSING,
+            attempt_count=1,
+        )
+        try:
+            async with self.session.begin_nested():
+                self.session.add(event)
+                await self.session.flush()
+        except IntegrityError:
+            result = await self.session.exec(
+                select(WeComArchiveEvent).where(
+                    WeComArchiveEvent.connection_id == connection_id,
+                    WeComArchiveEvent.provider_message_id == provider_message_id,
+                )
+            )
+            existing = result.one()
+            if existing.status in {WeComEventStatus.COMPLETED, WeComEventStatus.IGNORED}:
+                return existing, False
+            existing.status = WeComEventStatus.PROCESSING
+            existing.attempt_count += 1
+            existing.processing_error = None
+            existing.updated_at = utc_now()
+            self.session.add(existing)
+            await self.session.commit()
+            await self.session.refresh(existing)
+            return existing, True
+        await self.session.commit()
+        await self.session.refresh(event)
+        return event, True
+
+    async def complete_event(
+        self, event: WeComArchiveEvent, *, matched_user_count: int, ignored: bool = False
+    ) -> None:
+        event.status = WeComEventStatus.IGNORED if ignored else WeComEventStatus.COMPLETED
+        event.matched_user_count = matched_user_count
+        event.processing_error = None
+        event.processed_at = utc_now()
+        event.updated_at = utc_now()
+        self.session.add(event)
+        await self.session.commit()
+
+    async def fail_event(self, event: WeComArchiveEvent, error: str) -> None:
+        event.status = WeComEventStatus.FAILED
+        event.processing_error = error[:1000]
+        event.updated_at = utc_now()
+        self.session.add(event)
+        await self.session.commit()
+
+    async def ensure_archive_source(
+        self,
+        *,
+        connection_id: UUID,
+        owner_user_id: UUID,
+        external_conversation_id: str,
+        display_name: str,
+        source_type: WeComSourceType,
+        quota_paused: bool = False,
+        quota_reason: str | None = None,
+    ) -> WeComSource:
+        result = await self.session.exec(
+            select(WeComSource).where(
+                WeComSource.archive_connection_id == connection_id,
+                WeComSource.owner_user_id == owner_user_id,
+                WeComSource.external_conversation_id == external_conversation_id,
+            )
+        )
+        source = result.first()
+        now = utc_now()
+        if source:
+            source.display_name = display_name[:255]
+            source.last_message_at = now
+            source.updated_at = now
+        else:
+            source = WeComSource(
+                owner_user_id=owner_user_id,
+                archive_connection_id=connection_id,
+                external_conversation_id=external_conversation_id,
+                display_name=display_name[:255],
+                source_type=source_type,
+                receive_capability=WeComReceiveCapability.MESSAGE_ARCHIVE,
+                send_capability=WeComSendCapability.MANUAL_ONLY,
+                quota_paused=quota_paused,
+                quota_reason=quota_reason,
+                last_message_at=now,
+            )
+        self.session.add(source)
+        try:
+            await self.session.commit()
+        except IntegrityError:
+            await self.session.rollback()
+            result = await self.session.exec(
+                select(WeComSource).where(
+                    WeComSource.archive_connection_id == connection_id,
+                    WeComSource.owner_user_id == owner_user_id,
+                    WeComSource.external_conversation_id == external_conversation_id,
+                )
+            )
+            source = result.one()
+        await self.session.refresh(source)
+        return source
+
+    async def get_archive_source(
+        self,
+        *,
+        connection_id: UUID,
+        owner_user_id: UUID,
+        external_conversation_id: str,
+    ) -> WeComSource | None:
+        result = await self.session.exec(
+            select(WeComSource).where(
+                WeComSource.archive_connection_id == connection_id,
+                WeComSource.owner_user_id == owner_user_id,
+                WeComSource.external_conversation_id == external_conversation_id,
+            )
+        )
+        return result.first()
+
+    async def active_group_counts(self, owner_user_id: UUID) -> tuple[int, int]:
+        telegram_result = await self.session.exec(
+            select(func.count())
+            .select_from(TelegramSource)
+            .join(
+                TelegramConnection,
+                TelegramSource.connection_id == TelegramConnection.id,
+            )
+            .where(
+                TelegramSource.owner_user_id == owner_user_id,
+                TelegramSource.enabled.is_(True),
+                TelegramSource.quota_paused.is_(False),
+                TelegramConnection.enabled.is_(True),
+                TelegramConnection.status == TelegramConnectionStatus.CONNECTED,
+                TelegramSource.source_type.in_(
+                    [TelegramSourceType.GROUP, TelegramSourceType.CHANNEL]
+                ),
+            )
+        )
+        wecom_groups = await _count_active_wecom_group_sources(self.session, owner_user_id)
+        return int(telegram_result.one()), wecom_groups
+
+    async def reconcile_source_quota_for_user(
+        self, *, owner_user_id: UUID, capacity: int
+    ) -> list[WeComSource]:
+        result = await self.session.exec(
+            select(WeComSource)
+            .where(
+                WeComSource.owner_user_id == owner_user_id,
+                WeComSource.enabled.is_(True),
+                WeComSource.source_type.in_(
+                    [WeComSourceType.INTERNAL_GROUP, WeComSourceType.EXTERNAL_GROUP]
+                ),
+            )
+            .order_by(
+                col(WeComSource.quota_paused).asc(),
+                col(WeComSource.created_at).asc(),
+            )
+        )
+        sources = list(result.all())
+        for index, source in enumerate(sources):
+            paused = index >= max(capacity, 0)
+            source.quota_paused = paused
+            source.quota_reason = (
+                "current subscription does not have capacity for this WeCom group"
+                if paused
+                else None
+            )
+            source.updated_at = utc_now()
+            self.session.add(source)
+        await self.session.commit()
+        return sources
+
+    async def finish_poll(
+        self,
+        *,
+        connection: WeComArchiveConnection,
+        cursor: WeComArchiveCursor,
+        last_sequence: int,
+        batch_size: int,
+        verified: bool = False,
+    ) -> None:
+        now = utc_now()
+        cursor.last_seq = max(cursor.last_seq, last_sequence)
+        cursor.last_batch_size = batch_size
+        cursor.lease_expires_at = None
+        cursor.updated_at = now
+        connection.status = WeComConnectionStatus.ACTIVE
+        connection.last_polled_at = now
+        connection.last_error = None
+        if verified:
+            connection.last_verified_at = now
+        connection.updated_at = now
+        self.session.add(cursor)
+        self.session.add(connection)
+        await self.session.commit()
+
+    async def release_poll_failure(
+        self, connection: WeComArchiveConnection, cursor: WeComArchiveCursor, error: str
+    ) -> None:
+        cursor.lease_expires_at = None
+        cursor.updated_at = utc_now()
+        connection.last_error = error[:1000]
+        connection.updated_at = utc_now()
+        self.session.add(cursor)
+        self.session.add(connection)
+        await self.session.commit()
+
+    async def mark_connection_error(self, connection: WeComArchiveConnection, error: str) -> None:
+        connection.last_error = error[:1000]
+        connection.updated_at = utc_now()
+        self.session.add(connection)
+        await self.session.commit()
+
+    async def disable_and_clear_secrets(
+        self, connection: WeComArchiveConnection, *, cleared_secret: str
+    ) -> None:
+        connection.enabled = False
+        connection.status = WeComConnectionStatus.DISABLED
+        connection.secret_encrypted = cleared_secret
+        connection.private_key_encrypted = cleared_secret
+        connection.last_error = None
+        connection.updated_at = utc_now()
+        self.session.add(connection)
+        bindings = await self.session.exec(
+            select(WeComArchiveMemberBinding).where(
+                WeComArchiveMemberBinding.connection_id == connection.id
+            )
+        )
+        for binding in bindings.all():
+            binding.enabled = False
+            binding.updated_at = utc_now()
+            self.session.add(binding)
+        sources = await self.session.exec(
+            select(WeComSource).where(WeComSource.archive_connection_id == connection.id)
+        )
+        for source in sources.all():
+            source.enabled = False
+            source.updated_at = utc_now()
+            self.session.add(source)
+        await self.session.commit()
+
+
+class SourceFunctionalProfileRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def get(
+        self,
+        *,
+        owner_user_id: UUID,
+        channel: IMChannel,
+        external_source_id: str,
+    ) -> SourceFunctionalProfile | None:
+        result = await self.session.exec(
+            select(SourceFunctionalProfile).where(
+                SourceFunctionalProfile.owner_user_id == owner_user_id,
+                SourceFunctionalProfile.channel == channel,
+                SourceFunctionalProfile.external_source_id == external_source_id,
+            )
+        )
+        return result.first()
+
+    async def get_by_id_for_owner(
+        self, profile_id: UUID, owner_user_id: UUID
+    ) -> SourceFunctionalProfile | None:
+        result = await self.session.exec(
+            select(SourceFunctionalProfile).where(
+                SourceFunctionalProfile.id == profile_id,
+                SourceFunctionalProfile.owner_user_id == owner_user_id,
+            )
+        )
+        return result.first()
+
+    async def save_generated(
+        self,
+        *,
+        owner_user_id: UUID,
+        channel: IMChannel,
+        external_source_id: str,
+        source_display_name: str,
+        source_description: str | None,
+        source_username: str | None,
+        source_fingerprint: str,
+        primary_function: SourcePrimaryFunction,
+        secondary_functions: list[str],
+        industry_tags: list[str],
+        region_tags: list[str],
+        language_tags: list[str],
+        job_signal_prior: float,
+        estimated_noise_level: float,
+        reliability_score: float,
+        confidence: float,
+        evidence: list[str],
+        sampled_message_count: int,
+        expires_at: datetime,
+    ) -> SourceFunctionalProfile:
+        profile = await self.get(
+            owner_user_id=owner_user_id,
+            channel=channel,
+            external_source_id=external_source_id,
+        )
+        if profile is None:
+            profile = SourceFunctionalProfile(
+                owner_user_id=owner_user_id,
+                channel=channel,
+                external_source_id=external_source_id,
+                expires_at=expires_at,
+            )
+        profile.source_display_name = source_display_name
+        profile.source_description = source_description
+        profile.source_username = source_username
+        profile.source_fingerprint = source_fingerprint
+        profile.primary_function = primary_function
+        profile.secondary_functions = secondary_functions
+        profile.industry_tags = industry_tags
+        profile.region_tags = region_tags
+        profile.language_tags = language_tags
+        profile.job_signal_prior = job_signal_prior
+        profile.estimated_noise_level = estimated_noise_level
+        profile.reliability_score = reliability_score
+        profile.confidence = confidence
+        profile.evidence = evidence
+        profile.sampled_message_count = sampled_message_count
+        profile.profiled_at = utc_now()
+        profile.expires_at = expires_at
+        profile.updated_at = utc_now()
+        self.session.add(profile)
+        await self.session.commit()
+        await self.session.refresh(profile)
+        return profile
+
+    async def set_override(
+        self,
+        profile: SourceFunctionalProfile,
+        override: SourcePrimaryFunction | None,
+    ) -> SourceFunctionalProfile:
+        profile.manual_override = override
+        profile.updated_at = utc_now()
+        self.session.add(profile)
+        await self.session.commit()
+        await self.session.refresh(profile)
+        return profile
+
+
+class JobMessageAuditRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def get_by_message(self, message_id: UUID) -> JobMessageAudit | None:
+        result = await self.session.exec(
+            select(JobMessageAudit).where(JobMessageAudit.message_id == message_id)
+        )
+        return result.first()
+
+    async def list_for_owner(
+        self,
+        *,
+        owner_user_id: UUID,
+        classification: JobMessageClassification | None,
+        manually_corrected: bool | None,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[tuple[JobMessageAudit, Message]], int]:
+        filters = [JobMessageAudit.owner_user_id == owner_user_id]
+        if classification is not None:
+            filters.append(JobMessageAudit.classification == classification)
+        if manually_corrected is not None:
+            filters.append(JobMessageAudit.manually_corrected == manually_corrected)
+        statement = (
+            select(JobMessageAudit, Message)
+            .join(Message, Message.id == JobMessageAudit.message_id)
+            .where(*filters)
+            .order_by(JobMessageAudit.updated_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        count_statement = select(func.count(JobMessageAudit.id)).where(*filters)
+        rows = list((await self.session.exec(statement)).all())
+        total = int((await self.session.exec(count_statement)).one())
+        return rows, total
+
+    async def correct_for_owner(
+        self,
+        *,
+        audit_id: UUID,
+        owner_user_id: UUID,
+        is_job: bool,
+        note: str | None,
+    ) -> tuple[JobMessageAudit, Message] | None:
+        result = await self.session.exec(
+            select(JobMessageAudit, Message)
+            .join(Message, Message.id == JobMessageAudit.message_id)
+            .where(
+                JobMessageAudit.id == audit_id,
+                JobMessageAudit.owner_user_id == owner_user_id,
+            )
+        )
+        row = result.first()
+        if not row:
+            return None
+        audit, message = row
+        previous = audit.classification.value
+        audit.classification = (
+            JobMessageClassification.JOB_POST
+            if is_job
+            else JobMessageClassification.UNRELATED_CHAT
+        )
+        audit.manually_corrected = True
+        correction = f"manual correction: {previous} -> {audit.classification.value}"
+        if note:
+            correction = f"{correction}; {note.strip()}"
+        audit.filter_reason = correction[:1000]
+        audit.updated_at = utc_now()
+        self.session.add(audit)
+        await self.session.commit()
+        await self.session.refresh(audit)
+        return audit, message
+
+    async def record(
+        self,
+        *,
+        owner_user_id: UUID,
+        message_id: UUID,
+        source_profile_id: UUID | None,
+        classification: JobMessageClassification,
+        confidence: float,
+        filter_reason: str,
+        prefilter_score: float,
+        agent_required: bool,
+    ) -> tuple[JobMessageAudit, bool]:
+        existing = await self.get_by_message(message_id)
+        if existing:
+            return existing, False
+        audit = JobMessageAudit(
+            owner_user_id=owner_user_id,
+            message_id=message_id,
+            source_profile_id=source_profile_id,
+            classification=classification,
+            confidence=confidence,
+            filter_reason=filter_reason,
+            prefilter_score=prefilter_score,
+            agent_required=agent_required,
+        )
+        self.session.add(audit)
+        try:
+            await self.session.commit()
+        except IntegrityError:
+            await self.session.rollback()
+            existing = await self.get_by_message(message_id)
+            if existing:
+                return existing, False
+            raise
+        await self.session.refresh(audit)
+        return audit, True
+
+    async def apply_agent_classification(
+        self,
+        audit: JobMessageAudit,
+        *,
+        classification: JobMessageClassification,
+        confidence: float,
+        reason: str,
+    ) -> JobMessageAudit:
+        audit.classification = classification
+        audit.confidence = confidence
+        audit.filter_reason = reason[:1000]
+        audit.updated_at = utc_now()
+        self.session.add(audit)
+        await self.session.commit()
+        await self.session.refresh(audit)
+        return audit
+
+
+class JobOpportunityRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def find_duplicate(
+        self,
+        *,
+        owner_user_id: UUID,
+        application_url: str | None,
+        company_name: str | None,
+        normalized_job_title: str,
+        city: str | None,
+        content_fingerprint: str,
+        exclude_opportunity_id: UUID | None = None,
+    ) -> tuple[Opportunity, JobOpportunityDetail] | None:
+        candidates = [JobOpportunityDetail.content_fingerprint == content_fingerprint]
+        if application_url:
+            candidates.append(JobOpportunityDetail.application_url == application_url)
+        if company_name:
+            candidates.append(
+                (func.lower(JobOpportunityDetail.company_name) == company_name)
+                & (JobOpportunityDetail.normalized_job_title == normalized_job_title)
+                & (func.lower(JobOpportunityDetail.city) == city)
+            )
+        statement = (
+            select(Opportunity, JobOpportunityDetail)
+            .join(
+                JobOpportunityDetail,
+                JobOpportunityDetail.opportunity_id == Opportunity.id,
+            )
+            .where(
+                Opportunity.owner_user_id == owner_user_id,
+                Opportunity.opportunity_type == OpportunityType.JOB,
+                JobOpportunityDetail.duplicate_group_id.is_(None),
+                or_(*candidates),
+            )
+            .order_by(col(JobOpportunityDetail.posted_at).asc())
+        )
+        if exclude_opportunity_id:
+            statement = statement.where(Opportunity.id != exclude_opportunity_id)
+        result = await self.session.exec(statement.limit(1))
+        return result.first()
+
+    async def list_semantic_duplicate_candidates(
+        self,
+        *,
+        owner_user_id: UUID,
+        posted_after: datetime,
+        exclude_opportunity_id: UUID | None = None,
+        limit: int = 100,
+    ) -> list[tuple[Opportunity, JobOpportunityDetail]]:
+        statement = (
+            select(Opportunity, JobOpportunityDetail)
+            .join(
+                JobOpportunityDetail,
+                JobOpportunityDetail.opportunity_id == Opportunity.id,
+            )
+            .where(
+                Opportunity.owner_user_id == owner_user_id,
+                Opportunity.opportunity_type == OpportunityType.JOB,
+                JobOpportunityDetail.duplicate_group_id.is_(None),
+                JobOpportunityDetail.posted_at >= posted_after,
+            )
+            .order_by(col(JobOpportunityDetail.posted_at).desc())
+        )
+        if exclude_opportunity_id:
+            statement = statement.where(Opportunity.id != exclude_opportunity_id)
+        result = await self.session.exec(statement.limit(min(limit, 200)))
+        return list(result.all())
+
+    async def save_projection(
+        self,
+        *,
+        opportunity: Opportunity,
+        detail: JobOpportunityDetail,
+        source: JobOpportunitySource,
+        message: Message,
+        canonical: tuple[Opportunity, JobOpportunityDetail] | None,
+    ) -> Opportunity:
+        opportunity.opportunity_type = OpportunityType.JOB
+        opportunity.status = OpportunityStatus.PENDING_HUMAN
+        opportunity.title = detail.job_title
+        opportunity.summary = detail.requirements_summary
+        opportunity.last_message_at = message.sent_at
+        opportunity.updated_at = utc_now()
+        if canonical:
+            canonical_opportunity, canonical_detail = canonical
+            detail.duplicate_group_id = canonical_opportunity.id
+            if (
+                detail.salary_raw
+                and canonical_detail.salary_raw
+                and detail.salary_raw != canonical_detail.salary_raw
+            ):
+                canonical_detail.conflicting_source_data = True
+                canonical_detail.updated_at = utc_now()
+                self.session.add(canonical_detail)
+            source.opportunity_id = canonical_opportunity.id
+        message.opportunity_id = opportunity.id
+        message.processed_at = utc_now()
+        message.updated_at = utc_now()
+        self.session.add(opportunity)
+        self.session.add(detail)
+        self.session.add(source)
+        self.session.add(message)
+        try:
+            await self.session.commit()
+        except IntegrityError:
+            await self.session.rollback()
+            existing = await self.find_duplicate(
+                owner_user_id=source.owner_user_id,
+                application_url=detail.application_url,
+                company_name=detail.company_name,
+                normalized_job_title=detail.normalized_job_title or detail.job_title.casefold(),
+                city=detail.city,
+                content_fingerprint=detail.content_fingerprint,
+                exclude_opportunity_id=opportunity.id,
+            )
+            if existing:
+                return existing[0]
+            raise
+        await self.session.refresh(opportunity)
+        return canonical[0] if canonical else opportunity
+
+    async def get_detail_for_owner(
+        self, opportunity_id: UUID, owner_user_id: UUID
+    ) -> tuple[Opportunity, JobOpportunityDetail] | None:
+        result = await self.session.exec(
+            select(Opportunity, JobOpportunityDetail)
+            .join(
+                JobOpportunityDetail,
+                JobOpportunityDetail.opportunity_id == Opportunity.id,
+            )
+            .where(
+                Opportunity.id == opportunity_id,
+                Opportunity.owner_user_id == owner_user_id,
+                Opportunity.opportunity_type == OpportunityType.JOB,
+            )
+        )
+        return result.first()
+
+    async def list_sources(
+        self, opportunity_id: UUID, owner_user_id: UUID
+    ) -> list[JobOpportunitySource]:
+        result = await self.session.exec(
+            select(JobOpportunitySource)
+            .where(
+                JobOpportunitySource.opportunity_id == opportunity_id,
+                JobOpportunitySource.owner_user_id == owner_user_id,
+            )
+            .order_by(col(JobOpportunitySource.posted_at).desc())
+        )
+        return list(result.all())
+
+    async def list_canonical_ids(self, owner_user_id: UUID) -> list[UUID]:
+        result = await self.session.exec(
+            select(Opportunity.id)
+            .join(JobOpportunityDetail, JobOpportunityDetail.opportunity_id == Opportunity.id)
+            .where(
+                Opportunity.owner_user_id == owner_user_id,
+                Opportunity.opportunity_type == OpportunityType.JOB,
+                JobOpportunityDetail.duplicate_group_id.is_(None),
+            )
+        )
+        return list(result.all())
+
+    async def source_counts(
+        self, opportunity_ids: list[UUID], owner_user_id: UUID
+    ) -> dict[UUID, int]:
+        if not opportunity_ids:
+            return {}
+        result = await self.session.exec(
+            select(JobOpportunitySource.opportunity_id, func.count())
+            .where(
+                JobOpportunitySource.owner_user_id == owner_user_id,
+                col(JobOpportunitySource.opportunity_id).in_(opportunity_ids),
+            )
+            .group_by(JobOpportunitySource.opportunity_id)
+        )
+        return {opportunity_id: int(count) for opportunity_id, count in result.all()}
+
+    async def list_for_owner(
+        self,
+        *,
+        owner_user_id: UUID,
+        profile_id: UUID | None,
+        query: str | None,
+        source: IMChannel | None,
+        posted_from: datetime | None,
+        posted_to: datetime | None,
+        work_mode: str | None,
+        employment_type: str | None,
+        seniority: str | None,
+        country: str | None,
+        city: str | None,
+        salary_min: float | None,
+        salary_currency: str | None,
+        salary_disclosed: bool | None,
+        degree_level: str | None,
+        english_level: str | None,
+        visa_sponsorship: bool | None,
+        minimum_match_score: int | None,
+        age_requirement_present: bool | None,
+        exclude_expired: bool,
+        sort: str,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[tuple[Opportunity, JobOpportunityDetail, JobOpportunityMatch | None]], int]:
+        statement = (
+            select(Opportunity, JobOpportunityDetail, JobOpportunityMatch)
+            .join(JobOpportunityDetail, JobOpportunityDetail.opportunity_id == Opportunity.id)
+            .outerjoin(
+                JobOpportunityMatch,
+                (JobOpportunityMatch.opportunity_id == Opportunity.id)
+                & (JobOpportunityMatch.job_search_profile_id == profile_id),
+            )
+            .where(
+                Opportunity.owner_user_id == owner_user_id,
+                Opportunity.opportunity_type == OpportunityType.JOB,
+                Opportunity.archived_at.is_(None),
+                JobOpportunityDetail.duplicate_group_id.is_(None),
+            )
+        )
+        if profile_id is None:
+            statement = statement.where(JobOpportunityMatch.id.is_(None))
+        if query:
+            pattern = f"%{query.strip()[:200]}%"
+            statement = statement.where(
+                or_(
+                    JobOpportunityDetail.job_title.ilike(pattern),
+                    JobOpportunityDetail.company_name.ilike(pattern),
+                    JobOpportunityDetail.requirements_summary.ilike(pattern),
+                )
+            )
+        if source:
+            statement = statement.where(JobOpportunityDetail.source_channel == source)
+        if posted_from:
+            statement = statement.where(JobOpportunityDetail.posted_at >= posted_from)
+        if posted_to:
+            statement = statement.where(JobOpportunityDetail.posted_at <= posted_to)
+        if work_mode:
+            statement = statement.where(JobOpportunityDetail.work_mode == work_mode)
+        if employment_type:
+            statement = statement.where(JobOpportunityDetail.employment_type == employment_type)
+        if seniority:
+            statement = statement.where(JobOpportunityDetail.seniority == seniority)
+        if country:
+            statement = statement.where(JobOpportunityDetail.country_code == country.upper())
+        if city:
+            statement = statement.where(func.lower(JobOpportunityDetail.city) == city.casefold())
+        if salary_min is not None:
+            statement = statement.where(JobOpportunityDetail.salary_max >= salary_min)
+        if salary_currency:
+            statement = statement.where(
+                JobOpportunityDetail.salary_currency == salary_currency.upper()
+            )
+        if salary_disclosed is True:
+            statement = statement.where(JobOpportunityDetail.salary_raw.is_not(None))
+        elif salary_disclosed is False:
+            statement = statement.where(JobOpportunityDetail.salary_raw.is_(None))
+        if degree_level:
+            statement = statement.where(JobOpportunityDetail.degree_level == degree_level)
+        if english_level:
+            statement = statement.where(JobOpportunityDetail.english_level == english_level)
+        if visa_sponsorship is not None:
+            statement = statement.where(JobOpportunityDetail.visa_sponsorship == visa_sponsorship)
+        if minimum_match_score is not None:
+            statement = statement.where(JobOpportunityMatch.match_score >= minimum_match_score)
+        if age_requirement_present is not None:
+            statement = statement.where(
+                JobOpportunityDetail.age_requirement_present == age_requirement_present
+            )
+        if exclude_expired:
+            statement = statement.where(JobOpportunityDetail.is_expired.is_(False))
+
+        count_statement = select(func.count()).select_from(statement.subquery())
+        total_result = await self.session.exec(count_statement)
+        total = int(total_result.one())
+        if sort == "match":
+            statement = statement.order_by(
+                col(JobOpportunityMatch.match_score).desc(),
+                col(JobOpportunityDetail.posted_at).desc(),
+            )
+        elif sort == "salary":
+            statement = statement.order_by(
+                col(JobOpportunityDetail.salary_max).desc().nullslast(),
+                col(JobOpportunityDetail.posted_at).desc(),
+            )
+        elif sort == "confidence":
+            statement = statement.order_by(
+                col(JobOpportunityDetail.extraction_confidence).desc(),
+                col(JobOpportunityDetail.posted_at).desc(),
+            )
+        elif sort == "source_reliability":
+            statement = statement.order_by(
+                col(JobOpportunityDetail.source_reliability_score).desc(),
+                col(JobOpportunityDetail.posted_at).desc(),
+            )
+        else:
+            statement = statement.order_by(col(JobOpportunityDetail.posted_at).desc())
+        result = await self.session.exec(statement.offset(offset).limit(limit))
+        return list(result.all()), total
+
+    async def save_feedback(
+        self,
+        *,
+        opportunity_id: UUID,
+        owner_user_id: UUID,
+        feedback_type: JobFeedbackType,
+        note: str | None,
+    ) -> JobOpportunityFeedback:
+        result = await self.session.exec(
+            select(JobOpportunityFeedback).where(
+                JobOpportunityFeedback.opportunity_id == opportunity_id,
+                JobOpportunityFeedback.owner_user_id == owner_user_id,
+            )
+        )
+        feedback = result.first() or JobOpportunityFeedback(
+            opportunity_id=opportunity_id,
+            owner_user_id=owner_user_id,
+            feedback_type=feedback_type,
+        )
+        feedback.feedback_type = feedback_type
+        feedback.note = note
+        feedback.updated_at = utc_now()
+        self.session.add(feedback)
+        await self.session.commit()
+        await self.session.refresh(feedback)
+        return feedback
+
+
+class JobSearchProfileRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def list_for_owner(self, owner_user_id: UUID) -> list[JobSearchProfile]:
+        result = await self.session.exec(
+            select(JobSearchProfile)
+            .where(JobSearchProfile.user_id == owner_user_id)
+            .order_by(
+                col(JobSearchProfile.is_default).desc(), col(JobSearchProfile.created_at).asc()
+            )
+        )
+        return list(result.all())
+
+    async def list_enabled(self, owner_user_id: UUID) -> list[JobSearchProfile]:
+        result = await self.session.exec(
+            select(JobSearchProfile).where(
+                JobSearchProfile.user_id == owner_user_id,
+                JobSearchProfile.enabled.is_(True),
+            )
+        )
+        return list(result.all())
+
+    async def get_for_owner(self, profile_id: UUID, owner_user_id: UUID) -> JobSearchProfile | None:
+        result = await self.session.exec(
+            select(JobSearchProfile).where(
+                JobSearchProfile.id == profile_id,
+                JobSearchProfile.user_id == owner_user_id,
+            )
+        )
+        return result.first()
+
+    async def save(self, profile: JobSearchProfile) -> JobSearchProfile:
+        if profile.is_default:
+            await self.session.exec(
+                update(JobSearchProfile)
+                .where(
+                    JobSearchProfile.user_id == profile.user_id,
+                    JobSearchProfile.id != profile.id,
+                )
+                .values(is_default=False, updated_at=utc_now())
+            )
+        profile.updated_at = utc_now()
+        self.session.add(profile)
+        await self.session.commit()
+        await self.session.refresh(profile)
+        return profile
+
+    async def delete(self, profile: JobSearchProfile) -> None:
+        await self.session.delete(profile)
+        await self.session.commit()
+
+
+class JobOpportunityMatchRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def upsert(
+        self,
+        *,
+        opportunity_id: UUID,
+        profile_id: UUID,
+        owner_user_id: UUID,
+        eligibility,
+        match_score: int,
+        matched_reasons: list[str],
+        mismatch_reasons: list[str],
+        unknown_constraints: list[str],
+        score_breakdown: dict[str, int],
+    ) -> JobOpportunityMatch:
+        result = await self.session.exec(
+            select(JobOpportunityMatch).where(
+                JobOpportunityMatch.opportunity_id == opportunity_id,
+                JobOpportunityMatch.job_search_profile_id == profile_id,
+            )
+        )
+        match = result.first() or JobOpportunityMatch(
+            opportunity_id=opportunity_id,
+            job_search_profile_id=profile_id,
+            owner_user_id=owner_user_id,
+        )
+        match.eligibility = eligibility
+        match.match_score = match_score
+        match.matched_reasons = matched_reasons
+        match.mismatch_reasons = mismatch_reasons
+        match.unknown_constraints = unknown_constraints
+        match.score_breakdown = score_breakdown
+        match.updated_at = utc_now()
+        self.session.add(match)
+        await self.session.commit()
+        await self.session.refresh(match)
+        return match
+
+    async def get(
+        self, opportunity_id: UUID, profile_id: UUID, owner_user_id: UUID
+    ) -> JobOpportunityMatch | None:
+        result = await self.session.exec(
+            select(JobOpportunityMatch).where(
+                JobOpportunityMatch.opportunity_id == opportunity_id,
+                JobOpportunityMatch.job_search_profile_id == profile_id,
+                JobOpportunityMatch.owner_user_id == owner_user_id,
+            )
+        )
+        return result.first()
 
 
 class ReplyTemplateRepository:

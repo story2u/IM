@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,6 +59,7 @@ private fun emailLooksValid(email: String): Boolean {
 /** P0 登录：邮箱密码 + Google 原生登录（`GOOGLE_SERVER_CLIENT_ID` 未配置时隐藏 Google 按钮）。 */
 @Composable
 fun LoginScreen(session: SessionStore) {
+    var showPasswordReset by remember { mutableStateOf(false) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
@@ -112,6 +114,15 @@ fun LoginScreen(session: SessionStore) {
                 isSigningIn = false
             }
         }
+    }
+
+    if (showPasswordReset) {
+        PasswordResetScreen(
+            service = session.api.service,
+            initialEmail = email,
+            onBack = { showPasswordReset = false },
+        )
+        return
     }
 
     Column(
@@ -178,6 +189,9 @@ fun LoginScreen(session: SessionStore) {
             } else {
                 Text("登录")
             }
+        }
+        TextButton(onClick = { showPasswordReset = true }, enabled = !isSigningIn) {
+            Text("忘记密码？")
         }
 
         if (BuildConfig.GOOGLE_SERVER_CLIENT_ID.isNotEmpty()) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { BookText, LayoutGrid, LogOut, Moon, Settings, Sun, UserRound } from 'lucide-react'
+import { BookText, BriefcaseBusiness, LayoutGrid, LogOut, Moon, Settings, Sun, UserRound } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
@@ -9,10 +9,12 @@ import { ModeStatusBar } from '@/components/mode-status-bar'
 import { BrandLogo } from '@/components/brand-logo'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth'
+import { isPublicAuthPath } from '@/lib/auth-routes'
 import { cn } from '@/lib/utils'
 
 const navItems = [
   { href: '/', label: '商机看板', icon: LayoutGrid },
+  { href: '/jobs', label: '工作机会', icon: BriefcaseBusiness },
   { href: '/templates', label: '回复模板', icon: BookText },
   { href: '/settings', label: '设置中心', icon: Settings },
 ]
@@ -39,9 +41,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const { user, loading, logout } = useAuth()
-  const isLoginPage = pathname === '/login'
+  const isPublicAuthPage = isPublicAuthPath(pathname)
   const isHomePage = pathname === '/'
-  const isPublicPage = isLoginPage || isHomePage
+  const isPublicPage = isPublicAuthPage || isHomePage
 
   useEffect(() => {
     if (!loading && !user && !isPublicPage) {
@@ -49,7 +51,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [isPublicPage, loading, router, user])
 
-  if (isLoginPage || isHomePage) {
+  if (isPublicAuthPage || isHomePage) {
     return <main className="min-h-svh bg-background">{children}</main>
   }
 

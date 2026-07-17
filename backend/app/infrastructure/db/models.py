@@ -1,4 +1,5 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -8,6 +9,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     Index,
+    Numeric,
     Text,
     UniqueConstraint,
     text,
@@ -18,19 +20,30 @@ from sqlmodel import Field, SQLModel
 
 from app.domain.enums import (
     AgentAnalysisStatus,
+    AutoReplyDecisionReason,
+    AutoReplyDeliveryStatus,
     BillingEventStatus,
     BillingInterval,
     BillingProvider,
     BillingStore,
     BillingSubscriptionStatus,
     IMChannel,
+    JobEligibility,
+    JobEmploymentType,
+    JobFeedbackType,
+    JobMessageClassification,
+    JobSeniority,
+    JobWorkMode,
     MessageDirection,
     MessageSource,
     OpportunityArchiveAction,
     OpportunityStatus,
+    OpportunityType,
     PlanCode,
     Priority,
     RuleType,
+    SalaryPeriod,
+    SourcePrimaryFunction,
     SubscriptionStatus,
     TelegramConnectionAttemptStatus,
     TelegramConnectionStatus,
@@ -49,7 +62,7 @@ from app.domain.enums import (
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class TimestampMixin(SQLModel):
@@ -73,12 +86,33 @@ class User(TimestampMixin, table=True):
     display_name: str = Field(default="")
     avatar_url: str = Field(default="")
     password_hash: str | None = None
+    auth_version: int = Field(default=0, nullable=False)
     is_active: bool = Field(default=True, index=True)
     is_admin: bool = Field(default=False, index=True)
     last_login_at: datetime | None = Field(
         default=None,
         sa_column=Column(DateTime(timezone=True), nullable=True),
     )
+
+
+class PasswordResetChallenge(TimestampMixin, table=True):
+    __tablename__ = "password_reset_challenges"
+    __table_args__ = (
+        CheckConstraint("failed_attempts >= 0", name="ck_password_reset_failed_attempts"),
+        Index("ix_password_reset_user_expires", "user_id", "expires_at"),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    token_digest: str = Field(max_length=64, unique=True)
+    code_digest: str = Field(max_length=64)
+    expires_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False, index=True)
+    )
+    used_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
+    failed_attempts: int = Field(default=0, nullable=False)
 
 
 class AuthAccount(TimestampMixin, table=True):
@@ -299,6 +333,10 @@ class Opportunity(TimestampMixin, table=True):
     )
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
+    opportunity_type: OpportunityType = Field(
+        default=OpportunityType.BUSINESS,
+        sa_column=Column(SAEnum(OpportunityType, native_enum=False), nullable=False, index=True),
+    )
     owner_user_id: UUID | None = Field(default=None, foreign_key="users.id", index=True)
     channel: IMChannel = Field(
         sa_column=Column(SAEnum(IMChannel, native_enum=False), nullable=False, index=True)
@@ -389,6 +427,330 @@ class Opportunity(TimestampMixin, table=True):
     archive_reason: str | None = Field(default=None, max_length=500)
 
 
+class SourceFunctionalProfile(TimestampMixin, table=True):
+    __tablename__ = "source_functional_profiles"
+    __table_args__ = (
+        UniqueConstraint(
+            "owner_user_id",
+            "channel",
+            "external_source_id",
+            name="uq_source_functional_profiles_owner_source",
+        ),
+        Index("ix_source_functional_profiles_owner_function", "owner_user_id", "primary_function"),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    owner_user_id: UUID = Field(foreign_key="users.id", index=True)
+    channel: IMChannel = Field(
+        sa_column=Column(SAEnum(IMChannel, native_enum=False), nullable=False, index=True)
+    )
+    external_source_id: str = Field(max_length=255, index=True)
+    source_display_name: str = Field(default="", max_length=500)
+    source_description: str | None = Field(default=None, max_length=2000)
+    source_username: str | None = Field(default=None, max_length=255)
+    primary_function: SourcePrimaryFunction = Field(
+        default=SourcePrimaryFunction.UNKNOWN,
+        sa_column=Column(
+            SAEnum(SourcePrimaryFunction, native_enum=False), nullable=False, index=True
+        ),
+    )
+    secondary_functions: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    industry_tags: list[str] = Field(default_factory=list, sa_column=Column(JSONB, nullable=False))
+    region_tags: list[str] = Field(default_factory=list, sa_column=Column(JSONB, nullable=False))
+    language_tags: list[str] = Field(default_factory=list, sa_column=Column(JSONB, nullable=False))
+    job_signal_prior: float = Field(default=0.5, ge=0.0, le=1.0)
+    estimated_noise_level: float = Field(default=0.5, ge=0.0, le=1.0)
+    reliability_score: float = Field(default=0.5, ge=0.0, le=1.0)
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    evidence: list[str] = Field(default_factory=list, sa_column=Column(JSONB, nullable=False))
+    manual_override: SourcePrimaryFunction | None = Field(
+        default=None,
+        sa_column=Column(SAEnum(SourcePrimaryFunction, native_enum=False), nullable=True),
+    )
+    sampled_message_count: int = Field(default=0, ge=0)
+    source_fingerprint: str = Field(default="", max_length=64)
+    profiled_at: datetime = Field(
+        default_factory=utc_now, sa_column=Column(DateTime(timezone=True), nullable=False)
+    )
+    expires_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False, index=True)
+    )
+
+
+class JobMessageAudit(TimestampMixin, table=True):
+    __tablename__ = "job_message_audits"
+    __table_args__ = (
+        UniqueConstraint("message_id", name="uq_job_message_audits_message"),
+        Index("ix_job_message_audits_owner_classification", "owner_user_id", "classification"),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    owner_user_id: UUID = Field(foreign_key="users.id", index=True)
+    message_id: UUID = Field(foreign_key="messages.id", index=True)
+    source_profile_id: UUID | None = Field(
+        default=None, foreign_key="source_functional_profiles.id", index=True
+    )
+    classification: JobMessageClassification = Field(
+        default=JobMessageClassification.UNKNOWN,
+        sa_column=Column(
+            SAEnum(JobMessageClassification, native_enum=False), nullable=False, index=True
+        ),
+    )
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    filter_reason: str | None = Field(default=None, max_length=1000)
+    prefilter_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    agent_required: bool = Field(default=False)
+    manually_corrected: bool = Field(default=False)
+
+
+class JobOpportunityDetail(TimestampMixin, table=True):
+    __tablename__ = "job_opportunity_details"
+    __table_args__ = (
+        Index(
+            "ix_job_details_company_title_location", "company_name", "normalized_job_title", "city"
+        ),
+        Index("ix_job_details_posted_at", "posted_at"),
+        Index("ix_job_details_duplicate_group", "duplicate_group_id"),
+    )
+
+    opportunity_id: UUID = Field(primary_key=True, foreign_key="opportunities.id")
+    source_channel: IMChannel = Field(
+        sa_column=Column(SAEnum(IMChannel, native_enum=False), nullable=False, index=True)
+    )
+    source_chat_id: str = Field(max_length=255, index=True)
+    source_chat_name: str | None = Field(default=None, max_length=500)
+    source_message_id: str = Field(max_length=255, index=True)
+    source_message_url: str | None = Field(default=None, max_length=2000)
+    source_author_name: str | None = Field(default=None, max_length=500)
+    source_author_username: str | None = Field(default=None, max_length=255)
+    source_reliability_score: float = Field(default=0.5, ge=0.0, le=1.0)
+    posted_at: datetime = Field(
+        sa_column=Column(DateTime(timezone=True), nullable=False, index=True)
+    )
+    captured_at: datetime = Field(
+        default_factory=utc_now, sa_column=Column(DateTime(timezone=True), nullable=False)
+    )
+    job_title: str = Field(max_length=500)
+    normalized_job_title: str | None = Field(default=None, max_length=500, index=True)
+    company_name: str | None = Field(default=None, max_length=500, index=True)
+    department: str | None = Field(default=None, max_length=500)
+    company_industry: str | None = Field(default=None, max_length=255)
+    company_stage: str | None = Field(default=None, max_length=255)
+    location_text: str | None = Field(default=None, max_length=500)
+    country_code: str | None = Field(default=None, max_length=2, index=True)
+    city: str | None = Field(default=None, max_length=255, index=True)
+    timezone: str | None = Field(default=None, max_length=100)
+    work_mode: JobWorkMode = Field(
+        default=JobWorkMode.UNKNOWN,
+        sa_column=Column(SAEnum(JobWorkMode, native_enum=False), nullable=False, index=True),
+    )
+    employment_type: JobEmploymentType = Field(
+        default=JobEmploymentType.UNKNOWN,
+        sa_column=Column(SAEnum(JobEmploymentType, native_enum=False), nullable=False, index=True),
+    )
+    seniority: JobSeniority = Field(
+        default=JobSeniority.UNKNOWN,
+        sa_column=Column(SAEnum(JobSeniority, native_enum=False), nullable=False, index=True),
+    )
+    salary_raw: str | None = Field(default=None, max_length=500)
+    salary_min: Decimal | None = Field(
+        default=None, ge=0, sa_column=Column(Numeric(18, 2), nullable=True)
+    )
+    salary_max: Decimal | None = Field(
+        default=None, ge=0, sa_column=Column(Numeric(18, 2), nullable=True)
+    )
+    salary_currency: str | None = Field(default=None, max_length=3, index=True)
+    salary_period: SalaryPeriod = Field(
+        default=SalaryPeriod.UNKNOWN,
+        sa_column=Column(SAEnum(SalaryPeriod, native_enum=False), nullable=False),
+    )
+    salary_negotiable: bool | None = None
+    equity_mentioned: bool | None = None
+    requirements_summary: str | None = Field(default=None, max_length=4000)
+    required_skills: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    preferred_skills: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    minimum_years_experience: float | None = Field(default=None, ge=0)
+    maximum_years_experience: float | None = Field(default=None, ge=0)
+    degree_required: bool | None = None
+    degree_level: str | None = Field(default=None, max_length=100, index=True)
+    degree_field: str | None = Field(default=None, max_length=255)
+    english_level: str | None = Field(default=None, max_length=100, index=True)
+    other_language_requirements: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    visa_sponsorship: bool | None = Field(default=None, index=True)
+    work_authorization_text: str | None = Field(default=None, max_length=1000)
+    relocation_support: bool | None = None
+    age_requirement_text: str | None = Field(default=None, max_length=500)
+    age_requirement_present: bool = Field(default=False, index=True)
+    application_deadline: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True, index=True)
+    )
+    application_url: str | None = Field(default=None, max_length=2000)
+    contact_methods: list[dict[str, Any]] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    compliance_flags: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    extraction_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    missing_fields: list[str] = Field(default_factory=list, sa_column=Column(JSONB, nullable=False))
+    field_evidence: dict[str, str] = Field(
+        default_factory=dict, sa_column=Column(JSONB, nullable=False)
+    )
+    raw_excerpt: str = Field(default="", max_length=4000)
+    content_fingerprint: str = Field(max_length=64, index=True)
+    duplicate_group_id: UUID | None = Field(default=None, index=True)
+    conflicting_source_data: bool = Field(default=False)
+    is_expired: bool = Field(default=False, index=True)
+    expired_reason: str | None = Field(default=None, max_length=500)
+
+
+class JobOpportunitySource(TimestampMixin, table=True):
+    __tablename__ = "job_opportunity_sources"
+    __table_args__ = (
+        UniqueConstraint("opportunity_id", "message_id", name="uq_job_sources_opportunity_message"),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    opportunity_id: UUID = Field(foreign_key="opportunities.id", index=True)
+    message_id: UUID = Field(foreign_key="messages.id", index=True)
+    owner_user_id: UUID = Field(foreign_key="users.id", index=True)
+    source_channel: IMChannel = Field(
+        sa_column=Column(SAEnum(IMChannel, native_enum=False), nullable=False, index=True)
+    )
+    source_message_url: str | None = Field(default=None, max_length=2000)
+    source_chat_name: str | None = Field(default=None, max_length=500)
+    source_author_name: str | None = Field(default=None, max_length=500)
+    posted_at: datetime = Field(sa_column=Column(DateTime(timezone=True), nullable=False))
+    source_reliability_score: float = Field(default=0.5, ge=0.0, le=1.0)
+
+
+class JobSearchProfile(TimestampMixin, table=True):
+    __tablename__ = "job_search_profiles"
+    __table_args__ = (
+        Index("ix_job_search_profiles_user_enabled", "user_id", "enabled"),
+        Index(
+            "uq_job_search_profiles_default",
+            "user_id",
+            unique=True,
+            postgresql_where=text("is_default"),
+        ),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    name: str = Field(max_length=120)
+    is_default: bool = Field(default=False)
+    enabled: bool = Field(default=True, index=True)
+    target_roles: list[str] = Field(default_factory=list, sa_column=Column(JSONB, nullable=False))
+    excluded_roles: list[str] = Field(default_factory=list, sa_column=Column(JSONB, nullable=False))
+    target_industries: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    preferred_seniority: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    candidate_skills: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    years_experience: float | None = Field(default=None, ge=0)
+    education_level: str | None = Field(default=None, max_length=100)
+    english_level: str | None = Field(default=None, max_length=100)
+    other_languages: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    preferred_countries: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    preferred_cities: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    preferred_timezones: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    work_modes: list[str] = Field(default_factory=list, sa_column=Column(JSONB, nullable=False))
+    employment_types: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    minimum_salary: Decimal | None = Field(
+        default=None, ge=0, sa_column=Column(Numeric(18, 2), nullable=True)
+    )
+    salary_currency: str | None = Field(default=None, max_length=3)
+    salary_period: SalaryPeriod | None = Field(
+        default=None, sa_column=Column(SAEnum(SalaryPeriod, native_enum=False), nullable=True)
+    )
+    visa_sponsorship_required: bool | None = None
+    relocation_acceptable: bool | None = None
+    required_keywords: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    preferred_keywords: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    excluded_keywords: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    require_salary_disclosed: bool = Field(default=False)
+    minimum_match_score: int = Field(default=0, ge=0, le=100)
+    notification_enabled: bool = Field(default=False)
+
+
+class JobOpportunityMatch(TimestampMixin, table=True):
+    __tablename__ = "job_opportunity_matches"
+    __table_args__ = (
+        UniqueConstraint(
+            "opportunity_id", "job_search_profile_id", name="uq_job_matches_opportunity_profile"
+        ),
+        Index("ix_job_matches_profile_score", "job_search_profile_id", "match_score"),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    opportunity_id: UUID = Field(foreign_key="opportunities.id", index=True)
+    job_search_profile_id: UUID = Field(foreign_key="job_search_profiles.id", index=True)
+    owner_user_id: UUID = Field(foreign_key="users.id", index=True)
+    eligibility: JobEligibility = Field(
+        default=JobEligibility.UNKNOWN,
+        sa_column=Column(SAEnum(JobEligibility, native_enum=False), nullable=False, index=True),
+    )
+    match_score: int = Field(default=0, ge=0, le=100, index=True)
+    matched_reasons: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    mismatch_reasons: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    unknown_constraints: list[str] = Field(
+        default_factory=list, sa_column=Column(JSONB, nullable=False)
+    )
+    score_breakdown: dict[str, int] = Field(
+        default_factory=dict, sa_column=Column(JSONB, nullable=False)
+    )
+
+
+class JobOpportunityFeedback(TimestampMixin, table=True):
+    __tablename__ = "job_opportunity_feedback"
+    __table_args__ = (
+        UniqueConstraint(
+            "opportunity_id", "owner_user_id", name="uq_job_feedback_owner_opportunity"
+        ),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    opportunity_id: UUID = Field(foreign_key="opportunities.id", index=True)
+    owner_user_id: UUID = Field(foreign_key="users.id", index=True)
+    feedback_type: JobFeedbackType = Field(
+        sa_column=Column(SAEnum(JobFeedbackType, native_enum=False), nullable=False, index=True)
+    )
+    note: str | None = Field(default=None, max_length=1000)
+
+
 class OpportunityArchiveEvent(TimestampMixin, table=True):
     __tablename__ = "opportunity_archive_events"
     __table_args__ = (
@@ -404,6 +766,56 @@ class OpportunityArchiveEvent(TimestampMixin, table=True):
         )
     )
     reason: str | None = Field(default=None, max_length=500)
+
+
+class AutoReplyDelivery(TimestampMixin, table=True):
+    __tablename__ = "auto_reply_deliveries"
+    __table_args__ = (
+        UniqueConstraint(
+            "owner_user_id", "idempotency_key", name="uq_auto_reply_deliveries_owner_key"
+        ),
+        Index(
+            "ix_auto_reply_deliveries_conversation_status_created",
+            "owner_user_id",
+            "channel",
+            "conversation_id",
+            "status",
+            "created_at",
+        ),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    owner_user_id: UUID = Field(foreign_key="users.id", index=True)
+    opportunity_id: UUID = Field(foreign_key="opportunities.id", index=True)
+    source_message_id: UUID = Field(foreign_key="messages.id", index=True)
+    channel: IMChannel = Field(
+        sa_column=Column(SAEnum(IMChannel, native_enum=False), nullable=False, index=True)
+    )
+    conversation_id: str = Field(max_length=255, index=True)
+    idempotency_key: str = Field(max_length=255)
+    status: AutoReplyDeliveryStatus = Field(
+        default=AutoReplyDeliveryStatus.CANDIDATE,
+        sa_column=Column(
+            SAEnum(AutoReplyDeliveryStatus, native_enum=False), nullable=False, index=True
+        ),
+    )
+    decision_reason: AutoReplyDecisionReason | None = Field(
+        default=None,
+        sa_column=Column(SAEnum(AutoReplyDecisionReason, native_enum=False), nullable=True),
+    )
+    content_hash: str | None = Field(default=None, max_length=64)
+    provider_message_id: str | None = Field(default=None, max_length=255)
+    attempt_count: int = Field(default=0, ge=0)
+    ready_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
+    sending_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
+    sent_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
+    error: str | None = Field(default=None, max_length=500)
 
 
 class Message(TimestampMixin, table=True):
@@ -566,7 +978,7 @@ class UserWorkSchedule(TimestampMixin, table=True):
     slots: list[dict[str, Any]] = Field(
         default_factory=list, sa_column=Column(JSONB, nullable=False)
     )
-    auto_reply_outside_hours: bool = Field(default=True)
+    auto_reply_outside_hours: bool = Field(default=False)
 
 
 class UserNotificationPreference(TimestampMixin, table=True):
@@ -706,6 +1118,7 @@ class TelegramSource(TimestampMixin, table=True):
     display_name: str = Field(default="Telegram 来源", max_length=255)
     username: str | None = Field(default=None, max_length=255)
     enabled: bool = Field(default=True, index=True)
+    auto_reply_enabled: bool = Field(default=False, index=True)
     quota_paused: bool = Field(default=False, index=True)
     quota_reason: str | None = Field(default=None, max_length=500)
     retention_priority: int = Field(default=0, ge=0)
@@ -852,12 +1265,25 @@ class WeComSource(TimestampMixin, table=True):
             "external_conversation_id",
             name="uq_wecom_sources_connection_conversation",
         ),
+        UniqueConstraint(
+            "archive_connection_id",
+            "owner_user_id",
+            "external_conversation_id",
+            name="uq_wecom_sources_archive_owner_conversation",
+        ),
+        CheckConstraint(
+            "(connection_id IS NOT NULL) <> (archive_connection_id IS NOT NULL)",
+            name="ck_wecom_sources_exactly_one_connection",
+        ),
         Index("ix_wecom_sources_owner_enabled", "owner_user_id", "enabled", "quota_paused"),
     )
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     owner_user_id: UUID = Field(foreign_key="users.id", index=True)
-    connection_id: UUID = Field(foreign_key="wecom_connections.id", index=True)
+    connection_id: UUID | None = Field(default=None, foreign_key="wecom_connections.id", index=True)
+    archive_connection_id: UUID | None = Field(
+        default=None, foreign_key="wecom_archive_connections.id", index=True
+    )
     external_conversation_id: str = Field(max_length=255, index=True)
     display_name: str = Field(default="企业微信成员", max_length=255)
     source_type: WeComSourceType = Field(
@@ -945,6 +1371,114 @@ class WeComOutboundDelivery(TimestampMixin, table=True):
         default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
     )
     error: str | None = Field(default=None, max_length=1000)
+
+
+class WeComArchiveConnection(TimestampMixin, table=True):
+    """Enterprise Finance SDK credentials managed by one local installer."""
+
+    __tablename__ = "wecom_archive_connections"
+    __table_args__ = (
+        UniqueConstraint(
+            "owner_user_id", "corp_id", name="uq_wecom_archive_connections_owner_corp"
+        ),
+        Index("ix_wecom_archive_connections_status_enabled", "status", "enabled"),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    owner_user_id: UUID = Field(foreign_key="users.id", index=True)
+    display_name: str = Field(default="企业微信会话存档", max_length=255)
+    corp_id: str = Field(max_length=128, index=True)
+    secret_encrypted: str
+    private_key_encrypted: str
+    public_key_version: int = Field(ge=1)
+    status: WeComConnectionStatus = Field(
+        default=WeComConnectionStatus.PENDING,
+        sa_column=Column(
+            SAEnum(WeComConnectionStatus, native_enum=False), nullable=False, index=True
+        ),
+    )
+    enabled: bool = Field(default=True, index=True)
+    last_verified_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
+    last_polled_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True, index=True)
+    )
+    last_error: str | None = Field(default=None, max_length=1000)
+
+
+class WeComArchiveMemberBinding(TimestampMixin, table=True):
+    """Maps one local user to the WeCom member whose conversations they may see."""
+
+    __tablename__ = "wecom_archive_member_bindings"
+    __table_args__ = (
+        UniqueConstraint(
+            "connection_id", "user_id", name="uq_wecom_archive_bindings_connection_user"
+        ),
+        UniqueConstraint(
+            "connection_id",
+            "wecom_user_id",
+            name="uq_wecom_archive_bindings_connection_wecom_user",
+        ),
+        Index("ix_wecom_archive_bindings_user_enabled", "user_id", "enabled"),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    connection_id: UUID = Field(foreign_key="wecom_archive_connections.id", index=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    wecom_user_id: str = Field(max_length=128, index=True)
+    display_name: str = Field(default="企业微信成员", max_length=255)
+    enabled: bool = Field(default=True, index=True)
+    last_matched_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
+
+
+class WeComArchiveCursor(TimestampMixin, table=True):
+    __tablename__ = "wecom_archive_cursors"
+    __table_args__ = (
+        UniqueConstraint("connection_id", name="uq_wecom_archive_cursors_connection"),
+        CheckConstraint("last_seq >= 0", name="ck_wecom_archive_cursors_last_seq_nonnegative"),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    connection_id: UUID = Field(foreign_key="wecom_archive_connections.id", index=True)
+    last_seq: int = Field(default=0, sa_column=Column(BigInteger, nullable=False))
+    lease_expires_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True, index=True)
+    )
+    last_batch_size: int = Field(default=0, ge=0)
+
+
+class WeComArchiveEvent(TimestampMixin, table=True):
+    """Minimal provider audit. Decrypted message bodies are not stored here."""
+
+    __tablename__ = "wecom_archive_events"
+    __table_args__ = (
+        UniqueConstraint(
+            "connection_id",
+            "provider_message_id",
+            name="uq_wecom_archive_events_connection_message",
+        ),
+        Index("ix_wecom_archive_events_status_created", "status", "created_at"),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    connection_id: UUID = Field(foreign_key="wecom_archive_connections.id", index=True)
+    provider_message_id: str = Field(max_length=255)
+    sequence: int = Field(sa_column=Column(BigInteger, nullable=False, index=True))
+    message_type: str = Field(default="unknown", max_length=64, index=True)
+    payload_hash: str = Field(max_length=64)
+    status: WeComEventStatus = Field(
+        default=WeComEventStatus.RECEIVED,
+        sa_column=Column(SAEnum(WeComEventStatus, native_enum=False), nullable=False, index=True),
+    )
+    matched_user_count: int = Field(default=0, ge=0)
+    attempt_count: int = Field(default=0, ge=0)
+    processed_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
+    processing_error: str | None = Field(default=None, max_length=1000)
 
 
 class ReplyTemplate(TimestampMixin, table=True):

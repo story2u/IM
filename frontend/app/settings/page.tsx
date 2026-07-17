@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, ChevronRight, Clock, CreditCard, MessageSquare, Send, Tags, X } from 'lucide-react'
+import { Bell, BriefcaseBusiness, ChevronRight, Clock, CreditCard, KeyRound, MessageSquare, Send, Tags, X } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
@@ -97,6 +97,28 @@ export default function SettingsPage() {
       </header>
 
       <div className="flex flex-col gap-5">
+        <section aria-labelledby="account-heading">
+          <h2 id="account-heading" className="mb-2.5 text-sm font-semibold text-muted-foreground">账户</h2>
+          <Link href="/settings/security" className="block">
+            <Card className="flex-row items-center gap-3 rounded-xl p-4 shadow-sm transition-shadow hover:shadow-md">
+              <span className="flex size-10 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"><KeyRound className="size-5" /></span>
+              <div className="min-w-0 flex-1"><p className="text-sm font-medium">账户安全</p><p className="text-xs text-muted-foreground">修改或设置登录密码</p></div>
+              <ChevronRight className="size-4 text-muted-foreground" />
+            </Card>
+          </Link>
+        </section>
+
+        <section aria-labelledby="job-search-heading">
+          <h2 id="job-search-heading" className="mb-2.5 text-sm font-semibold text-muted-foreground">工作机会</h2>
+          <Link href="/settings/job-search" className="block">
+            <Card className="flex-row items-center gap-3 rounded-xl p-4 shadow-sm transition-shadow hover:shadow-md">
+              <span className="flex size-10 items-center justify-center rounded-lg bg-sky-500/15 text-sky-600 dark:text-sky-400"><BriefcaseBusiness className="size-5" /></span>
+              <div className="min-w-0 flex-1"><p className="text-sm font-medium">求职档案</p><p className="text-xs text-muted-foreground">管理目标岗位、技能、地点与薪资偏好</p></div>
+              <ChevronRight className="size-4 text-muted-foreground" />
+            </Card>
+          </Link>
+        </section>
+
         <section aria-labelledby="subscription-heading">
           <h2 id="subscription-heading" className="mb-2.5 text-sm font-semibold text-muted-foreground">
             订阅

@@ -20,15 +20,32 @@ from sqlalchemy.exc import (
     SQLAlchemyError,
 )
 
-from app.api.deps import get_redis_client, get_user_repo, require_user
+from app.api.deps import (
+    get_password_reset_repo,
+    get_redis_client,
+    get_task_queue,
+    get_user_repo,
+    require_user,
+)
 from app.application.dto import (
     AuthTokenRead,
     AuthUserRead,
     NativeLoginRequest,
     OAuthAuthorizeRead,
+    PasswordActionRead,
+    PasswordChangeRequest,
     PasswordLoginRequest,
+    PasswordResetConfirmRequest,
+    PasswordResetRequest,
 )
 from app.application.mappers import to_auth_user_read
+from app.application.use_cases.password_management import (
+    CurrentPasswordInvalid,
+    PasswordManagementUseCase,
+    PasswordResetInvalid,
+    PasswordResetRequired,
+    PasswordUnchanged,
+)
 from app.core.config import Settings, get_settings
 from app.core.security import (
     create_access_token,
@@ -39,7 +56,8 @@ from app.core.security import (
     verify_rs256_jwt,
 )
 from app.infrastructure.db.models import User
-from app.infrastructure.db.repositories import UserRepository
+from app.infrastructure.db.repositories import PasswordResetRepository, UserRepository
+from app.worker.queue import CeleryTaskQueue
 
 router = APIRouter()
 logger = structlog.get_logger(__name__)
@@ -50,6 +68,8 @@ _DUMMY_PASSWORD_HASH = (
     "$X0fRTAj7lhHyrGHXyPeC7DgIaE9Tk6KkwbIppJAYC5k="
 )
 _INVALID_CREDENTIALS_DETAIL = "邮箱或密码错误"
+_INVALID_RESET_DETAIL = "验证码或重置链接无效或已过期"
+_RESET_REQUEST_MESSAGE = "如果该邮箱已注册，重置邮件将在几分钟内送达"
 
 
 @dataclass(frozen=True)
@@ -68,7 +88,11 @@ class OAuthProviderConfig:
 
 def auth_token_response(user: User, settings: Settings) -> AuthTokenRead:
     return AuthTokenRead(
-        accessToken=create_access_token(subject=user.id, settings=settings),
+        accessToken=create_access_token(
+            subject=user.id,
+            settings=settings,
+            auth_version=user.auth_version,
+        ),
         user=to_auth_user_read(user),
     )
 
@@ -99,6 +123,38 @@ async def enforce_password_login_rate_limit(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="登录尝试过多，请稍后再试",
             headers={"Retry-After": str(settings.password_login_window_seconds)},
+        )
+    return key
+
+
+async def enforce_password_reset_rate_limit(
+    *,
+    request: Request,
+    identity: str,
+    scope: str,
+    limit: int,
+    window_seconds: int,
+    redis: Redis,
+) -> str:
+    client_host = request.client.host if request.client else "unknown"
+    fingerprint = hashlib.sha256(f"{client_host}\0{identity}".encode()).hexdigest()
+    key = f"auth:password-reset:{scope}:{fingerprint}"
+    try:
+        pipeline = redis.pipeline(transaction=True)
+        pipeline.incr(key)
+        pipeline.expire(key, window_seconds)
+        attempts, _ = await pipeline.execute()
+    except RedisError as exc:
+        logger.warning("auth.password_reset_rate_limit_unavailable", scope=scope)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="密码重置服务暂时不可用",
+        ) from exc
+    if int(attempts) > limit:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="请求过于频繁，请稍后再试",
+            headers={"Retry-After": str(window_seconds)},
         )
     return key
 
@@ -325,7 +381,14 @@ async def complete_oauth_login(
         profile = await exchange_code_for_profile(provider, code, settings)
         user = await resolve_profile_user(provider, profile, repo)
 
-        return frontend_login_response(settings, create_access_token(subject=user.id, settings=settings))
+        return frontend_login_response(
+            settings,
+            create_access_token(
+                subject=user.id,
+                settings=settings,
+                auth_version=user.auth_version,
+            ),
+        )
     except HTTPException:
         raise
     except SQLAlchemyError as exc:
@@ -504,6 +567,153 @@ async def password_login(
     except RedisError:
         logger.warning("auth.password_login_rate_limit_reset_failed")
     return response
+
+
+def password_management_use_case(
+    *,
+    settings: Settings,
+    user_repo: UserRepository,
+    reset_repo: PasswordResetRepository,
+    task_queue: CeleryTaskQueue,
+) -> PasswordManagementUseCase:
+    return PasswordManagementUseCase(
+        settings=settings,
+        user_repo=user_repo,
+        reset_repo=reset_repo,
+        task_queue=task_queue,
+    )
+
+
+@router.post(
+    "/password/reset/request",
+    response_model=PasswordActionRead,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def request_password_reset(
+    request: Request,
+    payload: PasswordResetRequest,
+    settings: Settings = Depends(get_settings),
+    user_repo: UserRepository = Depends(get_user_repo),
+    reset_repo: PasswordResetRepository = Depends(get_password_reset_repo),
+    task_queue: CeleryTaskQueue = Depends(get_task_queue),
+    redis: Redis = Depends(get_redis_client),
+) -> PasswordActionRead:
+    if not settings.password_reset_email_configured:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="密码重置邮件尚未配置",
+        )
+    await enforce_password_reset_rate_limit(
+        request=request,
+        identity=payload.email,
+        scope="request",
+        limit=settings.password_reset_request_limit,
+        window_seconds=settings.password_reset_request_window_seconds,
+        redis=redis,
+    )
+    queued = await password_management_use_case(
+        settings=settings,
+        user_repo=user_repo,
+        reset_repo=reset_repo,
+        task_queue=task_queue,
+    ).request_reset(payload.email)
+    if not queued:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="密码重置服务暂时不可用",
+        )
+    return PasswordActionRead(message=_RESET_REQUEST_MESSAGE)
+
+
+@router.post("/password/reset/confirm", response_model=PasswordActionRead)
+async def confirm_password_reset(
+    request: Request,
+    payload: PasswordResetConfirmRequest,
+    settings: Settings = Depends(get_settings),
+    user_repo: UserRepository = Depends(get_user_repo),
+    reset_repo: PasswordResetRepository = Depends(get_password_reset_repo),
+    task_queue: CeleryTaskQueue = Depends(get_task_queue),
+    redis: Redis = Depends(get_redis_client),
+) -> PasswordActionRead:
+    if not settings.password_reset_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="密码重置服务尚未启用",
+        )
+    identity = payload.email or hashlib.sha256((payload.token or "").encode()).hexdigest()
+    rate_limit_key = await enforce_password_reset_rate_limit(
+        request=request,
+        identity=identity,
+        scope="verify",
+        limit=settings.password_reset_verify_limit,
+        window_seconds=settings.password_reset_verify_window_seconds,
+        redis=redis,
+    )
+    try:
+        await password_management_use_case(
+            settings=settings,
+            user_repo=user_repo,
+            reset_repo=reset_repo,
+            task_queue=task_queue,
+        ).confirm_reset(
+            new_password=payload.newPassword,
+            token=payload.token,
+            email=payload.email,
+            code=payload.code,
+        )
+    except PasswordResetInvalid as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=_INVALID_RESET_DETAIL,
+        ) from exc
+    except PasswordUnchanged as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="新密码不能与当前密码相同",
+        ) from exc
+    try:
+        await redis.delete(rate_limit_key)
+    except RedisError:
+        logger.warning("auth.password_reset_rate_limit_reset_failed")
+    return PasswordActionRead(message="密码已重置，请使用新密码登录")
+
+
+@router.post("/password/change", response_model=PasswordActionRead)
+async def change_password(
+    payload: PasswordChangeRequest,
+    current_user: User = Depends(require_user),
+    settings: Settings = Depends(get_settings),
+    user_repo: UserRepository = Depends(get_user_repo),
+    reset_repo: PasswordResetRepository = Depends(get_password_reset_repo),
+    task_queue: CeleryTaskQueue = Depends(get_task_queue),
+) -> PasswordActionRead:
+    try:
+        await password_management_use_case(
+            settings=settings,
+            user_repo=user_repo,
+            reset_repo=reset_repo,
+            task_queue=task_queue,
+        ).change_password(
+            user=current_user,
+            current_password=payload.currentPassword,
+            new_password=payload.newPassword,
+        )
+    except CurrentPasswordInvalid as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="当前密码不正确",
+        ) from exc
+    except PasswordResetRequired as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="此账户尚未设置密码，请先通过邮箱验证设置密码",
+        ) from exc
+    except PasswordUnchanged as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="新密码不能与当前密码相同",
+        ) from exc
+    return PasswordActionRead(message="密码已修改，请重新登录")
 
 
 @router.get("/me", response_model=AuthUserRead)

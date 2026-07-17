@@ -1,13 +1,21 @@
 import asyncio
+from datetime import timedelta
 from uuid import UUID
 
 import structlog
 
-from app.application.use_cases.ai_reply import AIAutoReplyUseCase, transition_pending_to_ai
+from app.application.use_cases.ai_reply import AIAutoReplyUseCase
 from app.application.use_cases.analyze_message import AnalyzeMessageUseCase
 from app.application.use_cases.ingest_message import IngestMessageUseCase
+from app.application.use_cases.prepare_job_discovery import PrepareJobDiscoveryUseCase
 from app.application.use_cases.sync_revenuecat_customer import SyncRevenueCatCustomer
+from app.application.use_cases.sync_wecom_archive import SyncWeComArchive
 from app.core.config import get_settings
+from app.core.password_reset import (
+    generate_reset_code,
+    generate_reset_token,
+    reset_credential_digest,
+)
 from app.core.security import decrypt_secret
 from app.core.time_window import WorkTimeConfig, WorkTimeService
 from app.domain.ports import InboundMessage
@@ -18,22 +26,37 @@ from app.infrastructure.ai.litellm_client import LiteLLMOpportunityClassifier, L
 from app.infrastructure.billing.revenuecat_client import RevenueCatClient
 from app.infrastructure.db.repositories import (
     BillingEventRepository,
+    AutoReplyDeliveryRepository,
     ConfigRepository,
+    JobMessageAuditRepository,
+    JobOpportunityRepository,
+    JobOpportunityMatchRepository,
+    JobSearchProfileRepository,
     MessageRepository,
     OpportunityRepository,
+    PasswordResetRepository,
     RuleRepository,
+    SourceFunctionalProfileRepository,
     SubscriptionRepository,
     TelegramConnectionRepository,
     TelegramUserConfigRepository,
     UserRepository,
     UserSettingsRepository,
     WeComConnectionRepository,
+    WeComArchiveRepository,
     WeComEventRepository,
 )
+from app.infrastructure.db.models import utc_now
+from app.infrastructure.email.smtp import SMTPEmailSender
 from app.infrastructure.db.session import AsyncSessionLocal
 from app.infrastructure.im.base import AdapterRegistry
 from app.infrastructure.im.telegram import TelegramAdapter
 from app.infrastructure.im.wecom import WeComAdapter
+from app.infrastructure.im.wecom_archive import (
+    CtypesWeComFinanceProvider,
+    WeComArchiveCredentials,
+    WeComArchiveProviderError,
+)
 from app.worker.celery_app import celery_app
 from app.worker.queue import CeleryTaskQueue
 
@@ -41,11 +64,48 @@ logger = structlog.get_logger(__name__)
 
 
 @celery_app.task(
-    name="ai.generate_and_send_reply",
-    queue="ai",
+    name="auth.prepare_password_reset",
+    queue="default",
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_kwargs={"max_retries": 3},
+)
+def prepare_password_reset(email: str) -> None:
+    asyncio.run(_prepare_password_reset(email))
+
+
+async def _prepare_password_reset(email: str) -> None:
+    settings = get_settings()
+    if not settings.password_reset_email_configured:
+        raise RuntimeError("password reset email is not configured")
+    async with AsyncSessionLocal() as session:
+        user = await UserRepository(session).get_by_email(email)
+        if not user or not user.is_active:
+            return
+        token = generate_reset_token()
+        code = generate_reset_code()
+        reset_repo = PasswordResetRepository(session)
+        challenge = await reset_repo.create(
+            user_id=user.id,
+            token_digest=reset_credential_digest(token, settings),
+            code_digest=reset_credential_digest(code, settings),
+            expires_at=utc_now() + timedelta(minutes=settings.password_reset_ttl_minutes),
+        )
+        try:
+            await SMTPEmailSender(settings).send_password_reset(
+                recipient=user.email,
+                token=token,
+                code=code,
+            )
+        except Exception:
+            await reset_repo.invalidate(challenge)
+            raise
+        logger.info("auth.password_reset_email_sent", challenge_id=str(challenge.id))
+
+
+@celery_app.task(
+    name="ai.generate_and_send_reply",
+    queue="ai",
 )
 def generate_and_send_reply(opportunity_id: str) -> None:
     asyncio.run(_generate_and_send_reply(UUID(opportunity_id)))
@@ -126,6 +186,28 @@ def process_wecom_event(task, event_id: str) -> None:
         raise task.retry(exc=exc, countdown=min(2 ** (task.request.retries + 1), 30)) from exc
 
 
+@celery_app.task(name="wecom.enqueue_archive_syncs", queue="default")
+def enqueue_wecom_archive_syncs() -> None:
+    asyncio.run(_enqueue_wecom_archive_syncs())
+
+
+@celery_app.task(
+    bind=True,
+    name="wecom.sync_archive_connection",
+    queue="wecom_archive",
+    max_retries=3,
+    soft_time_limit=90,
+    time_limit=105,
+)
+def sync_wecom_archive_connection(task, connection_id: str, verifying: bool = False) -> None:
+    try:
+        asyncio.run(_sync_wecom_archive_connection(UUID(connection_id), verifying=verifying))
+    except Exception as exc:
+        if task.request.retries >= task.max_retries:
+            raise
+        raise task.retry(exc=exc, countdown=min(2 ** (task.request.retries + 1), 30)) from exc
+
+
 async def _generate_and_send_reply(opportunity_id: UUID) -> None:
     settings = get_settings()
     async with AsyncSessionLocal() as session:
@@ -141,17 +223,23 @@ async def _generate_and_send_reply(opportunity_id: UUID) -> None:
             opportunity_repo=opportunity_repo,
             message_repo=message_repo,
         )
+        telegram_repo = TelegramConnectionRepository(session)
         adapters = AdapterRegistry(
             [
-                TelegramAdapter(settings),
+                TelegramAdapter(settings, connection_repo=telegram_repo),
                 WeComAdapter(settings),
             ]
         )
         use_case = AIAutoReplyUseCase(
+            settings=settings,
             opportunity_repo=opportunity_repo,
             message_repo=message_repo,
+            delivery_repo=AutoReplyDeliveryRepository(session),
+            telegram_repo=telegram_repo,
+            user_settings_repo=UserSettingsRepository(session),
             adapters=adapters,
             reply_generator=reply_generator,
+            task_queue=CeleryTaskQueue(),
         )
         await use_case.execute(opportunity)
 
@@ -190,8 +278,9 @@ async def _process_wecom_event(event_id: UUID) -> None:
             if raw_config
             else WorkTimeConfig.from_settings(settings)
         )
+        message_repo = MessageRepository(session)
         await IngestMessageUseCase(
-            message_repo=MessageRepository(session),
+            message_repo=message_repo,
             opportunity_repo=OpportunityRepository(session),
             rule_repo=RuleRepository(session),
             detector=OpportunityDetector(ai_classifier=LiteLLMOpportunityClassifier(settings)),
@@ -199,6 +288,11 @@ async def _process_wecom_event(event_id: UUID) -> None:
             task_queue=CeleryTaskQueue(),
             subscription_repo=SubscriptionRepository(session),
             user_settings_repo=UserSettingsRepository(session),
+            job_discovery=PrepareJobDiscoveryUseCase(
+                message_repo=message_repo,
+                profile_repo=SourceFunctionalProfileRepository(session),
+                audit_repo=JobMessageAuditRepository(session),
+            ),
         ).execute(inbound)
         await event_repo.finish(event.id)
 
@@ -210,6 +304,83 @@ async def _fail_wecom_event(event_id: UUID, error: str, *, final: bool) -> None:
             f"WeCom event processing failed: {error}",
             final=final,
         )
+
+
+async def _enqueue_wecom_archive_syncs() -> None:
+    settings = get_settings()
+    if not settings.wecom_archive_enabled:
+        return
+    async with AsyncSessionLocal() as session:
+        connection_ids = await WeComArchiveRepository(session).active_connection_ids(limit=100)
+    queue = CeleryTaskQueue()
+    for connection_id in connection_ids:
+        queue.enqueue_wecom_archive_sync(connection_id)
+
+
+async def _sync_wecom_archive_connection(connection_id: UUID, *, verifying: bool) -> None:
+    settings = get_settings()
+    if not settings.wecom_archive_enabled:
+        raise RuntimeError("WeCom archive integration is disabled")
+    async with AsyncSessionLocal() as session:
+        repository = WeComArchiveRepository(session)
+        connection = await repository.get(connection_id)
+        if not connection or not connection.enabled:
+            return
+        try:
+            provider = CtypesWeComFinanceProvider(settings.wecom_archive_sdk_path)
+        except WeComArchiveProviderError as exc:
+            await repository.mark_connection_error(connection, str(exc))
+            raise
+        credentials = WeComArchiveCredentials(
+            corp_id=connection.corp_id,
+            archive_secret=decrypt_secret(connection.secret_encrypted, settings),
+            private_key_pem=decrypt_secret(connection.private_key_encrypted, settings),
+            public_key_version=connection.public_key_version,
+        )
+        config_repo = ConfigRepository(session)
+        raw_config = await config_repo.get_value("working_hours")
+        work_config = (
+            WorkTimeConfig.model_validate(raw_config)
+            if raw_config
+            else WorkTimeConfig.from_settings(settings)
+        )
+        message_repository = MessageRepository(session)
+        subscription_repository = SubscriptionRepository(session)
+        ingest = IngestMessageUseCase(
+            message_repo=message_repository,
+            opportunity_repo=OpportunityRepository(session),
+            rule_repo=RuleRepository(session),
+            detector=OpportunityDetector(ai_classifier=LiteLLMOpportunityClassifier(settings)),
+            work_time=WorkTimeService(work_config),
+            task_queue=CeleryTaskQueue(),
+            subscription_repo=subscription_repository,
+            user_settings_repo=UserSettingsRepository(session),
+            job_discovery=PrepareJobDiscoveryUseCase(
+                message_repo=message_repository,
+                profile_repo=SourceFunctionalProfileRepository(session),
+                audit_repo=JobMessageAuditRepository(session),
+            ),
+        )
+        result = await SyncWeComArchive(
+            repository=repository,
+            provider=provider,
+            ingest_message=ingest,
+            message_repository=message_repository,
+            subscription_repository=subscription_repository,
+            batch_size=settings.wecom_archive_batch_size,
+            timeout_seconds=settings.wecom_archive_sdk_timeout_seconds,
+            lease_seconds=settings.wecom_archive_lease_seconds,
+        ).execute(connection, credentials, verifying=verifying)
+        if result:
+            logger.info(
+                "wecom.archive_sync_completed",
+                connection_id=str(connection.id),
+                fetched=result.fetched,
+                processed=result.processed,
+                ignored=result.ignored,
+                projected_users=result.projected_users,
+                last_sequence=result.last_sequence,
+            )
 
 
 async def _analyze_message(
@@ -256,6 +427,11 @@ async def _analyze_message(
             task_queue=CeleryTaskQueue(),
             min_opportunity_confidence=settings.pi_agent_min_opportunity_confidence,
             max_links=settings.pi_agent_max_links,
+            job_audit_repo=JobMessageAuditRepository(session),
+            source_profile_repo=SourceFunctionalProfileRepository(session),
+            job_opportunity_repo=JobOpportunityRepository(session),
+            job_search_profile_repo=JobSearchProfileRepository(session),
+            job_match_repo=JobOpportunityMatchRepository(session),
         )
         opportunity = await use_case.execute(message_id, force=force)
         if usage_ledger_id:
@@ -289,6 +465,7 @@ async def _sync_revenuecat_user(user_id: UUID) -> None:
                 subscription_repo=SubscriptionRepository(session),
                 telegram_repo=TelegramUserConfigRepository(session),
                 telegram_connection_repo=TelegramConnectionRepository(session),
+                wecom_archive_repo=WeComArchiveRepository(session),
             ).execute(user_id)
     finally:
         await client.aclose()
@@ -361,6 +538,4 @@ async def _sweep_pending_for_ai() -> None:
         opportunity_repo = OpportunityRepository(session)
         stale = await opportunity_repo.pending_human_older_than(settings.pending_human_sla_minutes)
         for opportunity in stale:
-            updated = await transition_pending_to_ai(opportunity_repo, opportunity.id)
-            if updated:
-                celery_app.send_task("ai.generate_and_send_reply", args=[str(updated.id)])
+            CeleryTaskQueue().notify_reviewers(opportunity.id)

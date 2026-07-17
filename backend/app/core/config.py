@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import AnyHttpUrl, Field, field_validator
@@ -27,8 +28,34 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60 * 24 * 7
     password_login_max_attempts: int = Field(default=5, ge=1, le=100)
     password_login_window_seconds: int = Field(default=300, ge=10, le=3600)
+    password_reset_enabled: bool = True
+    password_reset_ttl_minutes: int = Field(default=15, ge=5, le=60)
+    password_reset_max_attempts: int = Field(default=5, ge=1, le=20)
+    password_reset_request_limit: int = Field(default=3, ge=1, le=20)
+    password_reset_request_window_seconds: int = Field(default=900, ge=60, le=86400)
+    password_reset_verify_limit: int = Field(default=10, ge=1, le=100)
+    password_reset_verify_window_seconds: int = Field(default=900, ge=60, le=86400)
+    smtp_host: str = ""
+    smtp_port: int = Field(default=587, ge=1, le=65535)
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+    smtp_from_name: str = "商机雷达"
+    smtp_starttls: bool = True
+    smtp_use_tls: bool = False
+    smtp_timeout_seconds: float = Field(default=10.0, ge=1.0, le=60.0)
     frontend_base_url: str = "http://localhost:3000"
     cors_origins: list[AnyHttpUrl | str] = Field(default_factory=list)
+
+    @property
+    def password_reset_email_configured(self) -> bool:
+        return bool(
+            self.password_reset_enabled
+            and self.smtp_host
+            and self.smtp_from_email
+            and (not self.smtp_username or self.smtp_password)
+            and not (self.smtp_starttls and self.smtp_use_tls)
+        )
 
     google_oauth_client_id: str = ""
     google_oauth_client_secret: str = ""
@@ -51,7 +78,7 @@ class Settings(BaseSettings):
     default_work_end: str = "18:30"
     pending_human_sla_minutes: int = 30
 
-    im_send_enabled: bool = False
+    im_send_enabled: bool = True
     telegram_bot_token: str = ""
     telegram_webhook_secret: str = ""
     telegram_bot_username: str = ""
@@ -72,10 +99,28 @@ class Settings(BaseSettings):
     wecom_connection_limit: int = Field(default=1, ge=1, le=20)
     wecom_webhook_tolerance_seconds: int = Field(default=300, ge=30, le=3600)
     wecom_webhook_max_body_bytes: int = Field(default=256_000, ge=1024, le=1_000_000)
+    wecom_archive_enabled: bool = False
+    wecom_archive_sdk_path: str = "/opt/wecom-finance-sdk/libWeWorkFinanceSdk_C.so"
+    wecom_archive_poll_interval_seconds: int = Field(default=10, ge=5, le=300)
+    wecom_archive_batch_size: int = Field(default=100, ge=1, le=1000)
+    wecom_archive_sdk_timeout_seconds: int = Field(default=5, ge=1, le=30)
+    wecom_archive_lease_seconds: int = Field(default=120, ge=30, le=900)
+    wecom_archive_connection_limit: int = Field(default=1, ge=1, le=20)
+    wecom_archive_sync_rate_limit_seconds: int = Field(default=30, ge=5, le=3600)
 
-    ai_enabled: bool = False
+    @property
+    def wecom_archive_sdk_configured(self) -> bool:
+        return self.wecom_archive_enabled and Path(self.wecom_archive_sdk_path).is_file()
+
+    ai_enabled: bool = True
     litellm_model: str = "openai/gpt-4o-mini"
     openai_api_key: str = ""
+    ai_auto_reply_enabled: bool = True
+    ai_auto_reply_min_confidence: float = Field(default=0.85, ge=0.0, le=1.0)
+    ai_auto_reply_cooldown_minutes: int = Field(default=720, ge=1, le=43_200)
+    ai_auto_reply_window_hours: int = Field(default=24, ge=1, le=720)
+    ai_auto_reply_max_per_window: int = Field(default=1, ge=1, le=10)
+    ai_auto_reply_max_chars: int = Field(default=240, ge=20, le=1000)
 
     pi_agent_enabled: bool = True
     pi_agent_provider: str = "openai"

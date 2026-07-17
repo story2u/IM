@@ -9,6 +9,18 @@ logger = structlog.get_logger(__name__)
 
 
 class CeleryTaskQueue:
+    def enqueue_password_reset(self, email: str) -> bool:
+        try:
+            celery_app.send_task(
+                "auth.prepare_password_reset",
+                args=[email],
+                argsrepr="(<email redacted>)",
+            )
+        except Exception:
+            logger.exception("auth.password_reset_enqueue_failed")
+            return False
+        return True
+
     def enqueue_ai_reply(self, opportunity_id: UUID) -> None:
         celery_app.send_task("ai.generate_and_send_reply", args=[str(opportunity_id)])
 
@@ -20,6 +32,19 @@ class CeleryTaskQueue:
             celery_app.send_task("wecom.process_webhook_event", args=[str(event_id)])
         except Exception:
             logger.exception("wecom.event_enqueue_failed", event_id=str(event_id))
+            return False
+        return True
+
+    def enqueue_wecom_archive_sync(self, connection_id: UUID, *, verifying: bool = False) -> bool:
+        try:
+            celery_app.send_task(
+                "wecom.sync_archive_connection",
+                args=[str(connection_id), verifying],
+            )
+        except Exception:
+            logger.exception(
+                "wecom.archive_sync_enqueue_failed", connection_id=str(connection_id)
+            )
             return False
         return True
 

@@ -192,6 +192,7 @@ data class AuthUser(
     val displayName: String = "",
     val avatarUrl: String = "",
     val isAdmin: Boolean = false,
+    val hasPassword: Boolean = false,
 )
 
 @Serializable
@@ -294,7 +295,7 @@ data class WorkScheduleSlotDTO(
 data class WorkSchedule(
     val timezone: String = "Asia/Shanghai",
     val slots: List<WorkScheduleSlotDTO> = emptyList(),
-    val autoReplyOutsideHours: Boolean = true,
+    val autoReplyOutsideHours: Boolean = false,
     val isDefault: Boolean = false,
 )
 
@@ -365,6 +366,8 @@ data class TelegramSourceDTO(
     val displayName: String,
     val username: String? = null,
     val enabled: Boolean = true,
+    val autoReplyEnabled: Boolean = false,
+    val autoReplyEligible: Boolean = false,
     val quotaPaused: Boolean = false,
     val quotaReason: String? = null,
     val lastError: String? = null,
@@ -392,6 +395,23 @@ data class TelegramConnectionEnabledUpdate(val enabled: Boolean)
 
 @Serializable
 data class PasswordLoginRequest(val email: String, val password: String)
+
+@Serializable
+data class PasswordActionResponse(val message: String)
+
+@Serializable
+data class PasswordResetRequest(val email: String)
+
+@Serializable
+data class PasswordResetConfirmRequest(
+    val newPassword: String,
+    val token: String? = null,
+    val email: String? = null,
+    val code: String? = null,
+)
+
+@Serializable
+data class PasswordChangeRequest(val currentPassword: String, val newPassword: String)
 
 /** 预留：Google 原生登录（后端 `POST /auth/oauth/google/native` 已就绪）。 */
 @Serializable

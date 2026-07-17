@@ -64,12 +64,22 @@ private struct SettingsList: View {
             }
 
             Section {
+                NavigationLink {
+                    PasswordSecurityView()
+                } label: {
+                    settingsRow(icon: "key", tint: AppColors.success, title: "账户安全")
+                }
                 if let user = session.currentUser {
                     NavigationLink {
                         SubscriptionView(api: session.api, billing: session.billing, userID: user.id)
                     } label: {
                         settingsRow(icon: "creditcard", tint: AppColors.ai, title: String(localized: "settings.subscription", defaultValue: "套餐与用量"))
                     }
+                }
+                NavigationLink {
+                    JobSearchProfilesView()
+                } label: {
+                    settingsRow(icon: "briefcase", tint: AppColors.primary, title: "求职档案")
                 }
                 NavigationLink {
                     TelegramSettingsView()

@@ -6,9 +6,11 @@ from fastapi import APIRouter, Depends, Request
 from app.api.deps import (
     get_adapter_registry,
     get_detector,
+    get_job_message_audit_repo,
     get_message_repo,
     get_opportunity_repo,
     get_rule_repo,
+    get_source_functional_profile_repo,
     get_subscription_repo,
     get_telegram_connection_repo,
     get_telegram_user_config_repo,
@@ -24,14 +26,17 @@ from app.application.use_cases.telegram_connection_workflow import (
 from app.core.config import Settings, get_settings
 from app.core.security import require_secret
 from app.application.use_cases.ingest_message import IngestMessageUseCase
+from app.application.use_cases.prepare_job_discovery import PrepareJobDiscoveryUseCase
 from app.domain.enums import IMChannel
 from app.domain.services.detection_policy import OpportunityDetector
 from app.domain.services.subscription_policy import telegram_group_capacity
 from app.infrastructure.db.models import Opportunity
 from app.infrastructure.db.repositories import (
     MessageRepository,
+    JobMessageAuditRepository,
     OpportunityRepository,
     RuleRepository,
+    SourceFunctionalProfileRepository,
     SubscriptionRepository,
     TelegramConnectionRepository,
     TelegramUserConfigRepository,
@@ -79,6 +84,10 @@ async def telegram_webhook(
     connection_repo: TelegramConnectionRepository = Depends(get_telegram_connection_repo),
     legacy_repo: TelegramUserConfigRepository = Depends(get_telegram_user_config_repo),
     user_settings_repo: UserSettingsRepository = Depends(get_user_settings_repo),
+    job_audit_repo: JobMessageAuditRepository = Depends(get_job_message_audit_repo),
+    source_profile_repo: SourceFunctionalProfileRepository = Depends(
+        get_source_functional_profile_repo
+    ),
 ) -> dict:
     # Reject unauthenticated requests before parsing or persisting their JSON body.
     require_secret(
@@ -131,6 +140,11 @@ async def telegram_webhook(
         task_queue=task_queue,
         subscription_repo=subscription_repo,
         user_settings_repo=user_settings_repo,
+        job_discovery=PrepareJobDiscoveryUseCase(
+            message_repo=message_repo,
+            profile_repo=source_profile_repo,
+            audit_repo=job_audit_repo,
+        ),
     )
     business_message = payload.get("business_message") or payload.get("edited_business_message")
     if isinstance(business_message, dict):
@@ -154,6 +168,17 @@ async def telegram_webhook(
         if not inbound:
             await connection_repo.finish_webhook_event(event=event, connection_id=connection.id)
             return {"ok": True, "ignored": True}
+        source = await connection_repo.ensure_business_source(
+            connection=connection,
+            external_chat_id=inbound.conversation_id,
+            display_name=inbound.sender_display_name or "Telegram Business 私聊",
+        )
+        inbound.auto_reply_allowed = bool(
+            source.enabled
+            and not source.quota_paused
+            and source.auto_reply_enabled
+            and connection.capabilities.get("can_reply") is True
+        )
         result = await use_case.execute(inbound)
         await connection_repo.finish_webhook_event(event=event, connection_id=connection.id)
         response = {"ok": True, "id": str(result.id), "type": result.__class__.__name__}

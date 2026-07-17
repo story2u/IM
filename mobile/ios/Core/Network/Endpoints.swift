@@ -20,6 +20,36 @@ extension APIClient {
         )
     }
 
+    func requestPasswordReset(email: String) async throws -> PasswordActionResponse {
+        try await post("auth/password/reset/request", body: PasswordResetRequest(email: email))
+    }
+
+    func confirmPasswordReset(
+        email: String,
+        code: String,
+        newPassword: String
+    ) async throws -> PasswordActionResponse {
+        try await post(
+            "auth/password/reset/confirm",
+            body: PasswordResetConfirmRequest(
+                newPassword: newPassword,
+                token: nil,
+                email: email,
+                code: code
+            )
+        )
+    }
+
+    func changePassword(currentPassword: String, newPassword: String) async throws -> PasswordActionResponse {
+        try await post(
+            "auth/password/change",
+            body: PasswordChangeRequest(
+                currentPassword: currentPassword,
+                newPassword: newPassword
+            )
+        )
+    }
+
     // MARK: Opportunities
 
     func opportunities(
@@ -70,6 +100,44 @@ extension APIClient {
         try await post(
             "opportunities/\(opportunityID.uuidString)/claim",
             query: [URLQueryItem(name: "operator_id", value: operatorID)]
+        )
+    }
+
+    // MARK: Job discovery
+
+    func jobs(query: [URLQueryItem] = []) async throws -> JobsPage {
+        try await get("jobs", query: query)
+    }
+
+    func job(id: UUID, profileID: UUID? = nil) async throws -> JobOpportunityDetail {
+        let query = profileID.map { [URLQueryItem(name: "profile_id", value: $0.uuidString)] } ?? []
+        return try await get("jobs/\(id.uuidString)", query: query)
+    }
+
+    func jobSearchProfiles() async throws -> [JobSearchProfile] {
+        try await get("job-search-profiles")
+    }
+
+    func createJobSearchProfile(_ body: JobSearchProfileWrite) async throws -> JobSearchProfile {
+        try await post("job-search-profiles", body: body)
+    }
+
+    func updateJobSearchProfile(id: UUID, body: JobSearchProfileWrite) async throws -> JobSearchProfile {
+        try await patch("job-search-profiles/\(id.uuidString)", body: body)
+    }
+
+    func deleteJobSearchProfile(id: UUID) async throws {
+        try await delete("job-search-profiles/\(id.uuidString)")
+    }
+
+    func parseJobSearchProfile(_ text: String) async throws -> JobSearchProfilePreview {
+        try await post("job-search-profiles/parse", body: JobProfileParseRequest(text: text))
+    }
+
+    func submitJobFeedback(id: UUID, type: JobFeedbackType) async throws -> JobFeedbackResponse {
+        try await post(
+            "jobs/\(id.uuidString)/feedback",
+            body: JobFeedbackRequest(feedbackType: type, note: nil)
         )
     }
 

@@ -28,7 +28,7 @@ from app.application.dto import (
 )
 from app.application.mappers import to_opportunity_detail, to_opportunity_read
 from app.application.use_cases.ai_reply import AIDraftUseCase
-from app.application.use_cases.manual_reply import ManualReplyUseCase
+from app.application.use_cases.manual_reply import ManualReplyUseCase, MessageDeliveryError
 from app.application.use_cases.schedule_agent_analysis import ScheduleAgentAnalysisUseCase
 from app.domain.enums import (
     AgentAnalysisStatus,
@@ -237,9 +237,15 @@ async def manual_reply(
     adapters: AdapterRegistry = Depends(get_adapter_registry),
 ) -> OpportunityDetailRead:
     ensure_opportunity_is_active(opportunity)
+    if opportunity.channel == IMChannel.WECOM and opportunity.conversation_id.startswith(
+        "wecom-archive:"
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="WeCom archive conversations are read-only; reply in WeCom",
+        )
     is_dynamic_wecom = (
-        opportunity.channel == IMChannel.WECOM
-        and opportunity.conversation_id.startswith("wecom:")
+        opportunity.channel == IMChannel.WECOM and opportunity.conversation_id.startswith("wecom:")
     )
     if is_dynamic_wecom and (not idempotency_key or not 8 <= len(idempotency_key) <= 128):
         raise HTTPException(
@@ -260,6 +266,8 @@ async def manual_reply(
             idempotency_key=idempotency_key,
         )
     except InvalidOpportunityTransition as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    except MessageDeliveryError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
     except WeComProviderError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
@@ -303,7 +311,9 @@ async def enqueue_agent_analysis(
         )
     source_message = await message_repo.get(opportunity.source_message_id)
     if not source_message or source_message.owner_user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="source message not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="source message not found"
+        )
     if source_message.agent_analysis_status == AgentAnalysisStatus.RUNNING:
         return AgentAnalysisEnqueueRead(
             messageId=source_message.id,

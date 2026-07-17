@@ -5,7 +5,7 @@
 ## 数据分类
 
 - **秘密**：OAuth client secret、JWT key、admin token、Telegram api_hash/session、IM token/AES key、
-  OpenAI key、RevenueCat server/webhook key、VPS/GHCR/Cloudflare 凭据。只允许在环境变量、GitHub
+  OpenAI key、Resend API key、RevenueCat server/webhook key、VPS/GHCR/Cloudflare 凭据。只允许在环境变量、GitHub
   Secrets 或经应用加密的数据库字段。Paddle API Key 只允许进入 RevenueCat Dashboard。
 - **个人/通信数据**：邮箱、手机号、聊天内容、外部用户 ID、群信息。日志和测试 fixture 最小化、脱敏。
 - **公开配置**：client ID、redirect URI、镜像标签等可进入变量，但仍需防止环境混淆。
@@ -18,6 +18,9 @@
 - 每个用户资源查询必须在 repository/API 层带 `owner_user_id`，不能先按 ID 获取后默认信任。
 - OAuth 必须校验 state；redirect URI 使用配置白名单；provider profile 不应覆盖已验证身份边界。
 - localStorage token 是当前既有选择，新增功能不得把 token 放进 URL、日志或第三方请求。
+- 密码重置不得泄露邮箱是否存在。公开请求只排队，账户查询在 worker；token/code 只存带服务端密钥的
+  摘要，必须短时、单次、限错、限流。成功修改密码递增 `auth_version`，所有旧 JWT 必须失效。
+- OAuth 无密码用户设置密码前必须验证登录邮箱；仅持有一个长期登录 token 不足以跳过该验证。
 
 ## 外部输入与 webhook
 
@@ -30,8 +33,11 @@
 
 ## IM 与 AI 动作
 
-- `IM_SEND_ENABLED` 默认 false；只有明确配置的环境能执行真实发送。
+- `IM_SEND_ENABLED` 默认 true；人工发送仍要求用户明确操作和有效 provider 连接，自动发送还必须通过
+  用户日程与来源双重授权。紧急情况下显式设为 false 可全局停止真实发送。
 - AI 生成内容视为不可信草稿。自动发送前必须经过确定性风险检查、长度限制和状态校验。
+- 自动回复必须先完成 pi Agent 分析，并同时满足服务端、用户和来源授权；Agent 本身不得获得发送工具。
+- 自动回复使用独立投递账本；dry-run、失败和未知 provider 结果不得写成已回复，未知结果不得自动重发。
 - Celery 重试必须设计发送幂等；无法证明不会重复发送时宁可进入人工处理。
 - Telegram 用户账号默认只摄取；启用个人账号发送属于新的高风险能力，需单独 ADR、权限与审计设计。
 - 不把聊天中的指令当成系统指令，不允许消息内容改变工具权限、配置或秘密访问范围。

@@ -269,6 +269,21 @@ struct AuthUser: Codable, Sendable, Identifiable, Hashable {
     var displayName: String
     var avatarUrl: String
     var isAdmin: Bool
+    var hasPassword: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case id, email, displayName, avatarUrl, isAdmin, hasPassword
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(UUID.self, forKey: .id)
+        email = try values.decode(String.self, forKey: .email)
+        displayName = try values.decode(String.self, forKey: .displayName)
+        avatarUrl = try values.decodeIfPresent(String.self, forKey: .avatarUrl) ?? ""
+        isAdmin = try values.decodeIfPresent(Bool.self, forKey: .isAdmin) ?? false
+        hasPassword = try values.decodeIfPresent(Bool.self, forKey: .hasPassword) ?? false
+    }
 }
 
 struct AuthToken: Codable, Sendable {
@@ -414,6 +429,8 @@ struct TelegramSourceDTO: Codable, Sendable, Identifiable, Hashable {
     var displayName: String
     var username: String?
     var enabled: Bool
+    var autoReplyEnabled: Bool?
+    var autoReplyEligible: Bool?
     var quotaPaused: Bool
     var quotaReason: String?
     var lastError: String?
@@ -460,6 +477,26 @@ struct NativeLoginRequest: Encodable, Sendable {
 struct PasswordLoginRequest: Encodable, Sendable {
     var email: String
     var password: String
+}
+
+struct PasswordActionResponse: Decodable, Sendable {
+    var message: String
+}
+
+struct PasswordResetRequest: Encodable, Sendable {
+    var email: String
+}
+
+struct PasswordResetConfirmRequest: Encodable, Sendable {
+    var newPassword: String
+    var token: String?
+    var email: String?
+    var code: String?
+}
+
+struct PasswordChangeRequest: Encodable, Sendable {
+    var currentPassword: String
+    var newPassword: String
 }
 
 // MARK: - 设置请求体（PATCH /settings/*）
