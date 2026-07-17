@@ -13,5 +13,7 @@
 - [2026-07-12：商机语义识别增强](2026-07-12-opportunity-semantic-detection.md)
 - [2026-07-13：商机归档功能](2026-07-13-opportunity-archive.md)
 - [2026-07-14：企业微信消息收发 P0](2026-07-14-wecom-message-integration.md)
+- [2026-07-14：企业微信会话存档](2026-07-14-wecom-conversation-archive.md)
+- [2026-07-15：密码管理](2026-07-15-password-management.md)
 - [2026-07-18：P5 Agent 草稿与内部命令工具](2026-07-18-p5-agent-draft-internal-tools.md)
 - [2026-07-18：P5 Agent 明确批准后外发](2026-07-18-p5-agent-approved-send.md)

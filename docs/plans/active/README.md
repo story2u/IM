@@ -2,6 +2,8 @@
 
 当前活动计划：
 
+- [安全 AI 自动回复](2026-07-15-safe-ai-auto-reply.md)
+- [职位机会发现](2026-07-16-job-opportunity-discovery.md)
 - [Agent-native + React Native 系统重构总计划](2026-07-17-agent-native-system-refactor.md)，方向输入见
   [Agent-native 产品架构蓝图](2026-07-16-agent-native-architecture.md)与
   [React Native + Pi Agent 移动端重构方案](2026-07-16-rn-pi-agent-refactor.md)，P0/P2 验收见
