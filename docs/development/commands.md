@@ -191,10 +191,13 @@ alembic downgrade -1
 ## 与 CI 的对应关系
 
 - `.github/workflows/ci.yml` 的 harness job：`python scripts/harness_check.py`。
-- backend job：固定 uv 版本、Python 3.12、`uv sync --locked`、migration upgrade/downgrade/upgrade、compileall、Ruff、pytest。
+- backend job：固定 uv 版本、Python 3.12，并安装 `@story2u/radar-agent` 的最小 Node 依赖后执行
+  `uv sync --locked`、migration upgrade/downgrade/upgrade、compileall、Ruff、pytest；Node 依赖用于校验
+  Python gateway 与共享 TypeScript Agent 契约一致。
 - pi-agent job：Node 22、`npm ci --ignore-scripts`、语法检查和 faux-provider 测试。
 - frontend job：Node 22、pnpm 10、根 frozen install、共享包/RN JS、Web lint/typecheck/Vitest/build。
 - ios/android jobs：原生旧 App 的 xcodegen/XCTest 与 Gradle 检查；`rn-ios` / `rn-android` 另做 Expo
-  prebuild 和 RN Release 构建。
+  prebuild 和 RN Release 构建。旧 iOS App 固定 Xcode 16.4 + iOS 18.5；RN iOS 因
+  `expo-modules-jsi@57.0.3` 的 Swift tools 6.2 要求固定使用 Xcode 26.3。
 
 若本地命令与 CI 漂移，优先统一根 Makefile和本文件，不在入口提示词复制更多命令。
