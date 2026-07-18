@@ -7,6 +7,7 @@ from app.api.deps import (
     get_adapter_registry,
     get_detector,
     get_device_agent_routing_service,
+    get_job_message_audit_repo,
     get_message_repo,
     get_opportunity_repo,
     get_rule_repo,
@@ -78,6 +79,10 @@ async def wecom_webhook(
     task_queue: CeleryTaskQueue = Depends(get_task_queue),
     subscription_repo: SubscriptionRepository = Depends(get_subscription_repo),
     user_settings_repo: UserSettingsRepository = Depends(get_user_settings_repo),
+    job_audit_repo: JobMessageAuditRepository = Depends(get_job_message_audit_repo),
+    source_profile_repo: SourceFunctionalProfileRepository = Depends(
+        get_source_functional_profile_repo
+    ),
     device_routing: DeviceAgentRoutingService = Depends(get_device_agent_routing_service),
 ) -> dict:
     body = await request.body()
@@ -100,6 +105,11 @@ async def wecom_webhook(
         task_queue=task_queue,
         subscription_repo=subscription_repo,
         user_settings_repo=user_settings_repo,
+        job_discovery=PrepareJobDiscoveryUseCase(
+            message_repo=message_repo,
+            profile_repo=source_profile_repo,
+            audit_repo=job_audit_repo,
+        ),
         device_routing=device_routing,
     )
     result = await use_case.execute(inbound)

@@ -34,6 +34,35 @@ export type {
 } from '@story2u/radar-contracts/subscriptions'
 
 export type Platform = 'telegram' | 'wecom'
+export type JobWorkMode = 'remote' | 'hybrid' | 'on_site' | 'flexible' | 'unknown'
+export type JobEmploymentType =
+  | 'full_time'
+  | 'part_time'
+  | 'contract'
+  | 'internship'
+  | 'freelance'
+  | 'temporary'
+  | 'unknown'
+export type JobSeniority =
+  | 'intern'
+  | 'junior'
+  | 'mid'
+  | 'senior'
+  | 'lead'
+  | 'manager'
+  | 'director'
+  | 'executive'
+  | 'unknown'
+export type SalaryPeriod = 'hourly' | 'daily' | 'monthly' | 'annual' | 'project' | 'unknown'
+export type JobEligibility = 'eligible' | 'not_eligible' | 'unknown'
+export type JobFeedbackType =
+  | 'relevant'
+  | 'not_relevant'
+  | 'not_a_job'
+  | 'duplicate'
+  | 'expired'
+  | 'scam'
+  | 'wrong_extraction'
 export type OpportunityStatus = 'pending' | 'replied' | 'ignored'
 export type InternalOpportunityStatus =
   | 'pending_human'
@@ -374,4 +403,38 @@ export interface WeComConnectionCreate {
   secret: string
   token: string
   encodingAesKey: string
+}
+
+export interface WeComArchiveConnectionCreate {
+  displayName: string
+  corpId: string
+  archiveSecret: string
+  privateKeyPem: string
+  publicKeyVersion: number
+  wecomUserId: string
+  memberDisplayName: string
+}
+
+export interface WeComArchiveConnection {
+  id: string
+  status: WeComConnectionStatus
+  enabled: boolean
+  displayName: string
+  corpId: string
+  publicKeyVersion: number
+  credentialConfigured: boolean
+  sdkConfigured: boolean
+  lastSequence: number
+  lastVerifiedAt: string | null
+  lastPolledAt: string | null
+  lastError: string | null
+  updatedAt: string
+  member: {
+    id: string
+    wecomUserId: string
+    displayName: string
+    enabled: boolean
+    lastMatchedAt: string | null
+  }
+  sources: WeComSource[]
 }

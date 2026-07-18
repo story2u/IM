@@ -9,6 +9,7 @@ const user = {
   displayName: 'Person',
   avatarUrl: '',
   isAdmin: false,
+  hasPassword: true,
 };
 
 function clientWithResponse(body: unknown) {

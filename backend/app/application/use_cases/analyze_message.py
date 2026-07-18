@@ -51,9 +51,9 @@ class AnalyzeMessageUseCase:
         agent: MessageAgent,
         link_inspector: LinkInspector,
         task_queue: TaskQueue,
-        execution: AgentExecutionMetadata,
         min_opportunity_confidence: float,
         max_links: int,
+        execution: AgentExecutionMetadata | None = None,
         job_audit_repo: JobMessageAuditRepository | None = None,
         source_profile_repo: SourceFunctionalProfileRepository | None = None,
         job_opportunity_repo: JobOpportunityRepository | None = None,
@@ -220,11 +220,41 @@ class AnalyzeMessageUseCase:
                     opportunity,
                     projection,
                 )
+            if result.job_analysis and source_profile and self.job_opportunity_repo:
+                persisted_job = await PersistJobOpportunityUseCase(
+                    self.job_opportunity_repo
+                ).execute(
+                    message=message,
+                    analysis=result.job_analysis,
+                    source_profile=source_profile,
+                    existing_opportunity=opportunity,
+                )
+                if persisted_job.opportunity:
+                    opportunity = persisted_job.opportunity
+                    if (
+                        opportunity.owner_user_id
+                        and self.job_search_profile_repo
+                        and self.job_match_repo
+                    ):
+                        await MatchJobOpportunityUseCase(
+                            job_repo=self.job_opportunity_repo,
+                            profile_repo=self.job_search_profile_repo,
+                            match_repo=self.job_match_repo,
+                        ).execute(opportunity.id, opportunity.owner_user_id)
+                elif persisted_job.rejected_reason and job_audit and self.job_audit_repo:
+                    await self.job_audit_repo.apply_agent_classification(
+                        job_audit,
+                        classification=result.job_analysis.classification,
+                        confidence=result.job_analysis.classification_confidence,
+                        reason=persisted_job.rejected_reason,
+                    )
             await self.message_repo.complete_agent_analysis(
                 message,
                 projection,
                 execution=self.execution,
             )
+            if opportunity and opportunity.status == OpportunityStatus.AI_AUTO_REPLY:
+                self.task_queue.enqueue_ai_reply(opportunity.id)
             return opportunity
         except Exception as exc:
             await self.message_repo.fail_agent_analysis(message.id, str(exc))

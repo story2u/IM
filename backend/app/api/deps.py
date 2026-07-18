@@ -13,11 +13,11 @@ from app.application.use_cases.analysis_run import (
     AnalysisRunTokenPrincipal,
     DeviceAgentRoutingService,
 )
+from app.application.use_cases.device_session import DeviceSessionService
 from app.application.use_cases.interactive_agent_action import (
     InteractiveAgentActionService,
     InteractiveAgentApprovalTokenPrincipal,
 )
-from app.application.use_cases.device_session import DeviceSessionService
 from app.application.use_cases.interactive_agent_gateway import (
     InteractiveAgentGatewayService,
 )
@@ -26,32 +26,34 @@ from app.application.use_cases.interactive_agent_turn import (
     InteractiveAgentTurnService,
     InteractiveAgentTurnTokenPrincipal,
 )
-from app.application.use_cases.push_registration import PushRegistrationService
 from app.application.use_cases.manual_reply import ManualReplyUseCase
+from app.application.use_cases.push_registration import PushRegistrationService
+from app.application.use_cases.signal_appetite_sync import SignalAppetiteSyncService
 from app.application.use_cases.sync_feed import SyncFeedService
 from app.core.config import Settings, get_settings
 from app.core.security import (
     constant_time_equals,
     decode_access_token,
     decode_analysis_run_token,
-    decode_interactive_agent_turn_token,
     decode_interactive_agent_approval_token,
+    decode_interactive_agent_turn_token,
     hash_analysis_run_nonce,
-    hash_interactive_agent_turn_nonce,
     hash_interactive_agent_approval_nonce,
+    hash_interactive_agent_turn_nonce,
 )
 from app.core.time_window import WorkTimeConfig, WorkTimeService
 from app.domain.services.detection_policy import OpportunityDetector
 from app.infrastructure.agent.link_inspector import SafeLinkInspector
+from app.infrastructure.agent.pi_client import PiAgentClient
 from app.infrastructure.ai.analysis_gateway import OpenAICompatibleGatewayClient
 from app.infrastructure.ai.litellm_client import LiteLLMOpportunityClassifier, LiteLLMReplyGenerator
 from app.infrastructure.db.analysis_gateway_repository import AnalysisGatewayRepository
 from app.infrastructure.db.analysis_run_repository import AnalysisRunRepository
-from app.infrastructure.db.interactive_agent_gateway_repository import (
-    InteractiveAgentGatewayRepository,
-)
 from app.infrastructure.db.interactive_agent_action_repository import (
     InteractiveAgentActionRepository,
+)
+from app.infrastructure.db.interactive_agent_gateway_repository import (
+    InteractiveAgentGatewayRepository,
 )
 from app.infrastructure.db.interactive_agent_repository import (
     InteractiveAgentTurnRepository,
@@ -68,6 +70,7 @@ from app.infrastructure.db.repositories import (
     JobOpportunityRepository,
     JobSearchProfileRepository,
     OpportunityRepository,
+    PasswordResetRepository,
     PushRegistrationRepository,
     ReplyTemplateRepository,
     RuleRepository,
@@ -83,6 +86,7 @@ from app.infrastructure.db.repositories import (
     WeComEventRepository,
 )
 from app.infrastructure.db.session import get_session
+from app.infrastructure.db.signal_appetite_repository import SignalAppetiteRepository
 from app.infrastructure.db.sync_repository import SyncFeedRepository
 from app.infrastructure.im.base import AdapterRegistry
 from app.infrastructure.im.telegram import TelegramAdapter
@@ -209,6 +213,14 @@ async def _principal_from_token(
     user = await UserRepository(session).get(user_id)
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="inactive user")
+    try:
+        token_version = int(payload.get("ver", 0))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token"
+        ) from exc
+    if token_version != user.auth_version:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid token")
     device = None
     device_id_value = payload.get("did")
     if device_id_value is not None:
@@ -272,6 +284,47 @@ def get_message_repo(session: AsyncSession = Depends(get_session)) -> MessageRep
     return MessageRepository(session)
 
 
+def get_job_message_audit_repo(
+    session: AsyncSession = Depends(get_session),
+) -> JobMessageAuditRepository:
+    return JobMessageAuditRepository(session)
+
+
+def get_source_functional_profile_repo(
+    session: AsyncSession = Depends(get_session),
+) -> SourceFunctionalProfileRepository:
+    return SourceFunctionalProfileRepository(session)
+
+
+def get_job_opportunity_repo(
+    session: AsyncSession = Depends(get_session),
+) -> JobOpportunityRepository:
+    return JobOpportunityRepository(session)
+
+
+def get_job_search_profile_repo(
+    session: AsyncSession = Depends(get_session),
+) -> JobSearchProfileRepository:
+    return JobSearchProfileRepository(session)
+
+
+def get_job_opportunity_match_repo(
+    session: AsyncSession = Depends(get_session),
+) -> JobOpportunityMatchRepository:
+    return JobOpportunityMatchRepository(session)
+
+
+def get_pi_agent_client(settings: Settings = Depends(get_settings)) -> PiAgentClient:
+    return PiAgentClient(
+        node_binary=settings.pi_agent_node_binary,
+        runner_path=settings.pi_agent_runner_path,
+        provider=settings.pi_agent_provider,
+        model=settings.pi_agent_model,
+        api_key=settings.effective_pi_agent_api_key,
+        timeout_seconds=settings.pi_agent_timeout_seconds,
+    )
+
+
 def get_manual_reply_delivery_repo(
     session: AsyncSession = Depends(get_session),
 ) -> ManualReplyDeliveryRepository:
@@ -294,6 +347,12 @@ def get_user_repo(session: AsyncSession = Depends(get_session)) -> UserRepositor
     return UserRepository(session)
 
 
+def get_password_reset_repo(
+    session: AsyncSession = Depends(get_session),
+) -> PasswordResetRepository:
+    return PasswordResetRepository(session)
+
+
 def get_device_session_service(
     session: AsyncSession = Depends(get_session),
     settings: Settings = Depends(get_settings),
@@ -306,6 +365,12 @@ def get_sync_feed_service(
     settings: Settings = Depends(get_settings),
 ) -> SyncFeedService:
     return SyncFeedService(SyncFeedRepository(session), settings)
+
+
+def get_signal_appetite_sync_service(
+    session: AsyncSession = Depends(get_session),
+) -> SignalAppetiteSyncService:
+    return SignalAppetiteSyncService(SignalAppetiteRepository(session))
 
 
 def get_push_registration_service(

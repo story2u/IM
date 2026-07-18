@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -25,6 +26,8 @@ from app.domain.enums import (
     AnalysisRunExecutor,
     AnalysisRunMode,
     AnalysisRunStatus,
+    AutoReplyDecisionReason,
+    AutoReplyDeliveryStatus,
     BillingEventStatus,
     BillingInterval,
     BillingProvider,
@@ -37,6 +40,12 @@ from app.domain.enums import (
     InteractiveAgentApprovalStatus,
     InteractiveAgentProviderRequestStatus,
     InteractiveAgentTurnStatus,
+    JobEligibility,
+    JobEmploymentType,
+    JobFeedbackType,
+    JobMessageClassification,
+    JobSeniority,
+    JobWorkMode,
     ManualReplyDeliveryStatus,
     MessageDirection,
     MessageSource,
@@ -528,6 +537,61 @@ class SyncChange(SQLModel, table=True):
     )
 
 
+class SignalAppetiteEvent(SQLModel, table=True):
+    """Content-free, append-only preference event uploaded by an owned device."""
+
+    __tablename__ = "signal_appetite_events"
+    __table_args__ = (
+        UniqueConstraint(
+            "owner_user_id", "event_id", name="uq_signal_appetite_events_owner_event"
+        ),
+        CheckConstraint(
+            "aggregate_version > 0",
+            name="ck_signal_appetite_events_aggregate_version_positive",
+        ),
+        CheckConstraint(
+            "schema_version = 1",
+            name="ck_signal_appetite_events_schema_v1",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(payload) = 'object' AND octet_length(payload::text) <= 65536",
+            name="ck_signal_appetite_events_payload_bounded_object",
+        ),
+        Index("ix_signal_appetite_events_owner_cursor", "owner_user_id", "cursor"),
+        Index(
+            "ix_signal_appetite_events_owner_aggregate",
+            "owner_user_id",
+            "aggregate_id",
+            "aggregate_version",
+        ),
+        ForeignKeyConstraint(
+            ["owner_user_id", "device_id"],
+            ["devices.owner_user_id", "devices.id"],
+            name="fk_signal_appetite_events_owner_device",
+            ondelete="CASCADE",
+        ),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    cursor: int | None = Field(
+        default=None,
+        sa_column=Column(BigInteger, Identity(start=1), nullable=False, unique=True),
+    )
+    owner_user_id: UUID = Field(foreign_key="users.id", ondelete="CASCADE", index=True)
+    device_id: UUID = Field(index=True)
+    event_id: UUID = Field(index=True)
+    event_type: str = Field(max_length=64, index=True)
+    aggregate_id: UUID = Field(index=True)
+    aggregate_version: int = Field(sa_column=Column(BigInteger, nullable=False))
+    schema_version: int = Field(default=1)
+    payload: dict[str, Any] = Field(sa_column=Column(JSONB, nullable=False))
+    occurred_at: datetime = Field(sa_column=Column(DateTime(timezone=True), nullable=False))
+    created_at: datetime = Field(
+        default_factory=utc_now,
+        sa_column=Column(DateTime(timezone=True), nullable=False),
+    )
+
+
 class SubscriptionAccount(TimestampMixin, table=True):
     __tablename__ = "subscription_accounts"
     __table_args__ = (
@@ -736,6 +800,12 @@ class Opportunity(TimestampMixin, table=True):
     )
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
+    opportunity_type: OpportunityType = Field(
+        default=OpportunityType.BUSINESS,
+        sa_column=Column(
+            SAEnum(OpportunityType, native_enum=False), nullable=False, index=True
+        ),
+    )
     aggregate_version: int = Field(
         default=1,
         ge=1,
@@ -1258,6 +1328,56 @@ class ManualReplyDelivery(TimestampMixin, table=True):
         sa_column=Column(DateTime(timezone=True), nullable=True),
     )
     error_class: str | None = Field(default=None, max_length=255)
+
+
+class AutoReplyDelivery(TimestampMixin, table=True):
+    __tablename__ = "auto_reply_deliveries"
+    __table_args__ = (
+        UniqueConstraint(
+            "owner_user_id", "idempotency_key", name="uq_auto_reply_deliveries_owner_key"
+        ),
+        Index(
+            "ix_auto_reply_deliveries_conversation_status_created",
+            "owner_user_id",
+            "channel",
+            "conversation_id",
+            "status",
+            "created_at",
+        ),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    owner_user_id: UUID = Field(foreign_key="users.id", index=True)
+    opportunity_id: UUID = Field(foreign_key="opportunities.id", index=True)
+    source_message_id: UUID = Field(foreign_key="messages.id", index=True)
+    channel: IMChannel = Field(
+        sa_column=Column(SAEnum(IMChannel, native_enum=False), nullable=False, index=True)
+    )
+    conversation_id: str = Field(max_length=255, index=True)
+    idempotency_key: str = Field(max_length=255)
+    status: AutoReplyDeliveryStatus = Field(
+        default=AutoReplyDeliveryStatus.CANDIDATE,
+        sa_column=Column(
+            SAEnum(AutoReplyDeliveryStatus, native_enum=False), nullable=False, index=True
+        ),
+    )
+    decision_reason: AutoReplyDecisionReason | None = Field(
+        default=None,
+        sa_column=Column(SAEnum(AutoReplyDecisionReason, native_enum=False), nullable=True),
+    )
+    content_hash: str | None = Field(default=None, max_length=64)
+    provider_message_id: str | None = Field(default=None, max_length=255)
+    attempt_count: int = Field(default=0, ge=0)
+    ready_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
+    sending_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
+    sent_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
+    error: str | None = Field(default=None, max_length=500)
 
 
 class Message(TimestampMixin, table=True):

@@ -9,6 +9,7 @@ from app.core.config import Settings
 from app.core.security import require_secret
 from app.domain.enums import IMChannel
 from app.domain.ports import InboundMessage, SendReceipt
+from app.infrastructure.db.repositories import TelegramConnectionRepository
 from app.infrastructure.im.base import IMSendDisabledError
 
 

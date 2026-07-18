@@ -18,6 +18,8 @@ export interface TelegramConnectionHealth extends Omit<GeneratedTelegramConnecti
 }
 
 export interface TelegramConnectionSource extends Omit<GeneratedTelegramConnectionSource, 'lastError' | 'quotaReason' | 'username'> {
+  autoReplyEligible: boolean;
+  autoReplyEnabled: boolean;
   lastError: string | null;
   quotaReason: string | null;
   username: string | null;
