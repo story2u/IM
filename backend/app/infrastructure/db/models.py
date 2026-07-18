@@ -51,6 +51,7 @@ from app.domain.enums import (
     MessageSource,
     OpportunityArchiveAction,
     OpportunityStatus,
+    OpportunityType,
     PlanCode,
     Priority,
     PushEnvironment,
@@ -799,6 +800,12 @@ class Opportunity(TimestampMixin, table=True):
     )
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
+    opportunity_type: OpportunityType = Field(
+        default=OpportunityType.BUSINESS,
+        sa_column=Column(
+            SAEnum(OpportunityType, native_enum=False), nullable=False, index=True
+        ),
+    )
     aggregate_version: int = Field(
         default=1,
         ge=1,
