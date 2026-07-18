@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -25,6 +26,8 @@ from app.domain.enums import (
     AnalysisRunExecutor,
     AnalysisRunMode,
     AnalysisRunStatus,
+    AutoReplyDecisionReason,
+    AutoReplyDeliveryStatus,
     BillingEventStatus,
     BillingInterval,
     BillingProvider,
@@ -37,12 +40,17 @@ from app.domain.enums import (
     InteractiveAgentApprovalStatus,
     InteractiveAgentProviderRequestStatus,
     InteractiveAgentTurnStatus,
+    JobEligibility,
+    JobEmploymentType,
+    JobFeedbackType,
+    JobMessageClassification,
+    JobSeniority,
+    JobWorkMode,
     ManualReplyDeliveryStatus,
     MessageDirection,
     MessageSource,
     OpportunityArchiveAction,
     OpportunityStatus,
-    OpportunityType,
     PlanCode,
     Priority,
     PushEnvironment,
@@ -1313,6 +1321,56 @@ class ManualReplyDelivery(TimestampMixin, table=True):
         sa_column=Column(DateTime(timezone=True), nullable=True),
     )
     error_class: str | None = Field(default=None, max_length=255)
+
+
+class AutoReplyDelivery(TimestampMixin, table=True):
+    __tablename__ = "auto_reply_deliveries"
+    __table_args__ = (
+        UniqueConstraint(
+            "owner_user_id", "idempotency_key", name="uq_auto_reply_deliveries_owner_key"
+        ),
+        Index(
+            "ix_auto_reply_deliveries_conversation_status_created",
+            "owner_user_id",
+            "channel",
+            "conversation_id",
+            "status",
+            "created_at",
+        ),
+    )
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    owner_user_id: UUID = Field(foreign_key="users.id", index=True)
+    opportunity_id: UUID = Field(foreign_key="opportunities.id", index=True)
+    source_message_id: UUID = Field(foreign_key="messages.id", index=True)
+    channel: IMChannel = Field(
+        sa_column=Column(SAEnum(IMChannel, native_enum=False), nullable=False, index=True)
+    )
+    conversation_id: str = Field(max_length=255, index=True)
+    idempotency_key: str = Field(max_length=255)
+    status: AutoReplyDeliveryStatus = Field(
+        default=AutoReplyDeliveryStatus.CANDIDATE,
+        sa_column=Column(
+            SAEnum(AutoReplyDeliveryStatus, native_enum=False), nullable=False, index=True
+        ),
+    )
+    decision_reason: AutoReplyDecisionReason | None = Field(
+        default=None,
+        sa_column=Column(SAEnum(AutoReplyDecisionReason, native_enum=False), nullable=True),
+    )
+    content_hash: str | None = Field(default=None, max_length=64)
+    provider_message_id: str | None = Field(default=None, max_length=255)
+    attempt_count: int = Field(default=0, ge=0)
+    ready_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
+    sending_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
+    sent_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
+    error: str | None = Field(default=None, max_length=500)
 
 
 class Message(TimestampMixin, table=True):

@@ -310,6 +310,8 @@ class WeComAdapter:
     ) -> SendReceipt:
         if not self.settings.im_send_enabled:
             raise IMSendDisabledError("IM sending is disabled")
+        if not credentials.corp_id or not credentials.agent_id or not credentials.secret:
+            raise IMSendDisabledError("WeCom sending is not configured")
         token = await self._access_token(credentials, cache_scope=cache_scope)
         try:
             async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:

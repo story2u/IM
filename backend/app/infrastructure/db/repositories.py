@@ -14,6 +14,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from app.domain.enums import (
     AgentAnalysisStatus,
     AnalysisRunStatus,
+    AutoReplyDecisionReason,
+    AutoReplyDeliveryStatus,
     BillingEventStatus,
     BillingInterval,
     BillingProvider,
@@ -24,6 +26,8 @@ from app.domain.enums import (
     DeviceStatus,
     FrontendOpportunityStatus,
     IMChannel,
+    JobFeedbackType,
+    JobMessageClassification,
     ManualReplyDeliveryStatus,
     MessageDirection,
     MessageSource,
@@ -36,6 +40,7 @@ from app.domain.enums import (
     PushEnvironment,
     PushProvider,
     PushRegistrationStatus,
+    SourcePrimaryFunction,
     SubscriptionStatus,
     TelegramConnectionAttemptStatus,
     TelegramConnectionStatus,
@@ -89,10 +94,17 @@ from app.infrastructure.db.models import (
     Device,
     DeviceCredential,
     InternalCommandReceipt,
+    JobMessageAudit,
+    JobOpportunityDetail,
+    JobOpportunityFeedback,
+    JobOpportunityMatch,
+    JobOpportunitySource,
+    JobSearchProfile,
     ManualReplyDelivery,
     Message,
     Opportunity,
     OpportunityArchiveEvent,
+    PasswordResetChallenge,
     PushRegistration,
     ReplyTemplate,
     Rule,
@@ -805,6 +817,113 @@ class PushRegistrationRepository:
         await self.session.commit()
 
 
+class PasswordResetRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def create(
+        self,
+        *,
+        user_id: UUID,
+        token_digest: str,
+        code_digest: str,
+        expires_at: datetime,
+    ) -> PasswordResetChallenge:
+        now = utc_now()
+        await self.session.exec(
+            update(PasswordResetChallenge)
+            .where(
+                PasswordResetChallenge.user_id == user_id,
+                PasswordResetChallenge.used_at.is_(None),
+            )
+            .values(used_at=now, updated_at=now)
+        )
+        challenge = PasswordResetChallenge(
+            user_id=user_id,
+            token_digest=token_digest,
+            code_digest=code_digest,
+            expires_at=expires_at,
+        )
+        self.session.add(challenge)
+        await self.session.commit()
+        await self.session.refresh(challenge)
+        return challenge
+
+    async def active_by_token(self, token_digest: str) -> PasswordResetChallenge | None:
+        result = await self.session.exec(
+            select(PasswordResetChallenge)
+            .where(
+                PasswordResetChallenge.token_digest == token_digest,
+                PasswordResetChallenge.used_at.is_(None),
+                PasswordResetChallenge.expires_at > utc_now(),
+            )
+            .with_for_update()
+        )
+        return result.first()
+
+    async def latest_active_for_email(
+        self, email: str
+    ) -> tuple[PasswordResetChallenge, User] | None:
+        result = await self.session.exec(
+            select(PasswordResetChallenge, User)
+            .join(User, User.id == PasswordResetChallenge.user_id)
+            .where(
+                User.email == email.lower().strip(),
+                User.is_active.is_(True),
+                PasswordResetChallenge.used_at.is_(None),
+                PasswordResetChallenge.expires_at > utc_now(),
+            )
+            .order_by(col(PasswordResetChallenge.created_at).desc())
+            .with_for_update()
+        )
+        return result.first()
+
+    async def user_for_challenge(self, challenge: PasswordResetChallenge) -> User | None:
+        return await self.session.get(User, challenge.user_id)
+
+    async def register_failed_attempt(
+        self, challenge: PasswordResetChallenge, *, max_attempts: int
+    ) -> None:
+        now = utc_now()
+        challenge.failed_attempts += 1
+        challenge.updated_at = now
+        if challenge.failed_attempts >= max_attempts:
+            challenge.used_at = now
+        self.session.add(challenge)
+        await self.session.commit()
+
+    async def invalidate(self, challenge: PasswordResetChallenge) -> None:
+        challenge.used_at = utc_now()
+        challenge.updated_at = utc_now()
+        self.session.add(challenge)
+        await self.session.commit()
+
+    async def replace_password(
+        self,
+        *,
+        user: User,
+        password_hash: str,
+        challenge: PasswordResetChallenge | None = None,
+    ) -> User:
+        now = utc_now()
+        user.password_hash = password_hash
+        user.auth_version += 1
+        user.updated_at = now
+        self.session.add(user)
+        if challenge:
+            await self.session.exec(
+                update(PasswordResetChallenge)
+                .where(
+                    PasswordResetChallenge.user_id == user.id,
+                    PasswordResetChallenge.used_at.is_(None),
+                )
+                .values(used_at=now, updated_at=now)
+            )
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
+
 @dataclass(frozen=True, slots=True)
 class SubscriptionSnapshot:
     plan_code: PlanCode
@@ -1411,6 +1530,223 @@ class SubscriptionRepository:
         )
         result = await self.session.exec(statement)
         return int(result.one())
+
+
+class AutoReplyDeliveryRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def reserve(
+        self,
+        *,
+        owner_user_id: UUID,
+        opportunity_id: UUID,
+        source_message_id: UUID,
+        channel: IMChannel,
+        conversation_id: str,
+        idempotency_key: str,
+    ) -> tuple[AutoReplyDelivery, bool]:
+        existing = await self._get_by_key(owner_user_id, idempotency_key)
+        if existing:
+            return existing, False
+        delivery = AutoReplyDelivery(
+            owner_user_id=owner_user_id,
+            opportunity_id=opportunity_id,
+            source_message_id=source_message_id,
+            channel=channel,
+            conversation_id=conversation_id,
+            idempotency_key=idempotency_key,
+        )
+        self.session.add(delivery)
+        try:
+            await self.session.commit()
+        except IntegrityError:
+            await self.session.rollback()
+            existing = await self._get_by_key(owner_user_id, idempotency_key)
+            if existing:
+                return existing, False
+            raise
+        await self.session.refresh(delivery)
+        return delivery, True
+
+    async def claim_candidate(self, delivery_id: UUID) -> AutoReplyDelivery | None:
+        delivery = await self.session.get(AutoReplyDelivery, delivery_id, with_for_update=True)
+        if not delivery or delivery.status != AutoReplyDeliveryStatus.CANDIDATE:
+            return None
+        delivery.status = AutoReplyDeliveryStatus.GENERATING
+        delivery.attempt_count += 1
+        delivery.updated_at = utc_now()
+        self.session.add(delivery)
+        await self.session.commit()
+        await self.session.refresh(delivery)
+        return delivery
+
+    async def mark_blocked(
+        self, delivery: AutoReplyDelivery, reason: AutoReplyDecisionReason
+    ) -> AutoReplyDelivery:
+        return await self._mark(delivery, status=AutoReplyDeliveryStatus.BLOCKED, reason=reason)
+
+    async def mark_ready(
+        self, delivery: AutoReplyDelivery, *, content_hash: str
+    ) -> AutoReplyDelivery:
+        return await self._mark(
+            delivery,
+            status=AutoReplyDeliveryStatus.READY,
+            reason=AutoReplyDecisionReason.ELIGIBLE,
+            content_hash=content_hash,
+            ready_at=utc_now(),
+        )
+
+    async def mark_sending(self, delivery: AutoReplyDelivery) -> AutoReplyDelivery:
+        current = await self.session.get(AutoReplyDelivery, delivery.id, with_for_update=True)
+        if not current or current.status != AutoReplyDeliveryStatus.READY:
+            raise ValueError("auto reply delivery is not ready")
+        return await self._mark(
+            current,
+            status=AutoReplyDeliveryStatus.SENDING,
+            reason=AutoReplyDecisionReason.ELIGIBLE,
+            sending_at=utc_now(),
+        )
+
+    async def claim_ready_for_send(
+        self, delivery: AutoReplyDelivery
+    ) -> tuple[AutoReplyDelivery, Opportunity] | None:
+        current = await self.session.get(AutoReplyDelivery, delivery.id, with_for_update=True)
+        if not current or current.status != AutoReplyDeliveryStatus.READY:
+            return None
+        opportunity = await self.session.get(Opportunity, current.opportunity_id, with_for_update=True)
+        if (
+            not opportunity
+            or opportunity.status != OpportunityStatus.AI_AUTO_REPLY
+            or opportunity.archived_at is not None
+            or opportunity.assigned_to
+        ):
+            return None
+        now = utc_now()
+        opportunity.assigned_to = "ai:auto_reply"
+        opportunity.updated_at = now
+        current.status = AutoReplyDeliveryStatus.SENDING
+        current.decision_reason = AutoReplyDecisionReason.ELIGIBLE
+        current.sending_at = now
+        current.updated_at = now
+        self.session.add(opportunity)
+        self.session.add(current)
+        await self.session.commit()
+        await self.session.refresh(current)
+        await self.session.refresh(opportunity)
+        return current, opportunity
+
+    async def mark_sent(
+        self, delivery: AutoReplyDelivery, *, provider_message_id: str
+    ) -> AutoReplyDelivery:
+        return await self._mark(
+            delivery,
+            status=AutoReplyDeliveryStatus.SENT,
+            reason=AutoReplyDecisionReason.ELIGIBLE,
+            provider_message_id=provider_message_id,
+            sent_at=utc_now(),
+        )
+
+    async def mark_dry_run(self, delivery: AutoReplyDelivery) -> AutoReplyDelivery:
+        return await self._mark(
+            delivery,
+            status=AutoReplyDeliveryStatus.DRY_RUN,
+            reason=AutoReplyDecisionReason.DELIVERY_DRY_RUN,
+        )
+
+    async def mark_failed(self, delivery: AutoReplyDelivery, error: str) -> AutoReplyDelivery:
+        await self.session.rollback()
+        current = await self.session.get(AutoReplyDelivery, delivery.id)
+        if not current:
+            return delivery
+        return await self._mark(
+            current,
+            status=AutoReplyDeliveryStatus.FAILED,
+            reason=AutoReplyDecisionReason.PROVIDER_ERROR,
+            error=error[:500],
+        )
+
+    async def mark_sending_uncertain(
+        self, delivery: AutoReplyDelivery, error: str
+    ) -> AutoReplyDelivery:
+        await self.session.rollback()
+        current = await self.session.get(AutoReplyDelivery, delivery.id)
+        if not current:
+            return delivery
+        return await self._mark(
+            current,
+            status=AutoReplyDeliveryStatus.SENDING,
+            reason=AutoReplyDecisionReason.PROVIDER_ERROR,
+            error=error[:500],
+        )
+
+    async def reload_after_rollback(self, delivery_id: UUID) -> AutoReplyDelivery | None:
+        await self.session.rollback()
+        return await self.session.get(AutoReplyDelivery, delivery_id)
+
+    async def count_sent_since(
+        self,
+        *,
+        owner_user_id: UUID,
+        channel: IMChannel,
+        conversation_id: str,
+        since: datetime,
+    ) -> int:
+        result = await self.session.exec(
+            select(func.count())
+            .select_from(AutoReplyDelivery)
+            .where(
+                AutoReplyDelivery.owner_user_id == owner_user_id,
+                AutoReplyDelivery.channel == channel,
+                AutoReplyDelivery.conversation_id == conversation_id,
+                AutoReplyDelivery.status == AutoReplyDeliveryStatus.SENT,
+                AutoReplyDelivery.sent_at >= since,
+            )
+        )
+        return int(result.one())
+
+    async def _get_by_key(
+        self, owner_user_id: UUID, idempotency_key: str
+    ) -> AutoReplyDelivery | None:
+        result = await self.session.exec(
+            select(AutoReplyDelivery).where(
+                AutoReplyDelivery.owner_user_id == owner_user_id,
+                AutoReplyDelivery.idempotency_key == idempotency_key,
+            )
+        )
+        return result.first()
+
+    async def _mark(
+        self,
+        delivery: AutoReplyDelivery,
+        *,
+        status: AutoReplyDeliveryStatus,
+        reason: AutoReplyDecisionReason,
+        content_hash: str | None = None,
+        provider_message_id: str | None = None,
+        ready_at: datetime | None = None,
+        sending_at: datetime | None = None,
+        sent_at: datetime | None = None,
+        error: str | None = None,
+    ) -> AutoReplyDelivery:
+        delivery.status = status
+        delivery.decision_reason = reason
+        if content_hash is not None:
+            delivery.content_hash = content_hash
+        if provider_message_id is not None:
+            delivery.provider_message_id = provider_message_id
+        if ready_at is not None:
+            delivery.ready_at = ready_at
+        if sending_at is not None:
+            delivery.sending_at = sending_at
+        if sent_at is not None:
+            delivery.sent_at = sent_at
+        delivery.error = error
+        delivery.updated_at = utc_now()
+        self.session.add(delivery)
+        await self.session.commit()
+        await self.session.refresh(delivery)
+        return delivery
 
 
 class MessageRepository:

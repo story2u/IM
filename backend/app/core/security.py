@@ -219,12 +219,14 @@ def create_access_token(
     *,
     subject: UUID,
     settings: Settings,
+    auth_version: int = 0,
     device_id: UUID | None = None,
     expires_delta: timedelta | None = None,
 ) -> str:
     return create_signed_token(
         {
             "sub": str(subject),
+            "ver": auth_version,
             **({"did": str(device_id)} if device_id is not None else {}),
         },
         settings=settings,

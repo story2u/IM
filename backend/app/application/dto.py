@@ -1,6 +1,7 @@
 import json
 import re
 from datetime import datetime
+from decimal import Decimal
 from typing import Annotated, Literal
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -22,6 +23,12 @@ from app.domain.enums import (
     IMChannel,
     InteractiveAgentApprovalStatus,
     InteractiveAgentTurnStatus,
+    JobEligibility,
+    JobEmploymentType,
+    JobFeedbackType,
+    JobMessageClassification,
+    JobSeniority,
+    JobWorkMode,
     MessageSource,
     OpportunityStatus,
     PlanCode,

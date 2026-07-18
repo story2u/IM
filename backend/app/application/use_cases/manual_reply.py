@@ -5,6 +5,7 @@ from uuid import UUID
 import structlog
 
 from app.domain.enums import (
+    IMChannel,
     ManualReplyDeliveryStatus,
     MessageSource,
     OpportunityStatus,
@@ -141,12 +142,6 @@ class ManualReplyUseCase:
             "wecom-archive:"
         ):
             raise ValueError("WeCom archive conversations are read-only")
-
-        opportunity = await self.opportunity_repo.claim_for_manual_reply(
-            opportunity_id=opportunity.id,
-            operator_id=operator_id,
-        )
-        ensure_transition_allowed(opportunity.status, target_status)
 
         adapter = self.adapters.get(opportunity.channel)
         try:

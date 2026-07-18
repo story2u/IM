@@ -21,7 +21,10 @@ def load_fixture() -> dict:
 
 def test_shared_agent_result_fixture_matches_python_policy_model() -> None:
     fixture = load_fixture()
-    assert AgentAnalysisResult.model_validate(fixture).model_dump(mode="json") == fixture
+    parsed = AgentAnalysisResult.model_validate(fixture).model_dump(mode="json")
+    parsed.pop("job_analysis", None)
+    parsed.pop("source_profile_analysis", None)
+    assert parsed == fixture
 
 
 @pytest.mark.parametrize(

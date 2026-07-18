@@ -10,6 +10,7 @@ const user = {
   displayName: 'Person',
   avatarUrl: '',
   isAdmin: false,
+  hasPassword: true,
 };
 const device = {
   id: deviceId,

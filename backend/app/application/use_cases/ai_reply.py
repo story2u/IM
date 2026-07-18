@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import timedelta
+from uuid import UUID
 
 import structlog
 
@@ -10,6 +11,7 @@ from app.core.time_window import WorkScheduleConfig, WorkScheduleService
 from app.domain.enums import (
     AutoReplyDecisionReason,
     AutoReplyDeliveryStatus,
+    IMChannel,
     MessageSource,
     OpportunityStatus,
     TelegramConnectionStatus,
@@ -32,6 +34,31 @@ from app.infrastructure.db.repositories import (
 from app.infrastructure.im.base import AdapterRegistry
 
 logger = structlog.get_logger(__name__)
+
+
+async def transition_pending_to_ai(
+    opportunity_repo: OpportunityRepository,
+    opportunity_id: UUID,
+) -> Opportunity | None:
+    opportunity = await opportunity_repo.get(opportunity_id)
+    if not opportunity:
+        return None
+    if opportunity.archived_at is not None:
+        return opportunity
+    if _requires_manual_wecom_reply(opportunity):
+        return None
+    if opportunity.status == OpportunityStatus.PENDING_HUMAN:
+        ensure_transition_allowed(opportunity.status, OpportunityStatus.AI_AUTO_REPLY)
+        return await opportunity_repo.update_status(
+            opportunity, OpportunityStatus.AI_AUTO_REPLY
+        )
+    return opportunity
+
+
+def _requires_manual_wecom_reply(opportunity: Opportunity) -> bool:
+    return opportunity.channel == IMChannel.WECOM and opportunity.conversation_id.startswith(
+        "wecom:"
+    )
 
 
 class AIDraftUseCase:

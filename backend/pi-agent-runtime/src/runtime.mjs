@@ -1,13 +1,64 @@
 import { Agent } from '@earendil-works/pi-agent-core'
 import { getModel } from '@earendil-works/pi-ai/compat'
+import { Type } from 'typebox'
 import {
-  ANALYSIS_SYSTEM_PROMPT,
-  AnalysisSchema,
-  createSubmitAnalysisTool,
-  serializeUntrustedInput,
+    ANALYSIS_SYSTEM_PROMPT,
+    AnalysisSchema as SharedAnalysisSchema,
+    serializeUntrustedInput,
 } from '@story2u/radar-agent/analysis'
 
-export { AnalysisSchema, createSubmitAnalysisTool, serializeUntrustedInput }
+import { JOB_DISCOVERY_PROMPT } from './job-discovery/prompts.mjs'
+import { validateJobAnalysisContext } from './job-discovery/policy.mjs'
+import {
+  JobAnalysisSchema,
+  JobSearchProfilePreviewSchema,
+  SourceProfileAssessmentObjectSchema,
+  SourceProfileAssessmentSchema,
+} from './job-discovery/schemas.mjs'
+import { PREFERENCE_PARSE_PROMPT } from './job-discovery/preference-parser.mjs'
+import { SOURCE_PROFILE_PROMPT } from './job-discovery/source-profiler.mjs'
+
+export const AnalysisSchema = Type.Object(
+  {
+    ...SharedAnalysisSchema.properties,
+    job_analysis: JobAnalysisSchema,
+    source_profile_analysis: SourceProfileAssessmentSchema,
+  },
+  { additionalProperties: false },
+)
+
+export function createSubmitAnalysisTool(onSubmit) {
+  return {
+    name: 'submit_analysis',
+    label: 'Submit analysis',
+    description: 'Submit the final structured opportunity and follow-up analysis.',
+    parameters: AnalysisSchema,
+    executionMode: 'sequential',
+    execute: async (_toolCallId, params) => {
+      onSubmit(params)
+      return {
+        content: [{ type: 'text', text: 'Analysis accepted.' }],
+        details: {},
+        terminate: true,
+      }
+    },
+  }
+}
+
+export { serializeUntrustedInput }
+
+function reportMetrics(agent, options, promptVersion) {
+  if (!options.onMetrics) return
+  const usage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
+  for (const message of agent.state.messages ?? []) {
+    if (message.role !== 'assistant' || !message.usage) continue
+    usage.input += message.usage.input ?? 0
+    usage.output += message.usage.output ?? 0
+    usage.cacheRead += message.usage.cacheRead ?? 0
+    usage.cacheWrite += message.usage.cacheWrite ?? 0
+  }
+  options.onMetrics({ prompt_version: promptVersion, token_usage: usage })
+}
 
 export async function runAnalysis(input, options = {}) {
   const provider = options.provider ?? process.env.PI_AGENT_PROVIDER ?? 'openai'
@@ -26,7 +77,7 @@ export async function runAnalysis(input, options = {}) {
   const AgentImpl = options.AgentImpl ?? Agent
   const agent = new AgentImpl({
     initialState: {
-      systemPrompt: ANALYSIS_SYSTEM_PROMPT,
+      systemPrompt: `${ANALYSIS_SYSTEM_PROMPT}\n${JOB_DISCOVERY_PROMPT}`,
       model,
       thinkingLevel: 'low',
       tools: [submitTool],

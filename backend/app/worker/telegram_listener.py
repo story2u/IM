@@ -8,6 +8,7 @@ import structlog
 
 from app.application.use_cases.ingest_message import IngestMessageUseCase
 from app.application.use_cases.analysis_run import DeviceAgentRoutingService
+from app.application.use_cases.prepare_job_discovery import PrepareJobDiscoveryUseCase
 from app.core.config import Settings, get_settings
 from app.core.security import decrypt_secret
 from app.core.time_window import WorkTimeConfig, WorkTimeService
@@ -52,6 +53,11 @@ async def ingest(inbound) -> None:
             work_time=WorkTimeService(work_time_config),
             task_queue=CeleryTaskQueue(),
             subscription_repo=SubscriptionRepository(session),
+            job_discovery=PrepareJobDiscoveryUseCase(
+                message_repo=message_repo,
+                profile_repo=SourceFunctionalProfileRepository(session),
+                audit_repo=JobMessageAuditRepository(session),
+            ),
             device_routing=DeviceAgentRoutingService(
                 run_repo=AnalysisRunRepository(session),
                 settings=settings,

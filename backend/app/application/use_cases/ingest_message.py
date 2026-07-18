@@ -41,6 +41,7 @@ class IngestMessageUseCase:
         task_queue: TaskQueue,
         subscription_repo: SubscriptionRepository,
         user_settings_repo: UserSettingsRepository | None = None,
+        job_discovery: PrepareJobDiscoveryUseCase | None = None,
         device_routing: DeviceAnalysisRouting | None = None,
     ) -> None:
         self.message_repo = message_repo

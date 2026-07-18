@@ -1,4 +1,5 @@
 import asyncio
+from datetime import timedelta
 from uuid import UUID, uuid4
 
 import structlog
@@ -11,6 +12,7 @@ from app.application.use_cases.analysis_run import (
 from app.application.use_cases.analyze_message import AnalyzeMessageUseCase
 from app.application.use_cases.dispatch_push_hints import dispatch_pending_push_hints
 from app.application.use_cases.ingest_message import IngestMessageUseCase
+from app.application.use_cases.prepare_job_discovery import PrepareJobDiscoveryUseCase
 from app.application.use_cases.interactive_agent_turn import (
     InteractiveAgentRoutingService,
     InteractiveAgentTurnService,
@@ -46,6 +48,7 @@ from app.infrastructure.db.repositories import (
     JobSearchProfileRepository,
     MessageRepository,
     OpportunityRepository,
+    PasswordResetRepository,
     PushRegistrationRepository,
     RuleRepository,
     SourceFunctionalProfileRepository,
@@ -315,6 +318,11 @@ async def _process_wecom_event(event_id: UUID) -> None:
             task_queue=CeleryTaskQueue(),
             subscription_repo=SubscriptionRepository(session),
             user_settings_repo=UserSettingsRepository(session),
+            job_discovery=PrepareJobDiscoveryUseCase(
+                message_repo=message_repo,
+                profile_repo=SourceFunctionalProfileRepository(session),
+                audit_repo=JobMessageAuditRepository(session),
+            ),
             device_routing=DeviceAgentRoutingService(
                 run_repo=AnalysisRunRepository(session),
                 settings=settings,

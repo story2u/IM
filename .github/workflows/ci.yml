@@ -110,7 +110,7 @@ jobs:
           cache-dependency-path: backend/pi-agent-runtime/package-lock.json
 
       - name: Install runtime dependencies
-        run: npm ci --ignore-scripts
+        run: npm ci --ignore-scripts --install-links
 
       - name: Check runtime syntax
         run: npm run check
@@ -129,7 +129,6 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 10
           run_install: false
 
       - name: Setup Node
@@ -184,7 +183,6 @@ jobs:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
         with:
-          version: 10
           run_install: false
       - uses: actions/setup-node@v6
         with:
@@ -220,7 +218,6 @@ jobs:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
         with:
-          version: 10
           run_install: false
       - uses: actions/setup-node@v6
         with:

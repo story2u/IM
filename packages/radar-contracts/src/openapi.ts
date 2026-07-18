@@ -395,6 +395,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/password/change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change Password */
+        post: operations["change_password_api_v1_auth_password_change_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/password/login": {
         parameters: {
             query?: never;
@@ -409,6 +426,40 @@ export interface paths {
          * @description 认证已有密码账户；所有凭据失败使用同一响应，避免暴露账户状态。
          */
         post: operations["password_login_api_v1_auth_password_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password/reset/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Password Reset */
+        post: operations["confirm_password_reset_api_v1_auth_password_reset_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password/reset/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request Password Reset */
+        post: operations["request_password_reset_api_v1_auth_password_reset_request_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -873,6 +924,76 @@ export interface paths {
         delete: operations["delete_source_api_v1_integrations_telegram_sources__source_id__delete"];
         options?: never;
         head?: never;
+        /** Update Source */
+        patch: operations["update_source_api_v1_integrations_telegram_sources__source_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/integrations/wecom/archive-connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Archive Connections */
+        get: operations["list_archive_connections_api_v1_integrations_wecom_archive_connections_get"];
+        put?: never;
+        /** Create Archive Connection */
+        post: operations["create_archive_connection_api_v1_integrations_wecom_archive_connections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/wecom/archive-connections/{connection_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Archive Connection */
+        delete: operations["delete_archive_connection_api_v1_integrations_wecom_archive_connections__connection_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/wecom/archive-connections/{connection_id}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sync Archive Connection */
+        post: operations["sync_archive_connection_api_v1_integrations_wecom_archive_connections__connection_id__sync_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/wecom/archive-connections/{connection_id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify Archive Connection */
+        post: operations["verify_archive_connection_api_v1_integrations_wecom_archive_connections__connection_id__verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
         patch?: never;
         trace?: never;
     };
@@ -939,6 +1060,145 @@ export interface paths {
         get: operations["list_sources_api_v1_integrations_wecom_sources_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/job-message-audits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Job Message Audits */
+        get: operations["list_job_message_audits_api_v1_job_message_audits_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/job-message-audits/{audit_id}/correction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Correct Job Message Audit */
+        patch: operations["correct_job_message_audit_api_v1_job_message_audits__audit_id__correction_patch"];
+        trace?: never;
+    };
+    "/api/v1/job-search-profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Profiles */
+        get: operations["list_profiles_api_v1_job_search_profiles_get"];
+        put?: never;
+        /** Create Profile */
+        post: operations["create_profile_api_v1_job_search_profiles_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/job-search-profiles/parse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Parse Profile */
+        post: operations["parse_profile_api_v1_job_search_profiles_parse_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/job-search-profiles/{profile_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Profile */
+        get: operations["get_profile_api_v1_job_search_profiles__profile_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Profile */
+        delete: operations["delete_profile_api_v1_job_search_profiles__profile_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Profile */
+        patch: operations["update_profile_api_v1_job_search_profiles__profile_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Jobs */
+        get: operations["list_jobs_api_v1_jobs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/jobs/{opportunity_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Job */
+        get: operations["get_job_api_v1_jobs__opportunity_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/jobs/{opportunity_id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save Job Feedback */
+        post: operations["save_job_feedback_api_v1_jobs__opportunity_id__feedback_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1339,6 +1599,57 @@ export interface paths {
         patch: operations["update_work_schedule_api_v1_settings_work_schedule_patch"];
         trace?: never;
     };
+    "/api/v1/sources/{profile_id}/functional-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Functional Profile */
+        get: operations["get_functional_profile_api_v1_sources__profile_id__functional_profile_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sources/{profile_id}/functional-profile/override": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Functional Profile Override */
+        patch: operations["update_functional_profile_override_api_v1_sources__profile_id__functional_profile_override_patch"];
+        trace?: never;
+    };
+    "/api/v1/sources/{profile_id}/functional-profile/recompute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recompute Functional Profile */
+        post: operations["recompute_functional_profile_api_v1_sources__profile_id__functional_profile_recompute_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/stats/summary": {
         parameters: {
             query?: never;
@@ -1704,6 +2015,7 @@ export interface components {
             contacts?: components["schemas"]["AgentContactExtraction"];
             /** Is Opportunity */
             is_opportunity: boolean;
+            job_analysis?: components["schemas"]["JobAgentAnalysis"] | null;
             /** @default unverified */
             link_status: components["schemas"]["LinkSafetyStatus"];
             /** Link Summary */
@@ -1712,6 +2024,7 @@ export interface components {
             priority: components["schemas"]["Priority"];
             /** Risk Flags */
             risk_flags?: string[];
+            source_profile_analysis?: components["schemas"]["SourceProfileAgentAssessment"] | null;
             /** Summary */
             summary: string;
             /** Title */
@@ -2002,6 +2315,11 @@ export interface components {
             /** Email */
             email: string;
             /**
+             * Haspassword
+             * @default false
+             */
+            hasPassword: boolean;
+            /**
              * Id
              * Format: uuid
              */
@@ -2255,6 +2573,94 @@ export interface components {
          * @enum {string}
          */
         DeviceStatus: "active" | "revoked";
+        /** ExtractedContactMethod */
+        ExtractedContactMethod: {
+            /** Type */
+            type: string;
+            /** Value */
+            value: string;
+        };
+        /** ExtractedJob */
+        ExtractedJob: {
+            /** Age Requirement Text */
+            age_requirement_text?: string | null;
+            /** Application Deadline */
+            application_deadline?: string | null;
+            /** Application Url */
+            application_url?: string | null;
+            /** City */
+            city?: string | null;
+            /** Company Industry */
+            company_industry?: string | null;
+            /** Company Name */
+            company_name?: string | null;
+            /** Company Stage */
+            company_stage?: string | null;
+            /** Contact Methods */
+            contact_methods?: components["schemas"]["ExtractedContactMethod"][];
+            /** Country Code */
+            country_code?: string | null;
+            /** Degree Field */
+            degree_field?: string | null;
+            /** Degree Level */
+            degree_level?: string | null;
+            /** Degree Required */
+            degree_required?: boolean | null;
+            /** Department */
+            department?: string | null;
+            /** @default unknown */
+            employment_type: components["schemas"]["JobEmploymentType"];
+            /** English Level */
+            english_level?: string | null;
+            /** Equity Mentioned */
+            equity_mentioned?: boolean | null;
+            /** Job Title */
+            job_title: string;
+            /** Location Text */
+            location_text?: string | null;
+            /** Maximum Years Experience */
+            maximum_years_experience?: number | null;
+            /** Minimum Years Experience */
+            minimum_years_experience?: number | null;
+            /** Normalized Job Title */
+            normalized_job_title?: string | null;
+            /** Other Language Requirements */
+            other_language_requirements?: string[];
+            /** Preferred Skills */
+            preferred_skills?: string[];
+            /** Relocation Support */
+            relocation_support?: boolean | null;
+            /** Required Skills */
+            required_skills?: string[];
+            /** Requirements Summary */
+            requirements_summary?: string | null;
+            salary?: components["schemas"]["ExtractedSalary"];
+            /** @default unknown */
+            seniority: components["schemas"]["JobSeniority"];
+            /** Timezone */
+            timezone?: string | null;
+            /** Visa Sponsorship */
+            visa_sponsorship?: boolean | null;
+            /** Work Authorization Text */
+            work_authorization_text?: string | null;
+            /** @default unknown */
+            work_mode: components["schemas"]["JobWorkMode"];
+        };
+        /** ExtractedSalary */
+        ExtractedSalary: {
+            /** Currency */
+            currency?: string | null;
+            /** Maximum */
+            maximum?: number | string | null;
+            /** Minimum */
+            minimum?: number | string | null;
+            /** Negotiable */
+            negotiable?: boolean | null;
+            /** @default unknown */
+            period: components["schemas"]["SalaryPeriod"];
+            /** Raw */
+            raw?: string | null;
+        };
         /**
          * FriendRequestUpdate
          * @description 好友申请状态流转（operator 手动驱动：发送/确认通过/确认被拒/重试）。
@@ -2491,6 +2897,692 @@ export interface components {
          * @enum {string}
          */
         InteractiveAgentTurnStatus: "claimed" | "running" | "completed" | "failed" | "expired";
+        /** JobAgentAnalysis */
+        JobAgentAnalysis: {
+            classification: components["schemas"]["JobMessageClassification"];
+            /** Classification Confidence */
+            classification_confidence: number;
+            /** Compliance Flags */
+            compliance_flags?: string[];
+            /**
+             * Extraction Confidence
+             * @default 0
+             */
+            extraction_confidence: number;
+            /** Field Evidence */
+            field_evidence?: {
+                [key: string]: string;
+            };
+            job?: components["schemas"]["ExtractedJob"] | null;
+            /** Missing Fields */
+            missing_fields?: string[];
+            /** Noise Reasons */
+            noise_reasons?: string[];
+        };
+        /**
+         * JobEligibility
+         * @enum {string}
+         */
+        JobEligibility: "eligible" | "not_eligible" | "unknown";
+        /**
+         * JobEmploymentType
+         * @enum {string}
+         */
+        JobEmploymentType: "full_time" | "part_time" | "contract" | "internship" | "freelance" | "temporary" | "unknown";
+        /** JobFeedbackRead */
+        JobFeedbackRead: {
+            feedbackType: components["schemas"]["JobFeedbackType"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Note */
+            note?: string | null;
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+        };
+        /** JobFeedbackRequest */
+        JobFeedbackRequest: {
+            feedbackType: components["schemas"]["JobFeedbackType"];
+            /** Note */
+            note?: string | null;
+        };
+        /**
+         * JobFeedbackType
+         * @enum {string}
+         */
+        JobFeedbackType: "relevant" | "not_relevant" | "not_a_job" | "duplicate" | "expired" | "scam" | "wrong_extraction";
+        /** JobMatchRead */
+        JobMatchRead: {
+            eligibility: components["schemas"]["JobEligibility"];
+            /** Matchscore */
+            matchScore: number;
+            /** Matchedreasons */
+            matchedReasons?: string[];
+            /** Mismatchreasons */
+            mismatchReasons?: string[];
+            /** Scorebreakdown */
+            scoreBreakdown?: {
+                [key: string]: number;
+            };
+            /** Unknownconstraints */
+            unknownConstraints?: string[];
+        };
+        /** JobMessageAuditCorrectionRequest */
+        JobMessageAuditCorrectionRequest: {
+            /** Isjob */
+            isJob: boolean;
+            /** Note */
+            note?: string | null;
+        };
+        /** JobMessageAuditPageRead */
+        JobMessageAuditPageRead: {
+            /** Items */
+            items: components["schemas"]["JobMessageAuditRead"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
+        /** JobMessageAuditRead */
+        JobMessageAuditRead: {
+            /** Agentrequired */
+            agentRequired: boolean;
+            channel: components["schemas"]["IMChannel"];
+            classification: components["schemas"]["JobMessageClassification"];
+            /** Confidence */
+            confidence: number;
+            /** Filterreason */
+            filterReason?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Manuallycorrected */
+            manuallyCorrected: boolean;
+            /** Messageexcerpt */
+            messageExcerpt: string;
+            /**
+             * Messageid
+             * Format: uuid
+             */
+            messageId: string;
+            /** Prefilterscore */
+            prefilterScore: number;
+            /**
+             * Sentat
+             * Format: date-time
+             */
+            sentAt: string;
+            /** Sourcename */
+            sourceName?: string | null;
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+        };
+        /**
+         * JobMessageClassification
+         * @enum {string}
+         */
+        JobMessageClassification: "job_post" | "job_repost" | "candidate_self_promotion" | "job_seeking_request" | "job_discussion" | "recruiter_chatter" | "referral_request" | "training_ad" | "paid_course_ad" | "generic_ad" | "spam" | "scam" | "unrelated_chat" | "unknown";
+        /** JobOpportunityDetailRead */
+        JobOpportunityDetailRead: {
+            /**
+             * Agerequirementpresent
+             * @default false
+             */
+            ageRequirementPresent: boolean;
+            /** Agerequirementtext */
+            ageRequirementText?: string | null;
+            /** Applicationdeadline */
+            applicationDeadline?: string | null;
+            /** Applicationurl */
+            applicationUrl?: string | null;
+            /** City */
+            city?: string | null;
+            /** Companyindustry */
+            companyIndustry?: string | null;
+            /** Companyname */
+            companyName?: string | null;
+            /** Companystage */
+            companyStage?: string | null;
+            /** Complianceflags */
+            complianceFlags?: string[];
+            /**
+             * Conflictingsourcedata
+             * @default false
+             */
+            conflictingSourceData: boolean;
+            /** Contactmethods */
+            contactMethods?: {
+                [key: string]: unknown;
+            }[];
+            /** Countrycode */
+            countryCode?: string | null;
+            /** Degreefield */
+            degreeField?: string | null;
+            /** Degreelevel */
+            degreeLevel?: string | null;
+            /** Degreerequired */
+            degreeRequired?: boolean | null;
+            /** Department */
+            department?: string | null;
+            employmentType: components["schemas"]["JobEmploymentType"];
+            /** Englishlevel */
+            englishLevel?: string | null;
+            /** Equitymentioned */
+            equityMentioned?: boolean | null;
+            /** Expiredreason */
+            expiredReason?: string | null;
+            /** Extractionconfidence */
+            extractionConfidence: number;
+            /** Fieldevidence */
+            fieldEvidence?: {
+                [key: string]: string;
+            };
+            /**
+             * Isexpired
+             * @default false
+             */
+            isExpired: boolean;
+            /** Jobtitle */
+            jobTitle: string;
+            /** Locationtext */
+            locationText?: string | null;
+            match?: components["schemas"]["JobMatchRead"] | null;
+            /** Maximumyearsexperience */
+            maximumYearsExperience?: number | null;
+            /** Minimumyearsexperience */
+            minimumYearsExperience?: number | null;
+            /** Missingfields */
+            missingFields?: string[];
+            /**
+             * Opportunityid
+             * Format: uuid
+             */
+            opportunityId: string;
+            /** Otherlanguagerequirements */
+            otherLanguageRequirements?: string[];
+            /**
+             * Postedat
+             * Format: date-time
+             */
+            postedAt: string;
+            /** Preferredskills */
+            preferredSkills?: string[];
+            /** Rawexcerpt */
+            rawExcerpt: string;
+            /** Relocationsupport */
+            relocationSupport?: boolean | null;
+            /** Requiredskills */
+            requiredSkills?: string[];
+            /** Requirementssummary */
+            requirementsSummary?: string | null;
+            /** Salarycurrency */
+            salaryCurrency?: string | null;
+            /** Salarymax */
+            salaryMax?: string | null;
+            /** Salarymin */
+            salaryMin?: string | null;
+            /** Salarynegotiable */
+            salaryNegotiable?: boolean | null;
+            salaryPeriod: components["schemas"]["SalaryPeriod"];
+            /** Salaryraw */
+            salaryRaw?: string | null;
+            seniority: components["schemas"]["JobSeniority"];
+            /** Sourceauthorname */
+            sourceAuthorName?: string | null;
+            sourceChannel: components["schemas"]["IMChannel"];
+            /** Sourcechatname */
+            sourceChatName?: string | null;
+            /**
+             * Sourcecount
+             * @default 1
+             */
+            sourceCount: number;
+            /** Sourcemessageurl */
+            sourceMessageUrl?: string | null;
+            /** Sourcereliabilityscore */
+            sourceReliabilityScore: number;
+            /** Sources */
+            sources?: components["schemas"]["JobSourceRead"][];
+            /** Timezone */
+            timezone?: string | null;
+            /** Visasponsorship */
+            visaSponsorship?: boolean | null;
+            /** Workauthorizationtext */
+            workAuthorizationText?: string | null;
+            workMode: components["schemas"]["JobWorkMode"];
+        };
+        /** JobOpportunityRead */
+        JobOpportunityRead: {
+            /** Applicationdeadline */
+            applicationDeadline?: string | null;
+            /** City */
+            city?: string | null;
+            /** Companyname */
+            companyName?: string | null;
+            /** Complianceflags */
+            complianceFlags?: string[];
+            /**
+             * Conflictingsourcedata
+             * @default false
+             */
+            conflictingSourceData: boolean;
+            /** Countrycode */
+            countryCode?: string | null;
+            /** Degreelevel */
+            degreeLevel?: string | null;
+            employmentType: components["schemas"]["JobEmploymentType"];
+            /** Englishlevel */
+            englishLevel?: string | null;
+            /** Extractionconfidence */
+            extractionConfidence: number;
+            /**
+             * Isexpired
+             * @default false
+             */
+            isExpired: boolean;
+            /** Jobtitle */
+            jobTitle: string;
+            /** Locationtext */
+            locationText?: string | null;
+            match?: components["schemas"]["JobMatchRead"] | null;
+            /**
+             * Opportunityid
+             * Format: uuid
+             */
+            opportunityId: string;
+            /**
+             * Postedat
+             * Format: date-time
+             */
+            postedAt: string;
+            /** Requiredskills */
+            requiredSkills?: string[];
+            /** Salarycurrency */
+            salaryCurrency?: string | null;
+            /** Salarymax */
+            salaryMax?: string | null;
+            /** Salarymin */
+            salaryMin?: string | null;
+            salaryPeriod: components["schemas"]["SalaryPeriod"];
+            /** Salaryraw */
+            salaryRaw?: string | null;
+            seniority: components["schemas"]["JobSeniority"];
+            sourceChannel: components["schemas"]["IMChannel"];
+            /** Sourcechatname */
+            sourceChatName?: string | null;
+            /**
+             * Sourcecount
+             * @default 1
+             */
+            sourceCount: number;
+            /** Sourcereliabilityscore */
+            sourceReliabilityScore: number;
+            /** Visasponsorship */
+            visaSponsorship?: boolean | null;
+            workMode: components["schemas"]["JobWorkMode"];
+        };
+        /** JobProfileParseRead */
+        JobProfileParseRead: {
+            /** Candidateskills */
+            candidateSkills?: string[];
+            /** Educationlevel */
+            educationLevel?: string | null;
+            /** Employmenttypes */
+            employmentTypes?: components["schemas"]["JobEmploymentType"][];
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /** Englishlevel */
+            englishLevel?: string | null;
+            /** Excludedkeywords */
+            excludedKeywords?: string[];
+            /** Excludedroles */
+            excludedRoles?: string[];
+            /**
+             * Isdefault
+             * @default false
+             */
+            isDefault: boolean;
+            /**
+             * Minimummatchscore
+             * @default 0
+             */
+            minimumMatchScore: number;
+            /** Minimumsalary */
+            minimumSalary?: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Notificationenabled
+             * @default false
+             */
+            notificationEnabled: boolean;
+            /** Otherlanguages */
+            otherLanguages?: string[];
+            /** Preferredcities */
+            preferredCities?: string[];
+            /** Preferredcountries */
+            preferredCountries?: string[];
+            /** Preferredkeywords */
+            preferredKeywords?: string[];
+            /** Preferredseniority */
+            preferredSeniority?: components["schemas"]["JobSeniority"][];
+            /** Preferredtimezones */
+            preferredTimezones?: string[];
+            /** Relocationacceptable */
+            relocationAcceptable?: boolean | null;
+            /**
+             * Requiresalarydisclosed
+             * @default false
+             */
+            requireSalaryDisclosed: boolean;
+            /** Requiredkeywords */
+            requiredKeywords?: string[];
+            /**
+             * Requiresconfirmation
+             * @default true
+             */
+            requiresConfirmation: boolean;
+            /** Salarycurrency */
+            salaryCurrency?: string | null;
+            salaryPeriod?: components["schemas"]["SalaryPeriod"] | null;
+            /** Targetindustries */
+            targetIndustries?: string[];
+            /** Targetroles */
+            targetRoles?: string[];
+            /** Visasponsorshiprequired */
+            visaSponsorshipRequired?: boolean | null;
+            /** Workmodes */
+            workModes?: components["schemas"]["JobWorkMode"][];
+            /** Yearsexperience */
+            yearsExperience?: number | null;
+        };
+        /** JobProfileParseRequest */
+        JobProfileParseRequest: {
+            /** Text */
+            text: string;
+        };
+        /** JobSearchProfileRead */
+        JobSearchProfileRead: {
+            /** Candidateskills */
+            candidateSkills?: string[];
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Educationlevel */
+            educationLevel?: string | null;
+            /** Employmenttypes */
+            employmentTypes?: components["schemas"]["JobEmploymentType"][];
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /** Englishlevel */
+            englishLevel?: string | null;
+            /** Excludedkeywords */
+            excludedKeywords?: string[];
+            /** Excludedroles */
+            excludedRoles?: string[];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Isdefault
+             * @default false
+             */
+            isDefault: boolean;
+            /**
+             * Minimummatchscore
+             * @default 0
+             */
+            minimumMatchScore: number;
+            /** Minimumsalary */
+            minimumSalary?: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Notificationenabled
+             * @default false
+             */
+            notificationEnabled: boolean;
+            /** Otherlanguages */
+            otherLanguages?: string[];
+            /** Preferredcities */
+            preferredCities?: string[];
+            /** Preferredcountries */
+            preferredCountries?: string[];
+            /** Preferredkeywords */
+            preferredKeywords?: string[];
+            /** Preferredseniority */
+            preferredSeniority?: components["schemas"]["JobSeniority"][];
+            /** Preferredtimezones */
+            preferredTimezones?: string[];
+            /** Relocationacceptable */
+            relocationAcceptable?: boolean | null;
+            /**
+             * Requiresalarydisclosed
+             * @default false
+             */
+            requireSalaryDisclosed: boolean;
+            /** Requiredkeywords */
+            requiredKeywords?: string[];
+            /** Salarycurrency */
+            salaryCurrency?: string | null;
+            salaryPeriod?: components["schemas"]["SalaryPeriod"] | null;
+            /** Targetindustries */
+            targetIndustries?: string[];
+            /** Targetroles */
+            targetRoles?: string[];
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+            /** Visasponsorshiprequired */
+            visaSponsorshipRequired?: boolean | null;
+            /** Workmodes */
+            workModes?: components["schemas"]["JobWorkMode"][];
+            /** Yearsexperience */
+            yearsExperience?: number | null;
+        };
+        /** JobSearchProfileUpdate */
+        JobSearchProfileUpdate: {
+            /** Candidateskills */
+            candidateSkills?: string[] | null;
+            /** Educationlevel */
+            educationLevel?: string | null;
+            /** Employmenttypes */
+            employmentTypes?: components["schemas"]["JobEmploymentType"][] | null;
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Englishlevel */
+            englishLevel?: string | null;
+            /** Excludedkeywords */
+            excludedKeywords?: string[] | null;
+            /** Excludedroles */
+            excludedRoles?: string[] | null;
+            /** Isdefault */
+            isDefault?: boolean | null;
+            /** Minimummatchscore */
+            minimumMatchScore?: number | null;
+            /** Minimumsalary */
+            minimumSalary?: number | string | null;
+            /** Name */
+            name?: string | null;
+            /** Notificationenabled */
+            notificationEnabled?: boolean | null;
+            /** Otherlanguages */
+            otherLanguages?: string[] | null;
+            /** Preferredcities */
+            preferredCities?: string[] | null;
+            /** Preferredcountries */
+            preferredCountries?: string[] | null;
+            /** Preferredkeywords */
+            preferredKeywords?: string[] | null;
+            /** Preferredseniority */
+            preferredSeniority?: components["schemas"]["JobSeniority"][] | null;
+            /** Preferredtimezones */
+            preferredTimezones?: string[] | null;
+            /** Relocationacceptable */
+            relocationAcceptable?: boolean | null;
+            /** Requiresalarydisclosed */
+            requireSalaryDisclosed?: boolean | null;
+            /** Requiredkeywords */
+            requiredKeywords?: string[] | null;
+            /** Salarycurrency */
+            salaryCurrency?: string | null;
+            salaryPeriod?: components["schemas"]["SalaryPeriod"] | null;
+            /** Targetindustries */
+            targetIndustries?: string[] | null;
+            /** Targetroles */
+            targetRoles?: string[] | null;
+            /** Visasponsorshiprequired */
+            visaSponsorshipRequired?: boolean | null;
+            /** Workmodes */
+            workModes?: components["schemas"]["JobWorkMode"][] | null;
+            /** Yearsexperience */
+            yearsExperience?: number | null;
+        };
+        /** JobSearchProfileWrite */
+        JobSearchProfileWrite: {
+            /** Candidateskills */
+            candidateSkills?: string[];
+            /** Educationlevel */
+            educationLevel?: string | null;
+            /** Employmenttypes */
+            employmentTypes?: components["schemas"]["JobEmploymentType"][];
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /** Englishlevel */
+            englishLevel?: string | null;
+            /** Excludedkeywords */
+            excludedKeywords?: string[];
+            /** Excludedroles */
+            excludedRoles?: string[];
+            /**
+             * Isdefault
+             * @default false
+             */
+            isDefault: boolean;
+            /**
+             * Minimummatchscore
+             * @default 0
+             */
+            minimumMatchScore: number;
+            /** Minimumsalary */
+            minimumSalary?: number | string | null;
+            /** Name */
+            name: string;
+            /**
+             * Notificationenabled
+             * @default false
+             */
+            notificationEnabled: boolean;
+            /** Otherlanguages */
+            otherLanguages?: string[];
+            /** Preferredcities */
+            preferredCities?: string[];
+            /** Preferredcountries */
+            preferredCountries?: string[];
+            /** Preferredkeywords */
+            preferredKeywords?: string[];
+            /** Preferredseniority */
+            preferredSeniority?: components["schemas"]["JobSeniority"][];
+            /** Preferredtimezones */
+            preferredTimezones?: string[];
+            /** Relocationacceptable */
+            relocationAcceptable?: boolean | null;
+            /**
+             * Requiresalarydisclosed
+             * @default false
+             */
+            requireSalaryDisclosed: boolean;
+            /** Requiredkeywords */
+            requiredKeywords?: string[];
+            /** Salarycurrency */
+            salaryCurrency?: string | null;
+            salaryPeriod?: components["schemas"]["SalaryPeriod"] | null;
+            /** Targetindustries */
+            targetIndustries?: string[];
+            /** Targetroles */
+            targetRoles?: string[];
+            /** Visasponsorshiprequired */
+            visaSponsorshipRequired?: boolean | null;
+            /** Workmodes */
+            workModes?: components["schemas"]["JobWorkMode"][];
+            /** Yearsexperience */
+            yearsExperience?: number | null;
+        };
+        /**
+         * JobSeniority
+         * @enum {string}
+         */
+        JobSeniority: "intern" | "junior" | "mid" | "senior" | "lead" | "manager" | "director" | "executive" | "unknown";
+        /** JobSourceRead */
+        JobSourceRead: {
+            /** Authorname */
+            authorName?: string | null;
+            channel: components["schemas"]["IMChannel"];
+            /** Chatname */
+            chatName?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Postedat
+             * Format: date-time
+             */
+            postedAt: string;
+            /** Reliabilityscore */
+            reliabilityScore: number;
+            /** Sourcemessageurl */
+            sourceMessageUrl?: string | null;
+        };
+        /**
+         * JobWorkMode
+         * @enum {string}
+         */
+        JobWorkMode: "remote" | "hybrid" | "on_site" | "flexible" | "unknown";
+        /** JobsPageRead */
+        JobsPageRead: {
+            /** Filtersummary */
+            filterSummary: {
+                [key: string]: unknown;
+            };
+            /** Items */
+            items: components["schemas"]["JobOpportunityRead"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            profile?: components["schemas"]["JobSearchProfileRead"] | null;
+            /** Total */
+            total: number;
+        };
         /** LinkInspection */
         LinkInspection: {
             /** Content Type */
@@ -2839,6 +3931,18 @@ export interface components {
             expectedVersion?: number | null;
             status: components["schemas"]["OpportunityStatus"];
         };
+        /** PasswordActionRead */
+        PasswordActionRead: {
+            /** Message */
+            message: string;
+        };
+        /** PasswordChangeRequest */
+        PasswordChangeRequest: {
+            /** Currentpassword */
+            currentPassword: string;
+            /** Newpassword */
+            newPassword: string;
+        };
         /**
          * PasswordLoginRequest
          * @description 已有账户使用邮箱和密码换取访问令牌。
@@ -2848,6 +3952,22 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+        };
+        /** PasswordResetConfirmRequest */
+        PasswordResetConfirmRequest: {
+            /** Code */
+            code?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Newpassword */
+            newPassword: string;
+            /** Token */
+            token?: string | null;
+        };
+        /** PasswordResetRequest */
+        PasswordResetRequest: {
+            /** Email */
+            email: string;
         };
         /**
          * PlanCode
@@ -3023,6 +4143,11 @@ export interface components {
             /** Score */
             score?: number | null;
         };
+        /**
+         * SalaryPeriod
+         * @enum {string}
+         */
+        SalaryPeriod: "hourly" | "daily" | "monthly" | "annual" | "project" | "unknown";
         /** SettingsBundleRead */
         SettingsBundleRead: {
             capabilities: components["schemas"]["SettingsCapabilitiesRead"];
@@ -3155,6 +4280,85 @@ export interface components {
             nextCursor: number;
             /** Servercursor */
             serverCursor: number;
+        };
+        /** SourceFunctionOverrideRequest */
+        SourceFunctionOverrideRequest: {
+            override: components["schemas"]["SourcePrimaryFunction"] | null;
+        };
+        /** SourceFunctionalProfileRead */
+        SourceFunctionalProfileRead: {
+            channel: components["schemas"]["IMChannel"];
+            /** Confidence */
+            confidence: number;
+            effectiveFunction: components["schemas"]["SourcePrimaryFunction"];
+            /** Estimatednoiselevel */
+            estimatedNoiseLevel: number;
+            /** Evidence */
+            evidence: string[];
+            /**
+             * Expiresat
+             * Format: date-time
+             */
+            expiresAt: string;
+            /** Externalsourceid */
+            externalSourceId: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Industrytags */
+            industryTags: string[];
+            /** Jobsignalprior */
+            jobSignalPrior: number;
+            /** Languagetags */
+            languageTags: string[];
+            manualOverride?: components["schemas"]["SourcePrimaryFunction"] | null;
+            primaryFunction: components["schemas"]["SourcePrimaryFunction"];
+            /**
+             * Profiledat
+             * Format: date-time
+             */
+            profiledAt: string;
+            /** Regiontags */
+            regionTags: string[];
+            /** Reliabilityscore */
+            reliabilityScore: number;
+            /** Sampledmessagecount */
+            sampledMessageCount: number;
+            /** Secondaryfunctions */
+            secondaryFunctions: string[];
+            /** Sourcedescription */
+            sourceDescription?: string | null;
+            /** Sourcedisplayname */
+            sourceDisplayName: string;
+        };
+        /**
+         * SourcePrimaryFunction
+         * @enum {string}
+         */
+        SourcePrimaryFunction: "recruitment" | "job_referral" | "career_networking" | "technical_discussion" | "industry_community" | "company_official" | "alumni_community" | "general_chat" | "education_training" | "marketplace" | "investment_crypto" | "advertising" | "unknown";
+        /** SourceProfileAgentAssessment */
+        SourceProfileAgentAssessment: {
+            /** Confidence */
+            confidence: number;
+            /** Estimated Noise Level */
+            estimated_noise_level: number;
+            /** Evidence */
+            evidence?: string[];
+            /** Industry Tags */
+            industry_tags?: string[];
+            /** Job Signal Prior */
+            job_signal_prior: number;
+            /** Language Tags */
+            language_tags?: string[];
+            primary_function: components["schemas"]["SourcePrimaryFunction"];
+            /** Region Tags */
+            region_tags?: string[];
+            /** Reliability Score */
+            reliability_score: number;
+            /** Secondary Functions */
+            secondary_functions?: components["schemas"]["SourcePrimaryFunction"][];
         };
         /** StatsSummaryRead */
         StatsSummaryRead: {
@@ -3566,6 +4770,16 @@ export interface components {
         /** TelegramSourceRead */
         TelegramSourceRead: {
             /**
+             * Autoreplyeligible
+             * @default false
+             */
+            autoReplyEligible: boolean;
+            /**
+             * Autoreplyenabled
+             * @default false
+             */
+            autoReplyEnabled: boolean;
+            /**
              * Connectionid
              * Format: uuid
              */
@@ -3601,6 +4815,11 @@ export interface components {
          * @enum {string}
          */
         TelegramSourceType: "group" | "channel" | "private";
+        /** TelegramSourceUpdate */
+        TelegramSourceUpdate: {
+            /** Autoreplyenabled */
+            autoReplyEnabled: boolean;
+        };
         /** TelegramUserConfigRead */
         TelegramUserConfigRead: {
             /**
@@ -3696,6 +4915,93 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /** WeComArchiveConnectionCreate */
+        WeComArchiveConnectionCreate: {
+            /** Archivesecret */
+            archiveSecret: string;
+            /** Corpid */
+            corpId: string;
+            /**
+             * Displayname
+             * @default 企业微信会话存档
+             */
+            displayName: string;
+            /**
+             * Memberdisplayname
+             * @default 企业微信成员
+             */
+            memberDisplayName: string;
+            /** Privatekeypem */
+            privateKeyPem: string;
+            /** Publickeyversion */
+            publicKeyVersion: number;
+            /** Wecomuserid */
+            wecomUserId: string;
+        };
+        /** WeComArchiveConnectionRead */
+        WeComArchiveConnectionRead: {
+            /** Corpid */
+            corpId: string;
+            /**
+             * Credentialconfigured
+             * @default true
+             */
+            credentialConfigured: boolean;
+            /** Displayname */
+            displayName: string;
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Lasterror */
+            lastError?: string | null;
+            /** Lastpolledat */
+            lastPolledAt?: string | null;
+            /** Lastsequence */
+            lastSequence: number;
+            /** Lastverifiedat */
+            lastVerifiedAt?: string | null;
+            member: components["schemas"]["WeComArchiveMemberBindingRead"];
+            /** Publickeyversion */
+            publicKeyVersion: number;
+            /** Sdkconfigured */
+            sdkConfigured: boolean;
+            /** Sources */
+            sources?: components["schemas"]["WeComSourceRead"][];
+            status: components["schemas"]["WeComConnectionStatus"];
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+        };
+        /** WeComArchiveMemberBindingRead */
+        WeComArchiveMemberBindingRead: {
+            /** Displayname */
+            displayName: string;
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Lastmatchedat */
+            lastMatchedAt?: string | null;
+            /** Wecomuserid */
+            wecomUserId: string;
+        };
+        /** WeComArchiveSyncAccepted */
+        WeComArchiveSyncAccepted: {
+            /**
+             * Accepted
+             * @default true
+             */
+            accepted: boolean;
+        };
         /** WeComConnectionCreate */
         WeComConnectionCreate: {
             /** Agentid */
@@ -3772,11 +5078,10 @@ export interface components {
         WeComSendCapability: "app_message" | "customer_service" | "manual_only";
         /** WeComSourceRead */
         WeComSourceRead: {
-            /**
-             * Connectionid
-             * Format: uuid
-             */
-            connectionId: string;
+            /** Archiveconnectionid */
+            archiveConnectionId?: string | null;
+            /** Connectionid */
+            connectionId?: string | null;
             /** Displayname */
             displayName: string;
             /** Enabled */
@@ -3817,7 +5122,7 @@ export interface components {
         WorkScheduleRead: {
             /**
              * Autoreplyoutsidehours
-             * @default true
+             * @default false
              */
             autoReplyOutsideHours: boolean;
             /**
@@ -3849,7 +5154,7 @@ export interface components {
         WorkScheduleUpdate: {
             /**
              * Autoreplyoutsidehours
-             * @default true
+             * @default false
              */
             autoReplyOutsideHours: boolean;
             /** Slots */
@@ -4759,6 +6064,39 @@ export interface operations {
             };
         };
     };
+    change_password_api_v1_auth_password_change_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasswordActionRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     password_login_api_v1_auth_password_login_post: {
         parameters: {
             query?: never;
@@ -4779,6 +6117,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuthTokenRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_password_reset_api_v1_auth_password_reset_confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasswordActionRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_password_reset_api_v1_auth_password_reset_request_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasswordActionRead"];
                 };
             };
             /** @description Validation Error */
@@ -5569,6 +6973,185 @@ export interface operations {
             };
         };
     };
+    update_source_api_v1_integrations_telegram_sources__source_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelegramSourceUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramConnectionRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_archive_connections_api_v1_integrations_wecom_archive_connections_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeComArchiveConnectionRead"][];
+                };
+            };
+        };
+    };
+    create_archive_connection_api_v1_integrations_wecom_archive_connections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WeComArchiveConnectionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeComArchiveConnectionRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_archive_connection_api_v1_integrations_wecom_archive_connections__connection_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_archive_connection_api_v1_integrations_wecom_archive_connections__connection_id__sync_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeComArchiveSyncAccepted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_archive_connection_api_v1_integrations_wecom_archive_connections__connection_id__verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeComArchiveSyncAccepted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_connections_api_v1_integrations_wecom_connections_get: {
         parameters: {
             query?: never;
@@ -5698,6 +7281,376 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WeComSourceRead"][];
+                };
+            };
+        };
+    };
+    list_job_message_audits_api_v1_job_message_audits_get: {
+        parameters: {
+            query?: {
+                classification?: components["schemas"]["JobMessageClassification"] | null;
+                manually_corrected?: boolean | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobMessageAuditPageRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    correct_job_message_audit_api_v1_job_message_audits__audit_id__correction_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                audit_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JobMessageAuditCorrectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobMessageAuditRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_profiles_api_v1_job_search_profiles_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobSearchProfileRead"][];
+                };
+            };
+        };
+    };
+    create_profile_api_v1_job_search_profiles_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JobSearchProfileWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobSearchProfileRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parse_profile_api_v1_job_search_profiles_parse_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JobProfileParseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobProfileParseRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_api_v1_job_search_profiles__profile_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobSearchProfileRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_profile_api_v1_job_search_profiles__profile_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_profile_api_v1_job_search_profiles__profile_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JobSearchProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobSearchProfileRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_jobs_api_v1_jobs_get: {
+        parameters: {
+            query?: {
+                profile_id?: string | null;
+                query?: string | null;
+                source?: components["schemas"]["IMChannel"] | null;
+                posted_from?: string | null;
+                posted_to?: string | null;
+                work_mode?: components["schemas"]["JobWorkMode"] | null;
+                employment_type?: components["schemas"]["JobEmploymentType"] | null;
+                seniority?: components["schemas"]["JobSeniority"] | null;
+                country?: string | null;
+                city?: string | null;
+                salary_min?: number | string | null;
+                salary_currency?: string | null;
+                salary_disclosed?: boolean | null;
+                degree_level?: string | null;
+                english_level?: string | null;
+                visa_sponsorship?: boolean | null;
+                minimum_match_score?: number | null;
+                age_requirement_present?: boolean | null;
+                exclude_expired?: boolean;
+                sort?: string;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobsPageRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_job_api_v1_jobs__opportunity_id__get: {
+        parameters: {
+            query?: {
+                profile_id?: string | null;
+            };
+            header?: never;
+            path: {
+                opportunity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOpportunityDetailRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_job_feedback_api_v1_jobs__opportunity_id__feedback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opportunity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JobFeedbackRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobFeedbackRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -6460,6 +8413,103 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkScheduleRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_functional_profile_api_v1_sources__profile_id__functional_profile_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceFunctionalProfileRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_functional_profile_override_api_v1_sources__profile_id__functional_profile_override_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceFunctionOverrideRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceFunctionalProfileRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recompute_functional_profile_api_v1_sources__profile_id__functional_profile_recompute_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceFunctionalProfileRead"];
                 };
             };
             /** @description Validation Error */

@@ -20,6 +20,7 @@ export const AuthUserSchema = Type.Object(
     displayName: Type.String(),
     avatarUrl: Type.String(),
     isAdmin: Type.Boolean(),
+    hasPassword: Type.Boolean(),
   },
   { additionalProperties: false },
 );
