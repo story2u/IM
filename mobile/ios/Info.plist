@@ -35,6 +35,14 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
+	<!-- iPad 多任务要求声明全部方向；iPhone 仍保持仅竖屏。 -->
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
 	<!-- DEBUG 连本地后端需要放行局域网 HTTP；生产 API 必须是 HTTPS。 -->
 	<key>NSAppTransportSecurity</key>
 	<dict>
