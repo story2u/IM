@@ -34,6 +34,7 @@ export type {
 } from '@story2u/radar-contracts/subscriptions'
 
 export type Platform = 'telegram' | 'wecom'
+export type OpportunityType = 'business' | 'job'
 export type JobWorkMode = 'remote' | 'hybrid' | 'on_site' | 'flexible' | 'unknown'
 export type JobEmploymentType =
   | 'full_time'
@@ -122,6 +123,7 @@ export interface AgentAction {
 
 export interface Opportunity {
   id: string
+  opportunityType?: OpportunityType
   platform: Platform
   contactName: string
   contactAvatar: string

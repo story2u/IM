@@ -1,6 +1,6 @@
 'use client'
 
-import { BookText, BriefcaseBusiness, LayoutGrid, LogOut, Moon, Settings, Sun, UserRound } from 'lucide-react'
+import { Inbox, LogOut, MessageSquareText, Moon, Settings, Sparkles, Sun, UserRound } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
@@ -13,10 +13,9 @@ import { isPublicAuthPath } from '@/lib/auth-routes'
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { href: '/', label: '商机看板', icon: LayoutGrid },
-  { href: '/jobs', label: '工作机会', icon: BriefcaseBusiness },
-  { href: '/templates', label: '回复模板', icon: BookText },
-  { href: '/settings', label: '设置中心', icon: Settings },
+  { href: '/', label: '今天', icon: Sparkles },
+  { href: '/messages', label: '消息', icon: Inbox },
+  { href: '/mira', label: 'Mira', icon: MessageSquareText },
 ]
 
 function ThemeToggle() {
@@ -43,7 +42,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth()
   const isPublicAuthPage = isPublicAuthPath(pathname)
   const isHomePage = pathname === '/'
-  const isPublicPage = isPublicAuthPage || isHomePage
+  const isPublicHomePage = isHomePage && (loading || !user)
+  const isPublicPage = isPublicAuthPage || isPublicHomePage
 
   useEffect(() => {
     if (!loading && !user && !isPublicPage) {
@@ -51,7 +51,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [isPublicPage, loading, router, user])
 
-  if (isPublicAuthPage || isHomePage) {
+  if (isPublicAuthPage || isPublicHomePage) {
     return <main className="min-h-svh bg-background">{children}</main>
   }
 
@@ -72,14 +72,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2 px-5 py-5">
             <BrandLogo size={32} />
             <div className="leading-tight">
-              <p className="text-sm font-semibold text-sidebar-foreground">商机雷达</p>
-              <p className="text-[11px] text-muted-foreground">IM 商机助手</p>
+              <p className="text-sm font-semibold text-sidebar-foreground">OpenMIRA</p>
+              <p className="text-[11px] text-muted-foreground">智能消息管家</p>
             </div>
           </div>
           <nav className="flex flex-col gap-1 px-3" aria-label="主导航">
             {navItems.map((item) => {
               const active =
-                item.href === '/' ? pathname === '/' || pathname.startsWith('/opportunity') : pathname.startsWith(item.href)
+                item.href === '/'
+                  ? pathname === '/'
+                  : item.href === '/messages'
+                    ? pathname.startsWith('/messages') || pathname.startsWith('/opportunity')
+                    : pathname.startsWith(item.href)
               return (
                 <Link
                   key={item.href}
@@ -110,6 +114,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="设置中心"
+                nativeButton={false}
+                render={<Link href="/settings" />}
+              >
+                <Settings className="size-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 aria-label="退出登录"
                 onClick={() => {
                   logout()
@@ -128,9 +141,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <header className="flex items-center justify-between border-b bg-card px-4 py-3 md:hidden">
             <div className="flex items-center gap-2">
               <BrandLogo size={28} />
-              <span className="text-sm font-semibold">商机雷达</span>
+              <span className="text-sm font-semibold">OpenMIRA</span>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="设置中心"
+                nativeButton={false}
+                render={<Link href="/settings" />}
+              >
+                <Settings className="size-4" />
+              </Button>
+              <ThemeToggle />
+            </div>
           </header>
 
           <main className="flex-1 pb-20 md:pb-0">{children}</main>
@@ -142,7 +166,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             {navItems.map((item) => {
               const active =
-                item.href === '/' ? pathname === '/' || pathname.startsWith('/opportunity') : pathname.startsWith(item.href)
+                item.href === '/'
+                  ? pathname === '/'
+                  : item.href === '/messages'
+                    ? pathname.startsWith('/messages') || pathname.startsWith('/opportunity')
+                    : pathname.startsWith(item.href)
               return (
                 <Link
                   key={item.href}

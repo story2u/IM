@@ -114,10 +114,10 @@ export default function LoginPage() {
         <div className="mx-auto max-w-lg">
           <BrandLogo size={72} priority className="mx-auto mb-8" />
           <h1 id="login-heading" className="text-4xl font-semibold tracking-tight sm:text-5xl">
-            登录或注册
+            登录 OpenMIRA
           </h1>
           <p className="mt-7 text-lg leading-8 text-zinc-300 sm:mt-8 sm:text-xl">
-            登录后，AI 会帮你发现群聊中的商机，并给出安全检查与跟进建议。
+            登录后，Mira 会先整理和过滤聊天消息，你只处理真正重要的信息。
           </p>
         </div>
 
@@ -210,7 +210,7 @@ export default function LoginPage() {
         </div>
 
         <p className="mt-auto pt-12 text-xs leading-5 text-zinc-500 sm:pt-16">
-          继续即表示你同意使用商机雷达处理登录所需的账户信息。
+          继续即表示你同意使用 OpenMIRA 处理登录所需的账户信息。
         </p>
       </section>
     </div>

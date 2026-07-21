@@ -47,6 +47,7 @@ import type {
   JobSearchProfile,
   JobSearchProfileInput,
   JobSearchProfilePreview,
+  OpportunityType,
 } from './types'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? ''
@@ -54,6 +55,7 @@ const AUTH_TOKEN_KEY = 'im_assistant_access_token'
 
 interface ApiOpportunity {
   id: string
+  opportunityType?: OpportunityType
   platform: Opportunity['platform']
   contactName: string
   contactAvatar?: string
@@ -277,6 +279,7 @@ export function toOpportunity(item: ApiOpportunity | ContractOpportunity): Oppor
   const detail = item as ApiOpportunity
   return {
     id: item.id,
+    opportunityType: item.opportunityType ?? 'business',
     platform: item.platform,
     contactName: item.contactName,
     contactAvatar: item.contactAvatar || '/placeholder-user.jpg',

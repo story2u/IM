@@ -7,13 +7,13 @@ import { AuthProvider } from '@/lib/auth'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: '商机雷达 - 企业级 IM 商机助手',
-  description: '连接 Telegram 与企业微信的智能商机管理工具，白天人工审核，夜间 AI 自动回复',
+  title: 'OpenMIRA：智能消息管家',
+  description: '聚合聊天消息，自动过滤噪音。消息再多，也只看重要的。',
   generator: 'v0.app',
   metadataBase: new URL(process.env.NEXT_PUBLIC_FRONTEND_BASE_URL || 'https://im.story2u.xyz'),
   openGraph: {
-    title: '商机雷达 · Opportunity Radar',
-    description: '多 IM 渠道商机识别与 AI 辅助跟进工具',
+    title: 'OpenMIRA：智能消息管家',
+    description: '由 Mira 主动整理、过滤和汇总聊天消息。',
   },
   icons: {
     icon: [
@@ -50,7 +50,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className="bg-background" suppressHydrationWarning>
       <body className="antialiased font-sans">
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <AuthProvider>
             <AppStoreProvider>
               <AppShell>{children}</AppShell>

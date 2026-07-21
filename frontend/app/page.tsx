@@ -1,313 +1,194 @@
 'use client'
 
-import { AlertTriangle, Archive, ChevronLeft, ChevronRight, Inbox, Loader2 } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Loader2, RefreshCw, Settings, ShieldCheck, Sparkles } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
-import { FilterPanel } from '@/components/filter-panel'
-import { OpportunityCard } from '@/components/opportunity-card'
-import { Badge } from '@/components/ui/badge'
+import { ProductHome } from '@/components/landing/product-home'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAppStore } from '@/lib/app-store'
 import { useAuth } from '@/lib/auth'
-import { ProductHome } from '@/components/landing/product-home'
-import { applyFilters, defaultFilters, type DashboardFilters, type SortKey } from '@/lib/dashboard-filters'
-import type { Platform } from '@/lib/types'
+import { buildMiraSummary, formatMiraClock, getMiraStats, greetingForNow } from '@/lib/mira'
+import { cn } from '@/lib/utils'
 
-const PAGE_SIZE = 12
-
-const sortLabels: Record<SortKey, string> = {
-  newest: '最新优先',
-  oldest: '最早优先',
-  confidence: '按商机相关度',
-  trust: '按可信度',
+function MiraOrb() {
+  return (
+    <div className="relative grid size-10 place-items-center" aria-hidden="true">
+      <span className="absolute size-10 animate-pulse rounded-full border border-cyan-300/50 bg-indigo-500/15" />
+      <span className="size-4 rounded-full bg-cyan-300 shadow-[0_0_22px_rgba(103,232,249,0.42)]" />
+    </div>
+  )
 }
 
-export default function DashboardPage() {
+function MetricTile({ label, tone, value }: { label: string; tone: string; value: number }) {
+  return (
+    <div className="min-h-24 rounded-md bg-[#081a25] p-4">
+      <p className={cn('text-3xl font-black tabular-nums', tone)}>{value}</p>
+      <p className="mt-2 text-sm leading-5 text-slate-300">{label}</p>
+    </div>
+  )
+}
+
+function BriefingRow({ label, state, time }: { label: string; state: string; time: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-white/8 py-3 last:border-0">
+      <div>
+        <p className="text-sm font-semibold text-white">{label}</p>
+        <p className="mt-1 text-xs text-slate-400">{state}</p>
+      </div>
+      <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-300">{time}</span>
+    </div>
+  )
+}
+
+export default function TodayPage() {
   const { user, loading } = useAuth()
+  const { backendError, backendLoading, opportunities, reloadBackendData } = useAppStore()
 
   if (!loading && !user) return <ProductHome />
   if (loading && !user) return <ProductHome />
+  if (!user) return null
 
-  return <AuthenticatedDashboard />
-}
-
-function AuthenticatedDashboard() {
-  const {
-    opportunities,
-    newOpportunityId,
-    archiveOpportunity,
-    restoreOpportunity,
-    bulkArchiveOpportunities,
-  } = useAppStore()
-  const [filters, setFilters] = useState<DashboardFilters>(defaultFilters)
-  const [page, setPage] = useState(1)
-  const [archiveView, setArchiveView] = useState(false)
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set())
-  const [archiveError, setArchiveError] = useState<string | null>(null)
-
-  const visibleOpportunities = useMemo(
-    () => opportunities.filter((item) => Boolean(item.archivedAt) === archiveView),
-    [archiveView, opportunities],
-  )
-  const filtered = useMemo(() => applyFilters(visibleOpportunities, filters), [visibleOpportunities, filters])
-  const keywordOptions = useMemo(
-    () => Array.from(new Set(opportunities.flatMap((o) => o.matchedKeywords))).sort(),
-    [opportunities],
-  )
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const safePage = Math.min(page, totalPages)
-  const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
-
-  // 筛选变化时回到第一页
-  useEffect(() => {
-    setPage(1)
-  }, [archiveView, filters])
-
-  const pendingCount = opportunities.filter((o) => !o.archivedAt && o.status === 'pending').length
-  const archivedCount = opportunities.filter((o) => o.archivedAt).length
-  const attentionOpportunities = opportunities.filter(
-    (o) => !o.archivedAt && o.attentionRequired && o.status === 'pending',
-  )
-
-  async function runArchiveAction(id: string, action: 'archive' | 'restore') {
-    setArchiveError(null)
-    setPendingIds((current) => new Set(current).add(id))
-    try {
-      if (action === 'archive') await archiveOpportunity(id)
-      else await restoreOpportunity(id)
-      setSelectedIds((current) => {
-        const next = new Set(current)
-        next.delete(id)
-        return next
-      })
-    } catch (error) {
-      setArchiveError(error instanceof Error ? error.message : '归档操作失败，请稍后重试。')
-    } finally {
-      setPendingIds((current) => {
-        const next = new Set(current)
-        next.delete(id)
-        return next
-      })
-    }
-  }
-
-  async function archiveSelected() {
-    const ids = Array.from(selectedIds)
-    if (ids.length === 0) return
-    setArchiveError(null)
-    setPendingIds(new Set(ids))
-    try {
-      await bulkArchiveOpportunities(ids)
-      setSelectedIds(new Set())
-    } catch (error) {
-      setArchiveError(error instanceof Error ? error.message : '批量归档失败，请稍后重试。')
-    } finally {
-      setPendingIds(new Set())
-    }
-  }
+  const stats = getMiraStats(opportunities)
+  const latestClock = formatMiraClock(stats.latestAt)
+  const displayName = user.displayName || user.email.split('@')[0] || 'Bruce'
+  const summary = buildMiraSummary(stats)
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-6 md:px-8">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">商机看板</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            自动识别 Telegram 与企业微信中的潜在商机
-          </p>
-        </div>
-        <Badge variant="secondary" className="gap-1.5 rounded-full px-3 py-1">
-          <span className="size-1.5 rounded-full bg-warning" aria-hidden="true" />
-          {pendingCount} 条待处理
-        </Badge>
-      </header>
+    <div className="min-h-full bg-[#06111f] text-white" data-testid="mira-today-page">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-5 py-6 md:px-8">
+        <header className="flex items-start justify-between gap-4 pt-2">
+          <div className="min-w-0">
+            <p className="text-sm font-black text-teal-300">{greetingForNow()}，{displayName}</p>
+            <h1 className="mt-5 max-w-3xl text-4xl font-black leading-tight tracking-normal md:text-6xl">
+              今天 Mira 会这样照顾你的注意力
+            </h1>
+            <p className="mt-4 text-base leading-7 text-slate-300">
+              {latestClock === '--:--'
+                ? 'Mira 还在认识你的信息胃口'
+                : `Mira 已整理至 ${latestClock}`}
+              {' · '}
+              本地处理 {stats.totalProcessed} 条 · 深度分析 {stats.attention.length} 条
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-3">
+            <MiraOrb />
+            <Button variant="outline" size="icon" nativeButton={false} render={<Link href="/settings" />} aria-label="设置中心">
+              <Settings className="size-4" />
+            </Button>
+          </div>
+        </header>
 
-      {attentionOpportunities.length > 0 && (
-        <section
-          role="alert"
-          aria-label="重大商机提醒"
-          className="mb-5 rounded-xl border border-warning/40 bg-warning/10 p-4"
-        >
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="mt-0.5 size-5 shrink-0 text-warning" />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold">pi Agent 发现 {attentionOpportunities.length} 条重大商机</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">请优先核对链接结论和后续行动建议，外部动作仍需人工批准。</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {attentionOpportunities.slice(0, 3).map((opportunity) => (
-                  <Button
-                    key={opportunity.id}
-                    nativeButton={false}
-                    render={<Link href={`/opportunity/${opportunity.id}`} />}
-                    variant="outline"
-                    size="sm"
-                    className="bg-background/70"
-                  >
-                    {opportunity.contactName} · 查看建议
-                  </Button>
-                ))}
+        {backendError ? (
+          <section
+            role="alert"
+            className="flex flex-col gap-3 rounded-md border border-rose-300/25 bg-rose-950/45 p-4 text-rose-100 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div className="flex gap-3">
+              <AlertTriangle className="mt-0.5 size-5 shrink-0" />
+              <div>
+                <p className="font-semibold">Mira 暂时读不到服务端数据</p>
+                <p className="mt-1 text-sm text-rose-100/75">{backendError}</p>
               </div>
+            </div>
+            <Button onClick={reloadBackendData} className="gap-2 bg-rose-100 text-rose-950 hover:bg-white">
+              <RefreshCw className="size-4" />
+              重试
+            </Button>
+          </section>
+        ) : null}
+
+        <section className="rounded-md border border-cyan-300/20 bg-[#0b2238] p-5 shadow-2xl shadow-cyan-950/20">
+          <p className="text-xs font-black uppercase text-cyan-300">OpenMIRA</p>
+          <div className="mt-3 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h2 className="max-w-2xl text-3xl font-black leading-tight md:text-5xl">
+                今天只需要你看 {stats.focusCount} 条
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
+                其他消息会先进入摘要、安静区或继续等待更多上下文，外部动作仍需你批准。
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button size="lg" nativeButton={false} render={<Link href="/messages?category=pending" />} className="gap-2 bg-cyan-300 text-slate-950 hover:bg-cyan-200">
+                开始处理
+                <ArrowRight className="size-4" />
+              </Button>
+              <Button size="lg" variant="outline" nativeButton={false} render={<Link href="/mira" />}>
+                为什么是这些
+              </Button>
+            </div>
+          </div>
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            <MetricTile value={stats.attention.length} label="条需要现在关注" tone="text-amber-300" />
+            <MetricTile value={stats.business.length + stats.jobs.length} label="条可以稍后处理" tone="text-sky-300" />
+            <MetricTile value={stats.judgment.length} label="条需要你帮助判断" tone="text-indigo-300" />
+          </div>
+        </section>
+
+        <section className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
+          <div className="rounded-md bg-[#0c1d30] p-5">
+            <p className="text-xs font-black text-teal-300">Mira 的一句话</p>
+            <p className="mt-3 text-xl font-bold leading-8 text-white">{summary}</p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {stats.attention.slice(0, 2).map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/opportunity/${item.id}`}
+                  className="rounded-md border border-white/10 bg-[#071725] p-4 transition hover:border-cyan-300/45"
+                >
+                  <p className="text-sm font-semibold text-white">{item.contactName}</p>
+                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-300">{item.summary}</p>
+                  <p className="mt-3 text-xs font-bold text-cyan-300">查看来源 ›</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-md bg-[#0c1d30] p-5">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-black text-teal-300">当前信息胃口</p>
+                <h2 className="mt-2 text-xl font-black">Mira 还在认识你的偏好</h2>
+              </div>
+              {backendLoading ? <Loader2 className="size-5 animate-spin text-cyan-300" /> : <Sparkles className="size-5 text-cyan-300" />}
+            </div>
+            <div className="mt-5 rounded-md bg-[#071725] p-5 text-center">
+              <Sparkles className="mx-auto size-7 text-teal-300" />
+              <p className="mx-auto mt-4 max-w-sm text-sm leading-6 text-slate-300">
+                用几条真实消息开始教学，正式偏好只会在你确认后生效。
+              </p>
+            </div>
+            <Button nativeButton={false} render={<Link href="/mira" />} className="mt-4 w-full bg-[#155e75] hover:bg-[#0e7490]">
+              教 Mira 几条
+            </Button>
+          </div>
+        </section>
+
+        <section className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-md bg-[#0c1d30] p-5">
+            <h2 className="text-xl font-black">三段简报</h2>
+            <div className="mt-4">
+              <BriefingRow label="早间简报" time="08:30" state={stats.totalProcessed > 0 ? '已基于当前消息更新' : '等待真实消息'} />
+              <BriefingRow label="午间简报" time="12:00" state="聚合上午新增的需要关注项" />
+              <BriefingRow label="晚间摘要" time="18:30" state={`${stats.digestCount} 条可进入晚间回看`} />
+            </div>
+          </div>
+          <div className="rounded-md bg-[#0c1d30] p-5">
+            <h2 className="text-xl font-black">今天的信息流</h2>
+            <p className="mt-2 text-sm text-slate-400">Mira 已判断 {stats.totalProcessed} 条服务端消息</p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <MetricTile value={stats.attention.length} label="立即关注" tone="text-amber-300" />
+              <MetricTile value={stats.pending.length} label="稍后处理" tone="text-sky-300" />
+              <MetricTile value={stats.digestCount} label="摘要出现" tone="text-indigo-300" />
+              <MetricTile value={stats.quietCount} label="安静收起" tone="text-slate-300" />
             </div>
           </div>
         </section>
-      )}
 
-      <div className="mb-3 flex flex-wrap items-center gap-2.5">
-        <Tabs
-          value={archiveView ? 'archived' : filters.status}
-          onValueChange={(value) => {
-            setArchiveView(value === 'archived')
-            setFilters({
-              ...filters,
-              status: value === 'archived' ? 'all' : value as DashboardFilters['status'],
-            })
-            setSelectedIds(new Set())
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="all">全部</TabsTrigger>
-            <TabsTrigger value="pending">待处理</TabsTrigger>
-            <TabsTrigger value="replied">已回复</TabsTrigger>
-            <TabsTrigger value="ignored">已忽略</TabsTrigger>
-            <TabsTrigger value="archived">归档{archivedCount > 0 ? ` ${archivedCount}` : ''}</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <Select
-          items={{ all: '全部平台', telegram: 'Telegram', wecom: '企业微信' }}
-          value={filters.platform}
-          onValueChange={(v) => setFilters({ ...filters, platform: v as 'all' | Platform })}
-        >
-          <SelectTrigger className="h-8 w-32 text-xs" aria-label="按平台筛选">
-            <SelectValue placeholder="平台" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">全部平台</SelectItem>
-            <SelectItem value="telegram">Telegram</SelectItem>
-            <SelectItem value="wecom">企业微信</SelectItem>
-          </SelectContent>
-        </Select>
-        <FilterPanel filters={filters} onChange={setFilters} keywordOptions={keywordOptions} />
-        <Select
-          items={sortLabels}
-          value={filters.sort}
-          onValueChange={(v) => setFilters({ ...filters, sort: v as SortKey })}
-        >
-          <SelectTrigger className="h-8 w-36 text-xs" aria-label="排序方式">
-            <SelectValue placeholder="排序" />
-          </SelectTrigger>
-          <SelectContent>
-            {(Object.keys(sortLabels) as SortKey[]).map((key) => (
-              <SelectItem key={key} value={key}>
-                {sortLabels[key]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <footer className="flex items-center gap-2 pb-3 text-xs text-slate-500">
+          <ShieldCheck className="size-4" />
+          访问令牌只保存在设备安全存储中；Mira 不会绕过你执行外部动作。
+        </footer>
       </div>
-
-      {selectedIds.size > 0 && !archiveView && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/40 px-3 py-2">
-          <p className="text-sm">已选择 {selectedIds.size} 条商机</p>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>取消选择</Button>
-            <Button size="sm" className="gap-1.5" disabled={pendingIds.size > 0} onClick={archiveSelected}>
-              {pendingIds.size > 0 ? <Loader2 className="size-3.5 animate-spin" /> : <Archive className="size-3.5" />}
-              批量归档
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {archiveError && (
-        <p role="alert" className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {archiveError}
-        </p>
-      )}
-
-      <p className="mb-4 text-xs text-muted-foreground" aria-live="polite">
-        当前筛选下共 <span className="font-semibold text-foreground">{filtered.length}</span> 条商机
-        {totalPages > 1 && `，第 ${safePage} / ${totalPages} 页`}
-      </p>
-
-      {pageItems.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed py-16 text-center">
-          <span className="flex size-14 items-center justify-center rounded-full bg-muted">
-            <Inbox className="size-7 text-muted-foreground" />
-          </span>
-          <div>
-            <p className="text-sm font-medium">暂无匹配的商机</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {archiveView ? '归档后的商机会显示在这里，并可随时恢复' : '调整筛选条件，或等待系统从聊天中识别新的商机'}
-            </p>
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* CSS 多列瀑布流：卡片高度不齐时不再像 grid 那样按行对齐留大空隙 */}
-          <div className="columns-1 gap-3 md:columns-2">
-            {pageItems.map((opportunity) => (
-              <div key={opportunity.id} className="mb-3 break-inside-avoid">
-                <OpportunityCard
-                  opportunity={opportunity}
-                  isNew={opportunity.id === newOpportunityId}
-                  selected={selectedIds.has(opportunity.id)}
-                  actionPending={pendingIds.has(opportunity.id)}
-                  onSelectedChange={archiveView ? undefined : (selected) => {
-                    setSelectedIds((current) => {
-                      const next = new Set(current)
-                      if (selected) next.add(opportunity.id)
-                      else next.delete(opportunity.id)
-                      return next
-                    })
-                  }}
-                  onArchive={() => runArchiveAction(opportunity.id, 'archive')}
-                  onRestore={() => runArchiveAction(opportunity.id, 'restore')}
-                />
-              </div>
-            ))}
-          </div>
-
-          {totalPages > 1 && (
-            <nav className="mt-6 flex items-center justify-center gap-1.5" aria-label="分页">
-              <Button
-                variant="outline"
-                size="icon-sm"
-                className="bg-transparent"
-                disabled={safePage <= 1}
-                onClick={() => setPage(safePage - 1)}
-                aria-label="上一页"
-              >
-                <ChevronLeft className="size-4" />
-              </Button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <Button
-                  key={p}
-                  variant={p === safePage ? 'default' : 'ghost'}
-                  size="icon-sm"
-                  onClick={() => setPage(p)}
-                  aria-label={`第 ${p} 页`}
-                  aria-current={p === safePage ? 'page' : undefined}
-                >
-                  {p}
-                </Button>
-              ))}
-              <Button
-                variant="outline"
-                size="icon-sm"
-                className="bg-transparent"
-                disabled={safePage >= totalPages}
-                onClick={() => setPage(safePage + 1)}
-                aria-label="下一页"
-              >
-                <ChevronRight className="size-4" />
-              </Button>
-            </nav>
-          )}
-        </>
-      )}
     </div>
   )
 }

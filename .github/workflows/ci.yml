@@ -191,6 +191,7 @@ jobs:
       RADAR_APP_VERSION: 1.0.0
       RADAR_BUILD_NUMBER: 2
       EXPO_PUBLIC_API_BASE_URL: https://api.example.test
+      EXPO_PUBLIC_MIRA_CONCIERGE_UI_ENABLED: "true"
       EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: 1234567890-ci-server.apps.googleusercontent.com
       EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: 1234567890-ci-ios.apps.googleusercontent.com
     steps:
@@ -211,8 +212,8 @@ jobs:
       - name: Build RN iOS release
         run: |
           xcodebuild -quiet \
-            -workspace mobile/radar/ios/app.xcworkspace \
-            -scheme app \
+            -workspace mobile/radar/ios/OpenMIRA.xcworkspace \
+            -scheme OpenMIRA \
             -configuration Release \
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
@@ -228,6 +229,7 @@ jobs:
       RADAR_APP_VERSION: 1.0.0
       RADAR_BUILD_NUMBER: 2
       EXPO_PUBLIC_API_BASE_URL: https://api.example.test
+      EXPO_PUBLIC_MIRA_CONCIERGE_UI_ENABLED: "true"
       EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: 1234567890-ci-server.apps.googleusercontent.com
       EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: 1234567890-ci-ios.apps.googleusercontent.com
     steps:

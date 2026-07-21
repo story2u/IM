@@ -33,7 +33,10 @@ interface AppStore {
   messageTotalsByOpportunity: Record<string, number>
   templates: ReplyTemplate[]
   workMode: WorkMode
+  backendError: string | null
+  backendLoading: boolean
   newOpportunityId: string | null
+  reloadBackendData: () => void
   toggleWorkMode: () => void
   setOpportunityStatus: (id: string, status: InternalOpportunityStatus) => Promise<void>
   sendMessage: (opportunityId: string, content: string, idempotencyKey: string) => Promise<void>
@@ -66,6 +69,9 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const [messageTotalsByOpportunity, setMessageTotalsByOpportunity] = useState<Record<string, number>>({})
   const [templates, setTemplates] = useState<ReplyTemplate[]>([])
   const [workMode, setWorkMode] = useState<WorkMode>('work')
+  const [backendError, setBackendError] = useState<string | null>(null)
+  const [backendLoading, setBackendLoading] = useState(false)
+  const [reloadSignal, setReloadSignal] = useState(0)
   const [newOpportunityId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -74,10 +80,13 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     setMessagesByOpportunity({})
     setMessageTotalsByOpportunity({})
     setTemplates([])
-    async function loadBackendData() {
+    async function loadBackendData(background = false) {
       if (!token) {
+        setBackendLoading(false)
         return
       }
+      if (!background) setBackendLoading(true)
+      setBackendError(null)
       try {
         const [backendOpportunities, backendTemplates] = await Promise.all([
           fetchOpportunities('all'),
@@ -89,19 +98,26 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.warn('Failed to load backend data.', error)
         if (!cancelled) {
+          setBackendError(error instanceof Error ? error.message : '暂时无法读取数据，请检查网络后重试。')
           setOpportunities([])
           setMessagesByOpportunity({})
         }
+      } finally {
+        if (!cancelled && !background) setBackendLoading(false)
       }
     }
 
     loadBackendData()
-    const interval = setInterval(loadBackendData, 30000)
+    const interval = setInterval(() => loadBackendData(true), 30000)
     return () => {
       cancelled = true
       clearInterval(interval)
     }
-  }, [token])
+  }, [reloadSignal, token])
+
+  const reloadBackendData = useCallback(() => {
+    setReloadSignal((value) => value + 1)
+  }, [])
 
   const toggleWorkMode = useCallback(() => {
     setWorkMode((prev) => (prev === 'work' ? 'ai' : 'work'))
@@ -308,7 +324,10 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       messageTotalsByOpportunity,
       templates,
       workMode,
+      backendError,
+      backendLoading,
       newOpportunityId,
+      reloadBackendData,
       toggleWorkMode,
       setOpportunityStatus,
       sendMessage,
@@ -334,7 +353,10 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       messageTotalsByOpportunity,
       templates,
       workMode,
+      backendError,
+      backendLoading,
       newOpportunityId,
+      reloadBackendData,
       toggleWorkMode,
       setOpportunityStatus,
       sendMessage,
